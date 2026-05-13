@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
+import '../../services/session_storage.dart';
 
 class _C {
   static const primary   = Color(0xFF39988E);
@@ -13,8 +14,25 @@ class _C {
   static const textMuted = Color(0xFF7A9E9B);
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncFromPrefs());
+  }
+
+  Future<void> _syncFromPrefs() async {
+    final u = await SessionStorage.loadUserModel();
+    if (!mounted || u == null) return;
+    Provider.of<UserProvider>(context, listen: false).setUser(u);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +43,10 @@ class HomeScreen extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context);
     final user         = userProvider.user;
     final isCaptain    = user?.role == 'captain';
+    final p = user?.photoUrl;
+    final hasPhoto = p != null && p.isNotEmpty;
+    final pendingCaptain = isCaptain &&
+        user?.captainVerificationStatus == 'pending_verification';
 
     return Scaffold(
       backgroundColor: _C.bg,
@@ -82,35 +104,87 @@ class HomeScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        // Notification bell
-                        Container(
-                          width: 42, height: 42,
-                          decoration: BoxDecoration(
-                            color:        _C.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(13),
-                          ),
-                          child: const Icon(
-                            Icons.notifications_outlined,
-                            color: _C.white, size: 22,
+                        GestureDetector(
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/wallet'),
+                          child: Container(
+                            width: 42, height: 42,
+                            decoration: BoxDecoration(
+                              color:        _C.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            child: const Icon(
+                              Icons.notifications_outlined,
+                              color: _C.white, size: 22,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
                         // Avatar
-                        CircleAvatar(
-                          radius: 21,
-                          backgroundColor: _C.white.withOpacity(0.2),
-                          child: Text(
-                            (user?.name ?? 'U')[0].toUpperCase(),
-                            style: const TextStyle(
-                              color:      _C.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize:   16,
-                            ),
+                        GestureDetector(
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/profile'),
+                          child: CircleAvatar(
+                            radius: 21,
+                            backgroundColor: _C.white.withOpacity(0.2),
+                            backgroundImage: hasPhoto
+                                ? NetworkImage(p as String)
+                                : null,
+                            child: !hasPhoto
+                                ? Text(
+                                    (user?.name ?? 'U')[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      color:      _C.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize:   16,
+                                    ),
+                                  )
+                                : null,
                           ),
                         ),
                       ],
                     ),
                   ),
+
+                  if (pendingCaptain) ...[
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color:        const Color(0xFFFFF8E1),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFFFFB74D).withOpacity(0.5),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.hourglass_top_rounded,
+                              color: Color(0xFFFF9800),
+                              size:  22,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Your captain documents are under review. '
+                                'You can browse the app; posting rides may be '
+                                'limited until approved.',
+                                style: TextStyle(
+                                  color:    _C.textDark.withOpacity(0.85),
+                                  fontSize: 13,
+                                  height:   1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 20),
 
@@ -188,19 +262,25 @@ class HomeScreen extends StatelessWidget {
                             // Open map button
                             Positioned(
                               bottom: 12, right: 12,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 7),
-                                decoration: BoxDecoration(
-                                  color:        _C.primary,
-                                  borderRadius: BorderRadius.circular(20),
+                              child: GestureDetector(
+                                onTap: () => Navigator.pushNamed(
+                                  context,
+                                  isCaptain ? '/post-ride' : '/find-ride',
                                 ),
-                                child: const Text(
-                                  'Open Map',
-                                  style: TextStyle(
-                                    color:      _C.white,
-                                    fontSize:   12,
-                                    fontWeight: FontWeight.w600,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color:        _C.primary,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    'Open Map',
+                                    style: TextStyle(
+                                      color:      _C.white,
+                                      fontSize:   12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -271,12 +351,18 @@ class HomeScreen extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        Text(
-                          'See all',
-                          style: TextStyle(
-                            color:    _C.primary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            isCaptain ? '/my-rides' : '/my-bookings',
+                          ),
+                          child: Text(
+                            'See all',
+                            style: TextStyle(
+                              color:    _C.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

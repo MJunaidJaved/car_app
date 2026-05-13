@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../services/auth_service.dart';
+import '../../services/session_storage.dart';
+import '../../providers/user_provider.dart';
 import '../../widgets/app_widgets.dart';
 
 class _C {
@@ -23,6 +27,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
   String? _selected;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
+  bool _isBusy = false;
 
   @override
   void initState() {
@@ -39,12 +44,52 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
     super.dispose();
   }
 
-  void _proceed() {
-    if (_selected == null) return;
+  Future<void> _proceed() async {
+    if (_selected == null || _isBusy) return;
+
     if (_selected == 'captain') {
-      Navigator.pushReplacementNamed(context, '/captain-phone');
-    } else {
-      Navigator.pushReplacementNamed(context, '/home');
+      setState(() => _isBusy = true);
+      try {
+        final userProvider =
+            Provider.of<UserProvider>(context, listen: false);
+        await SessionStorage.setRole('captain');
+        if (!mounted) return;
+        final model = await SessionStorage.loadUserModel();
+        if (model != null) userProvider.setUser(model);
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/captain-register');
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isBusy = false);
+      }
+      return;
+    }
+
+    setState(() => _isBusy = true);
+    try {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      final userProvider =
+          Provider.of<UserProvider>(context, listen: false);
+      final model = await auth.savePassengerRoleAndProfile();
+      if (!mounted) return;
+      userProvider.setUser(model);
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
     }
   }
 
@@ -149,7 +194,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
                       duration: const Duration(milliseconds: 250),
                       child: TealButton(
                         label:     'Continue as ${_selected == null ? '...' : _selected![0].toUpperCase() + _selected!.substring(1)}',
-                        isLoading: false,
+                        isLoading: _isBusy,
                         onTap:     _proceed,
                       ),
                     ),

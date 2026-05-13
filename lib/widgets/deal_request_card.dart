@@ -14,7 +14,7 @@ class DealRequestCard extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final wallet = userProvider.wallet;
 
-    if (wallet == null || wallet.balance < deal.platformFee) {
+    if (wallet != null && wallet.balance < deal.platformFee) {
       AppHelpers.showSnackBar(
         context,
         'Insufficient wallet balance. Please add funds.',

@@ -12,7 +12,9 @@ class UserProvider with ChangeNotifier {
   WalletModel? get wallet => _wallet;
   bool get isLoading => _isLoading;
   bool get isCaptain => _currentUser?.role == 'captain';
-  bool get isCustomer => _currentUser?.role == 'customer';
+  bool get isCustomer =>
+      _currentUser?.role == 'customer' ||
+      _currentUser?.role == 'passenger';
 
   void setUser(UserModel? user) {
     _currentUser = user;

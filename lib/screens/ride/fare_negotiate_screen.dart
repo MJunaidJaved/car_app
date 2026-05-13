@@ -315,7 +315,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                         ),
                       ),
                       child: const Text(
-                        'View Ride',
+                        'Confirm & start ride',
                         style: TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700,
                         ),

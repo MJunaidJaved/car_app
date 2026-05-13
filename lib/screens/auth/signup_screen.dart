@@ -67,19 +67,15 @@ class _SignupScreenState extends State<SignupScreen>
     try {
       final authService  = Provider.of<AuthService>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await authService.signUp(
+      final userData = await authService.signUp(
         email:    _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
         name:     _nameCtrl.text.trim(),
         phone:    _phoneCtrl.text.trim(),
         role:     'customer',
       );
-      final userData =
-          await authService.getUserData(authService.currentUser!.uid);
-      if (userData != null) {
-        userProvider.setUser(userData);
-        if (mounted) Navigator.pushReplacementNamed(context, '/role-select');
-      }
+      userProvider.setUser(userData);
+      if (mounted) Navigator.pushReplacementNamed(context, '/role-select');
     } catch (e) {
       if (mounted)
         AppHelpers.showSnackBar(context, e.toString(), isError: true);

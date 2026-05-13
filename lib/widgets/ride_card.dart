@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/ride_model.dart';
-import '../models/deal_model.dart';
-import '../services/firestore_service.dart';
 import '../providers/user_provider.dart';
 import '../utils/helpers.dart';
 
@@ -253,10 +251,8 @@ class _CaptainActions extends StatelessWidget {
         Expanded(
           child: OutlinedButton(
             onPressed: () async {
-              final firestoreService = Provider.of<FirestoreService>(context, listen: false);
-              await firestoreService.updateRideStatus(ride.id, 'completed');
               if (context.mounted) {
-                AppHelpers.showSnackBar(context, 'Ride completed');
+                AppHelpers.showSnackBar(context, 'Ride marked complete (demo)');
               }
             },
             child: const Text('Mark Complete'),
@@ -266,10 +262,8 @@ class _CaptainActions extends StatelessWidget {
         Expanded(
           child: ElevatedButton(
             onPressed: () async {
-              final firestoreService = Provider.of<FirestoreService>(context, listen: false);
-              await firestoreService.updateRideStatus(ride.id, 'cancelled');
               if (context.mounted) {
-                AppHelpers.showSnackBar(context, 'Ride cancelled');
+                AppHelpers.showSnackBar(context, 'Ride cancelled (demo)');
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -340,28 +334,8 @@ class _PassengerActions extends StatelessWidget {
         return;
       }
 
-      final agreedFare = double.tryParse(fareController.text) ?? ride.suggestedFare;
-      final platformFee = AppHelpers.calculatePlatformFee(agreedFare);
-
-      final deal = DealModel(
-        id: '',
-        rideId: ride.id,
-        captainId: ride.captainId,
-        customerId: user.id,
-        customerName: user.name,
-        customerPhone: user.phone,
-        agreedFare: agreedFare,
-        platformFee: platformFee,
-        status: 'pending',
-        createdAt: DateTime.now(),
-        customerMessage: messageController.text.isNotEmpty ? messageController.text : null,
-      );
-
-      final firestoreService = Provider.of<FirestoreService>(context, listen: false);
-      await firestoreService.createDeal(deal);
-
       if (context.mounted) {
-        AppHelpers.showSnackBar(context, 'Request sent successfully!');
+        AppHelpers.showSnackBar(context, 'Request sent (demo — no server)');
       }
     } catch (e) {
       if (context.mounted) {

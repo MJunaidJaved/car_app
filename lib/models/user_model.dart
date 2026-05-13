@@ -5,8 +5,13 @@ class UserModel {
   final String email;
   final String name;
   final String phone;
-  final String role; // 'captain' or 'customer'
+  final String role; // '' until role select; then captain | passenger | customer
   final bool isVerified;
+  final String? photoUrl;
+  /// When role is captain: pending_verification | approved | rejected
+  final String? captainVerificationStatus;
+  final String? cnicFrontUrl;
+  final String? cnicBackUrl;
   final String? cnic;
   final String? vehicleMake;
   final String? vehicleModel;
@@ -22,6 +27,10 @@ class UserModel {
     required this.phone,
     required this.role,
     this.isVerified = false,
+    this.photoUrl,
+    this.captainVerificationStatus,
+    this.cnicFrontUrl,
+    this.cnicBackUrl,
     this.cnic,
     this.vehicleMake,
     this.vehicleModel,
@@ -40,6 +49,10 @@ class UserModel {
       phone: data['phone'] ?? '',
       role: data['role'] ?? 'customer',
       isVerified: data['isVerified'] ?? false,
+      photoUrl: data['photoUrl'] as String?,
+      captainVerificationStatus: data['captainVerificationStatus'] as String?,
+      cnicFrontUrl: data['cnicFrontUrl'] as String?,
+      cnicBackUrl: data['cnicBackUrl'] as String?,
       cnic: data['cnic'],
       vehicleMake: data['vehicleMake'],
       vehicleModel: data['vehicleModel'],
@@ -59,6 +72,11 @@ class UserModel {
       'phone': phone,
       'role': role,
       'isVerified': isVerified,
+      if (photoUrl != null) 'photoUrl': photoUrl,
+      if (captainVerificationStatus != null)
+        'captainVerificationStatus': captainVerificationStatus,
+      if (cnicFrontUrl != null) 'cnicFrontUrl': cnicFrontUrl,
+      if (cnicBackUrl != null) 'cnicBackUrl': cnicBackUrl,
       'cnic': cnic,
       'vehicleMake': vehicleMake,
       'vehicleModel': vehicleModel,
@@ -76,6 +94,10 @@ class UserModel {
     String? phone,
     String? role,
     bool? isVerified,
+    String? photoUrl,
+    String? captainVerificationStatus,
+    String? cnicFrontUrl,
+    String? cnicBackUrl,
     String? cnic,
     String? vehicleMake,
     String? vehicleModel,
@@ -91,6 +113,11 @@ class UserModel {
       phone: phone ?? this.phone,
       role: role ?? this.role,
       isVerified: isVerified ?? this.isVerified,
+      photoUrl: photoUrl ?? this.photoUrl,
+      captainVerificationStatus:
+          captainVerificationStatus ?? this.captainVerificationStatus,
+      cnicFrontUrl: cnicFrontUrl ?? this.cnicFrontUrl,
+      cnicBackUrl: cnicBackUrl ?? this.cnicBackUrl,
       cnic: cnic ?? this.cnic,
       vehicleMake: vehicleMake ?? this.vehicleMake,
       vehicleModel: vehicleModel ?? this.vehicleModel,

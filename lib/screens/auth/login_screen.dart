@@ -65,17 +65,12 @@ class _LoginScreenState extends State<LoginScreen>
       final authService  = Provider.of<AuthService>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      await authService.signIn(
+      final userData = await authService.signIn(
         email:    _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
-
-      final userData =
-      await authService.getUserData(authService.currentUser!.uid);
-      if (userData != null) {
-        userProvider.setUser(userData);
-        if (mounted) Navigator.pushReplacementNamed(context, '/home');
-      }
+      userProvider.setUser(userData);
+      if (mounted) Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       if (mounted) AppHelpers.showSnackBar(context, e.toString(), isError: true);
     } finally {

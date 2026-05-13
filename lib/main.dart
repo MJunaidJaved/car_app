@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
 import 'services/auth_service.dart';
@@ -12,12 +11,14 @@ import 'providers/ride_provider.dart';
 
 import 'models/ride_model.dart';
 
+import 'screens/auth/splash_screen.dart';
 import 'screens/auth/app_gate_screen.dart';
 import 'screens/auth/captain_phone_screen.dart';
 import 'screens/auth/captain_register_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/role_select_screen.dart';
 import 'screens/auth/signup_screen.dart';
+import 'screens/auth/account_created_screen.dart';
 
 import 'screens/home/home_screen.dart';
 
@@ -39,8 +40,6 @@ import 'utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-
   runApp(const CarPoolApp());
 }
 
@@ -60,7 +59,7 @@ class CarPoolApp extends StatelessWidget {
         ),
 
         Provider<GrokAIService>(
-          create: (_) => GrokAIService(),
+          create: (_) => const GrokAIService(),
         ),
 
         Provider<RideService>(
@@ -80,18 +79,32 @@ class CarPoolApp extends StatelessWidget {
         title: 'CarPool App',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const AppGateScreen(),
-
+        initialRoute: '/',
+        onGenerateRoute: (RouteSettings settings) {
+          if (settings.name == '/fare-negotiate') {
+            final ride = settings.arguments as RideModel?;
+            if (ride == null) return null;
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (context) => FareNegotiateScreen(ride: ride),
+            );
+          }
+          return null;
+        },
         routes: {
+          '/': (context) => const SplashScreen(),
+
           '/gate': (context) => const AppGateScreen(),
 
           '/role-select': (context) => const RoleSelectScreen(),
 
-          '/captain-phone': (context) =>
-              const CaptainPhoneScreen(),
+          '/captain-phone': (context) => const CaptainPhoneScreen(),
 
           '/captain-register': (context) =>
               const CaptainRegisterScreen(),
+
+          '/account-created': (context) =>
+              const AccountCreatedScreen(),
 
           '/login': (context) => const LoginScreen(),
 
@@ -99,36 +112,21 @@ class CarPoolApp extends StatelessWidget {
 
           '/home': (context) => const HomeScreen(),
 
-          '/post-ride': (context) =>
-              const PostRideScreen(),
+          '/post-ride': (context) => const PostRideScreen(),
 
-          '/my-rides': (context) =>
-              const MyRidesScreen(),
+          '/my-rides': (context) => const MyRidesScreen(),
 
-          '/find-ride': (context) =>
-              const FindRideScreen(),
+          '/find-ride': (context) => const FindRideScreen(),
 
-          '/my-bookings': (context) =>
-              const MyBookingsScreen(),
+          '/my-bookings': (context) => const MyBookingsScreen(),
 
-          '/wallet': (context) =>
-              const WalletScreen(),
+          '/wallet': (context) => const WalletScreen(),
 
-          '/profile': (context) =>
-              const ProfileScreen(),
+          '/profile': (context) => const ProfileScreen(),
 
-          '/fare-negotiate': (context) =>
-              FareNegotiateScreen(
-                ride: ModalRoute.of(context)!
-                    .settings
-                    .arguments as RideModel,
-              ),
+          '/active-ride': (context) => const ActiveRideScreen(),
 
-          '/active-ride': (context) =>
-              const ActiveRideScreen(),
-
-          '/earnings': (context) =>
-              const EarningsScreen(),
+          '/earnings': (context) => const EarningsScreen(),
         },
       ),
     );

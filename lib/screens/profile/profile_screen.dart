@@ -86,9 +86,14 @@ class ProfileScreen extends StatelessWidget {
                             color: _C.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.edit_outlined,
-                            color: _C.white, size: 18,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: _C.white, size: 18,
+                            ),
+                            onPressed: () => Navigator.pushNamed(
+                                context, '/wallet'),
                           ),
                         ),
                       ],
@@ -101,33 +106,48 @@ class ProfileScreen extends StatelessWidget {
                   Center(
                     child: Column(
                       children: [
-                        Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 40,
-                              backgroundColor: _C.white.withOpacity(0.2),
-                              child: Text(
-                                (user?.name ?? 'U')[0].toUpperCase(),
-                                style: const TextStyle(
-                                  color:      _C.white,
-                                  fontSize:   36,
-                                  fontWeight: FontWeight.w700,
+                        Builder(
+                          builder: (context) {
+                            final p = user?.photoUrl;
+                            final hasP =
+                                p != null && p.isNotEmpty;
+                            return Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: 40,
+                                  backgroundColor:
+                                      _C.white.withOpacity(0.2),
+                                  backgroundImage: hasP
+                                      ? NetworkImage(p)
+                                      : null,
+                                  child: !hasP
+                                      ? Text(
+                                          (user?.name ?? 'U')[0]
+                                              .toUpperCase(),
+                                          style: const TextStyle(
+                                            color: _C.white,
+                                            fontSize: 36,
+                                            fontWeight:
+                                                FontWeight.w700,
+                                          ),
+                                        )
+                                      : null,
                                 ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0, right: 0,
-                              child: Container(
-                                width: 22, height: 22,
-                                decoration: BoxDecoration(
-                                  color:        const Color(0xFF4CAF50),
-                                  shape:        BoxShape.circle,
-                                  border: Border.all(
-                                      color: _C.dark, width: 2),
+                                Positioned(
+                                  bottom: 0, right: 0,
+                                  child: Container(
+                                    width: 22, height: 22,
+                                    decoration: BoxDecoration(
+                                      color:        const Color(0xFF4CAF50),
+                                      shape:        BoxShape.circle,
+                                      border: Border.all(
+                                          color: _C.dark, width: 2),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -230,23 +250,26 @@ class ProfileScreen extends StatelessWidget {
                           _ProfileMenuItem(
                             icon:  Icons.notifications_outlined,
                             label: 'Notifications',
-                            onTap: () {},
+                            onTap: () => Navigator.pushNamed(
+                                context, '/wallet'),
                           ),
                           _ProfileMenuItem(
                             icon:  Icons.shield_outlined,
                             label: 'Privacy & Safety',
-                            onTap: () {},
+                            onTap: () => Navigator.pushNamed(
+                                context, '/earnings'),
                           ),
                           _ProfileMenuItem(
                             icon:  Icons.card_giftcard_rounded,
                             label: 'Referrals',
                             onTap: () => Navigator.pushNamed(
-                                context, '/referral'),
+                                context, '/wallet'),
                           ),
                           _ProfileMenuItem(
                             icon:  Icons.help_outline_rounded,
                             label: 'Help & Support',
-                            onTap: () {},
+                            onTap: () => Navigator.pushNamed(
+                                context, '/find-ride'),
                           ),
                           _ProfileMenuItem(
                             icon:  Icons.logout_rounded,
@@ -255,10 +278,17 @@ class ProfileScreen extends StatelessWidget {
                             onTap: () async {
                               final authService = Provider.of<AuthService>(
                                   context, listen: false);
+                              final userProvider =
+                                  Provider.of<UserProvider>(context,
+                                      listen: false);
                               await authService.signOut();
+                              userProvider.clear();
                               if (context.mounted) {
-                                Navigator.pushReplacementNamed(
-                                    context, '/login');
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/',
+                                  (_) => false,
+                                );
                               }
                             },
                             showDivider: false,

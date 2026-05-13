@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../../providers/user_provider.dart';
-import '../../services/ride_service.dart';
 import '../../utils/helpers.dart';
 import '../../widgets/app_widgets.dart';
 
@@ -44,25 +41,15 @@ class _PostRideScreenState extends State<PostRideScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      final rideService  = Provider.of<RideService>(context, listen: false);
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await rideService.postRide(
-        captainId:      userProvider.user!.uid,
-        from:           _fromCtrl.text.trim(),
-        to:             _toCtrl.text.trim(),
-        offeredFare:    double.parse(_fareCtrl.text),
-        availableSeats: int.parse(_seatsCtrl.text),
-        rideType:       _rideType,
-        departureTime:  _time.format(context),
-        isRecurring:    _isRecurring,
-      );
+      await Future<void>.delayed(const Duration(seconds: 2));
       if (mounted) {
-        AppHelpers.showSnackBar(context, 'Ride posted successfully!');
-        Navigator.pop(context);
+        AppHelpers.showSnackBar(context, 'Ride posted (demo)');
+        Navigator.pushReplacementNamed(context, '/my-rides');
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         AppHelpers.showSnackBar(context, e.toString(), isError: true);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
