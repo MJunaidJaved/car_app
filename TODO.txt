@@ -1,0 +1,133 @@
+═══════════════════════════════════════════════════════════
+    CARPOOL APP - SETUP CHECKLIST
+═══════════════════════════════════════════════════════════
+
+✅ = Complete
+⬜ = To Do
+
+STEP 1: FLUTTER SETUP
+⬜ Extract zip file to your desired location
+⬜ Open terminal/command prompt in project folder
+⬜ Run: flutter pub get
+⬜ Run: flutter doctor (check everything is OK)
+
+STEP 2: FIREBASE PROJECT SETUP
+⬜ Go to: https://console.firebase.google.com/
+⬜ Click "Add Project" or "Create Project"
+⬜ Project name: CarPool App (or any name)
+⬜ Disable Google Analytics (optional)
+⬜ Click "Create Project"
+
+STEP 3: FIREBASE - ADD ANDROID APP
+⬜ In Firebase Console, click Android icon
+⬜ Android package name: com.carpool.app
+⬜ Download "google-services.json"
+⬜ Place file in: carpool_app/android/app/google-services.json
+⬜ Click "Next" and "Continue to console"
+
+STEP 4: FIREBASE - ADD iOS APP (If using iOS)
+⬜ In Firebase Console, click "Add app" → iOS
+⬜ iOS bundle ID: com.carpool.app
+⬜ Download "GoogleService-Info.plist"
+⬜ Place file in: carpool_app/ios/Runner/GoogleService-Info.plist
+⬜ Run: cd ios && pod install && cd ..
+
+STEP 5: FIREBASE AUTHENTICATION
+⬜ Firebase Console → Authentication
+⬜ Click "Get Started"
+⬜ Go to "Sign-in method" tab
+⬜ Click "Email/Password"
+⬜ Enable the toggle
+⬜ Click "Save"
+
+STEP 6: FIRESTORE DATABASE
+⬜ Firebase Console → Firestore Database
+⬜ Click "Create Database"
+⬜ Select "Start in test mode"
+⬜ Choose location (closest to Pakistan)
+⬜ Click "Enable"
+
+STEP 7: FIRESTORE SECURITY RULES
+⬜ In Firestore, click "Rules" tab
+⬜ Copy rules from FIREBASE_SETUP.md file
+⬜ Paste in the rules editor
+⬜ Click "Publish"
+
+STEP 8: RUN THE APP
+⬜ Run: flutter run
+⬜ Wait for app to build and launch
+⬜ If errors, run: flutter clean && flutter pub get && flutter run
+
+STEP 9: TEST THE APP
+⬜ Click "Sign Up" in the app
+⬜ Create Captain account:
+   - Name: Test Captain
+   - Email: captain@test.com
+   - Password: test123
+   - Role: Captain/Driver
+   - Add vehicle details
+⬜ Post a test ride
+⬜ Create Passenger account (use different email)
+⬜ Search and request ride
+⬜ Test all features!
+
+STEP 10: VERIFY IN FIREBASE
+⬜ Firebase Console → Authentication → Users (should see accounts)
+⬜ Firebase Console → Firestore → Data (should see collections)
+
+═══════════════════════════════════════════════════════════
+    IMPORTANT FILES LOCATIONS
+═══════════════════════════════════════════════════════════
+
+📱 Android Firebase Config:
+   carpool_app/android/app/google-services.json
+
+🍎 iOS Firebase Config:
+   carpool_app/ios/Runner/GoogleService-Info.plist
+
+📚 Documentation:
+   - README.md (Full guide)
+   - FIREBASE_SETUP.md (Detailed Firebase steps)
+   - QUICK_START.md (5-minute setup)
+
+═══════════════════════════════════════════════════════════
+    TROUBLESHOOTING
+═══════════════════════════════════════════════════════════
+
+❌ Build errors:
+   → flutter clean
+   → flutter pub get
+   → flutter run
+
+❌ Firebase errors:
+   → Check google-services.json location
+   → Verify package name matches
+
+❌ iOS pod errors:
+   → cd ios
+   → rm Podfile.lock && rm -rf Pods
+   → pod install
+   → cd ..
+
+❌ "Permission denied" in Firestore:
+   → Check security rules are published
+   → Ensure authentication is enabled
+
+═══════════════════════════════════════════════════════════
+    NEED HELP?
+═══════════════════════════════════════════════════════════
+
+📖 Read: README.md for complete documentation
+📖 Read: FIREBASE_SETUP.md for detailed Firebase guide
+📖 Read: QUICK_START.md for quick 5-minute setup
+
+🔧 Commands:
+   flutter doctor         - Check Flutter installation
+   flutter clean          - Clean build files
+   flutter pub get        - Get dependencies
+   flutter run            - Run the app
+   flutter build apk      - Build Android APK
+
+═══════════════════════════════════════════════════════════
+
+Good luck! 🚀 Your CarPool App is ready to run!
