@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -28,7 +29,7 @@ class _AccountCreatedScreenState extends State<AccountCreatedScreen>
     super.initState();
     _animCtrl = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 800));
+        duration: const Duration(milliseconds: 1500));
     _scaleAnim = CurvedAnimation(
         parent: _animCtrl, curve: Curves.elasticOut);
     _fadeAnim  = CurvedAnimation(
@@ -51,146 +52,209 @@ class _AccountCreatedScreenState extends State<AccountCreatedScreen>
 
     return Scaffold(
       backgroundColor: _C.bg,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(),
+      body: Stack(
+        children: [
+          // Simple Confetti effect
+          ...List.generate(20, (index) => _ConfettiPiece(index: index)),
+          
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Spacer(),
 
-                // Animated check icon
-                Center(
-                  child: ScaleTransition(
-                    scale: _scaleAnim,
-                    child: Container(
-                      width: 100, height: 100,
-                      decoration: BoxDecoration(
-                        color:        _C.primary.withOpacity(0.1),
-                        shape:        BoxShape.circle,
-                        border: Border.all(
-                            color: _C.primary.withOpacity(0.2),
-                            width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.check_rounded,
-                        color: _C.primary,
-                        size:  54,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                const Text(
-                  "You're all set!",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color:        _C.textDark,
-                    fontSize:     28,
-                    fontWeight:   FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Welcome to CarPool. Your account is\nactive and ready to use.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color:    _C.textMuted,
-                    fontSize: 15,
-                    height:   1.5,
-                  ),
-                ),
-
-                const SizedBox(height: 36),
-
-                // Status checklist card
-                Container(
-                  padding:     const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color:        _C.white,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color:      _C.dark.withOpacity(0.08),
-                        blurRadius: 16,
-                        offset:     const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _StatusItem(
-                        icon:      Icons.link_rounded,
-                        label:     'Google account linked securely',
-                        isDone:    true,
-                      ),
-                      const SizedBox(height: 14),
-                      _StatusItem(
-                        icon:      Icons.account_balance_wallet_outlined,
-                        label:     'Wallet created · Top up to start',
-                        isDone:    true,
-                      ),
-                      const SizedBox(height: 14),
-                      _StatusItem(
-                        icon:      Icons.description_outlined,
-                        label:     'Docs under review (24 hrs)',
-                        isDone:    false,
-                        isPending: true,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                // CTA
-                SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () =>
-                        Navigator.pushReplacementNamed(context, '/home'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _C.primary,
-                      foregroundColor: _C.white,
-                      elevation:   0,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    // Animated check icon
+                    Center(
+                      child: ScaleTransition(
+                        scale: _scaleAnim,
+                        child: Container(
+                          width: 100, height: 100,
+                          decoration: BoxDecoration(
+                            color:        _C.primary.withOpacity(0.1),
+                            shape:        BoxShape.circle,
+                            border: Border.all(
+                                color: _C.primary.withOpacity(0.2),
+                                width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            color: _C.primary,
+                            size:  54,
+                          ),
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      'Go to Dashboard',
+
+                    const SizedBox(height: 28),
+
+                    const Text(
+                      "You're all set!",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize:   16,
-                        fontWeight: FontWeight.w700,
+                        color:        _C.textDark,
+                        fontSize:     28,
+                        fontWeight:   FontWeight.w800,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                Center(
-                  child: Text(
-                    "You'll be notified once your Captain account is approved",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color:    _C.textMuted,
-                      fontSize: 12,
-                      height:   1.5,
+                    const SizedBox(height: 8),
+                    Text(
+                      'Welcome to CarPool. Your account is\nactive and ready to use.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color:    _C.textMuted,
+                        fontSize: 15,
+                        height:   1.5,
+                      ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 32),
-              ],
+                    const SizedBox(height: 36),
+
+                    // Status checklist card
+                    Container(
+                      padding:     const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color:        _C.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color:      _C.dark.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset:     const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          const _StatusItem(
+                            icon:      Icons.link_rounded,
+                            label:     'Google account linked securely',
+                            isDone:    true,
+                          ),
+                          const SizedBox(height: 14),
+                          const _StatusItem(
+                            icon:      Icons.account_balance_wallet_outlined,
+                            label:     'Wallet created · Top up to start',
+                            isDone:    true,
+                          ),
+                          const SizedBox(height: 14),
+                          const _StatusItem(
+                            icon:      Icons.description_outlined,
+                            label:     'Docs under review (24 hrs)',
+                            isDone:    false,
+                            isPending: true,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // CTA
+                    SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            Navigator.pushReplacementNamed(context, '/home'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _C.primary,
+                          foregroundColor: _C.white,
+                          elevation:   0,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Go to Dashboard',
+                          style: TextStyle(
+                            fontSize:   16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    const Center(
+                      child: Text(
+                        "You'll be notified once your Captain account is approved",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color:    _C.textMuted,
+                          fontSize: 12,
+                          height:   1.5,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConfettiPiece extends StatefulWidget {
+  final int index;
+  const _ConfettiPiece({required this.index});
+
+  @override
+  State<_ConfettiPiece> createState() => _ConfettiPieceState();
+}
+
+class _ConfettiPieceState extends State<_ConfettiPiece> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late double _left;
+  late double _top;
+  late Color _color;
+  late double _size;
+
+  @override
+  void initState() {
+    super.initState();
+    final random = Random();
+    _left = random.nextDouble() * 400;
+    _top = -20.0;
+    _size = random.nextDouble() * 10 + 5;
+    _color = [_C.primary, _C.light, Colors.amber, Colors.orange, Colors.pink][random.nextInt(5)];
+    
+    _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: 2000 + random.nextInt(1000)));
+    _ctrl.forward();
+    _ctrl.addListener(() {
+       if (mounted) setState(() {
+         _top += 5;
+       });
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: _left,
+      top: _top,
+      child: RotationTransition(
+        turns: _ctrl,
+        child: Container(
+          width: _size,
+          height: _size,
+          decoration: BoxDecoration(color: _color, shape: widget.index % 2 == 0 ? BoxShape.circle : BoxShape.rectangle),
         ),
       ),
     );

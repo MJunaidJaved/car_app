@@ -35,6 +35,15 @@ import 'screens/wallet/wallet_screen.dart';
 import 'screens/captain/earnings_screen.dart';
 
 import 'screens/profile/profile_screen.dart';
+import 'screens/profile/referral_screen.dart';
+import 'screens/captain/requests_screen.dart';
+import 'screens/ride/deal_confirmed_screen.dart';
+import 'screens/ride/rate_review_screen.dart';
+import 'screens/tours/tours_screen.dart';
+import 'screens/tours/tour_detail_screen.dart';
+import 'screens/tours/tour_booked_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
+
 
 import 'utils/app_theme.dart';
 
@@ -127,6 +136,22 @@ class CarPoolApp extends StatelessWidget {
           '/active-ride': (context) => const ActiveRideScreen(),
 
           '/earnings': (context) => const EarningsScreen(),
+
+          '/requests': (context) => const RequestsScreen(),
+
+          '/deal-confirmed': (context) => const DealConfirmedScreen(),
+
+          '/rate-review': (context) => const RateReviewScreen(),
+
+          '/tours': (context) => const ToursScreen(),
+
+          '/tour-detail': (context) => const TourDetailScreen(),
+
+          '/tour-booked': (context) => const TourBookedScreen(),
+
+          '/notifications': (context) => const NotificationsScreen(),
+
+          '/referral': (context) => const ReferralScreen(),
         },
       ),
     );

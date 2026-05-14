@@ -251,7 +251,7 @@ class ProfileScreen extends StatelessWidget {
                             icon:  Icons.notifications_outlined,
                             label: 'Notifications',
                             onTap: () => Navigator.pushNamed(
-                                context, '/wallet'),
+                                context, '/notifications'),
                           ),
                           _ProfileMenuItem(
                             icon:  Icons.shield_outlined,
@@ -263,7 +263,7 @@ class ProfileScreen extends StatelessWidget {
                             icon:  Icons.card_giftcard_rounded,
                             label: 'Referrals',
                             onTap: () => Navigator.pushNamed(
-                                context, '/wallet'),
+                                context, '/referral'),
                           ),
                           _ProfileMenuItem(
                             icon:  Icons.help_outline_rounded,
