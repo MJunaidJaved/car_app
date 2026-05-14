@@ -5,13 +5,14 @@ import '../../providers/user_provider.dart';
 import '../../services/auth_service.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class ProfileScreen extends StatelessWidget {
@@ -35,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
               height: 220,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -138,7 +139,7 @@ class ProfileScreen extends StatelessWidget {
                                   child: Container(
                                     width: 22, height: 22,
                                     decoration: BoxDecoration(
-                                      color:        const Color(0xFF4CAF50),
+                                      color:        const Color(0xFF4A7C59),
                                       shape:        BoxShape.circle,
                                       border: Border.all(
                                           color: _C.dark, width: 2),
@@ -179,9 +180,10 @@ class ProfileScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color:        _C.white,
                         borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color:      _C.dark.withOpacity(0.08),
+                            color:      Colors.black.withOpacity(0.04),
                             blurRadius: 16,
                             offset:     const Offset(0, 4),
                           ),
@@ -189,7 +191,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Expanded(
+                          const Expanded(
                             child: _TrustStat(
                               value: '4.9',
                               label: 'Trust Score',
@@ -198,9 +200,9 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           Container(
                             width: 1, height: 40,
-                            color: const Color(0xFFF0F0F0),
+                            color: const Color(0xFFCCBFA3),
                           ),
-                          Expanded(
+                          const Expanded(
                             child: _TrustStat(
                               value: '42',
                               label: 'Rides',
@@ -209,9 +211,9 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           Container(
                             width: 1, height: 40,
-                            color: const Color(0xFFF0F0F0),
+                            color: const Color(0xFFCCBFA3),
                           ),
-                          Expanded(
+                          const Expanded(
                             child: _TrustStat(
                               value: '98%',
                               label: 'On-time',
@@ -232,9 +234,10 @@ class ProfileScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color:        _C.white,
                         borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color:      _C.dark.withOpacity(0.07),
+                            color:      Colors.black.withOpacity(0.04),
                             blurRadius: 12,
                             offset:     const Offset(0, 4),
                           ),
@@ -367,13 +370,13 @@ class _ProfileMenuItem extends StatelessWidget {
           onTap:   onTap,
           leading: Icon(
             icon,
-            color: isDestructive ? Colors.red : _C.primary,
+            color: isDestructive ? _C.primary : _C.primary,
             size:  22,
           ),
           title: Text(
             label,
             style: TextStyle(
-              color:      isDestructive ? Colors.red : _C.textDark,
+              color:      isDestructive ? _C.primary : _C.textDark,
               fontSize:   14,
               fontWeight: FontWeight.w600,
             ),
@@ -389,7 +392,7 @@ class _ProfileMenuItem extends StatelessWidget {
         ),
         if (showDivider)
           const Divider(
-            color:   Color(0xFFF5F5F5),
+            color:   Color(0xFFCCBFA3),
             height:  1,
             indent:  56,
           ),
@@ -397,3 +400,5 @@ class _ProfileMenuItem extends StatelessWidget {
     );
   }
 }
+
+

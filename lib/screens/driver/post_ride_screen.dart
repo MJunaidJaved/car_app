@@ -4,13 +4,14 @@ import '../../utils/helpers.dart';
 import '../../widgets/app_widgets.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class PostRideScreen extends StatefulWidget {
@@ -32,10 +33,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
 
   final _types = ['office', 'random', 'delivery', 'tour'];
 
-  String get _aiSuggestedFare {
-    // Wire to Grok AI service
-    return 'Rs 120';
-  }
+  String get _aiSuggestedFare => 'Rs 120';
 
   Future<void> _post() async {
     if (!_formKey.currentState!.validate()) return;
@@ -81,7 +79,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
               height: 200,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -155,7 +153,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                             title: 'Route',
                             child: Column(
                               children: [
-                                TealField(
+                                AppField(
                                   controller: _fromCtrl,
                                   label:      'From',
                                   icon:       Icons.my_location_rounded,
@@ -163,7 +161,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                       ? 'Enter pickup' : null,
                                 ),
                                 const SizedBox(height: 12),
-                                TealField(
+                                AppField(
                                   controller: _toCtrl,
                                   label:      'To',
                                   icon:       Icons.location_on_outlined,
@@ -180,7 +178,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                           _SectionCard(
                             title: 'Ride Type',
                             child: Wrap(
-                              spacing: 8, runSpacing: 8,
+                              spacing: 10, runSpacing: 10,
                               children: _types.map((t) {
                                 final selected = _rideType == t;
                                 return GestureDetector(
@@ -190,15 +188,15 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                     duration:
                                         const Duration(milliseconds: 200),
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
+                                        horizontal: 16, vertical: 10),
                                     decoration: BoxDecoration(
                                       color:        selected
-                                          ? _C.primary : _C.bg,
+                                          ? _C.primary : _C.white,
                                       borderRadius:
-                                          BorderRadius.circular(20),
+                                          BorderRadius.circular(14),
                                       border: Border.all(
                                         color: selected
-                                            ? _C.primary : _C.light,
+                                            ? _C.primary : const Color(0xFFCCBFA3),
                                       ),
                                     ),
                                     child: Text(
@@ -206,7 +204,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                       style: TextStyle(
                                         color: selected
                                             ? _C.white : _C.textMuted,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w700,
                                         fontSize:   13,
                                       ),
                                     ),
@@ -229,25 +227,23 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   padding: const EdgeInsets.all(12),
                                   margin: const EdgeInsets.only(bottom: 14),
                                   decoration: BoxDecoration(
-                                    color: _C.primary.withOpacity(0.08),
+                                    color: _C.accent.withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                        color: _C.light, width: 1),
                                   ),
                                   child: Row(
                                     children: [
                                       const Icon(
                                         Icons.auto_awesome_rounded,
-                                        color: _C.primary, size: 18,
+                                        color: _C.black, size: 18,
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           'AI suggests: $_aiSuggestedFare based on distance',
                                           style: const TextStyle(
-                                            color:    _C.primary,
+                                            color:    _C.black,
                                             fontSize: 13,
-                                            fontWeight: FontWeight.w500,
+                                            fontWeight: FontWeight.w700,
                                           ),
                                         ),
                                       ),
@@ -266,7 +262,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                             style: TextStyle(
                                               color:    _C.white,
                                               fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight: FontWeight.w800,
                                             ),
                                           ),
                                         ),
@@ -274,7 +270,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                     ],
                                   ),
                                 ),
-                                TealField(
+                                AppField(
                                   controller: _fareCtrl,
                                   label:      'Your fare (Rs)',
                                   icon:       Icons.payments_outlined,
@@ -288,7 +284,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 12),
-                                TealField(
+                                AppField(
                                   controller: _seatsCtrl,
                                   label:      'Available seats',
                                   icon:       Icons.event_seat_rounded,
@@ -324,6 +320,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                           colorScheme:
                                               const ColorScheme.light(
                                             primary: _C.primary,
+                                            onPrimary: _C.white,
                                           ),
                                         ),
                                         child: child!,
@@ -335,9 +332,10 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF0F7F6),
+                                      color: _C.bg,
                                       borderRadius:
                                           BorderRadius.circular(14),
+                                      border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                                     ),
                                     child: Row(
                                       children: [
@@ -351,7 +349,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                           style: const TextStyle(
                                             color:      _C.textDark,
                                             fontSize:   15,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.w700,
                                           ),
                                         ),
                                         const Spacer(),
@@ -367,16 +365,16 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                 // Recurring toggle
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 12),
+                                      horizontal: 14, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: _isRecurring
                                         ? _C.primary.withOpacity(0.08)
-                                        : const Color(0xFFF0F7F6),
+                                        : _C.bg,
                                     borderRadius:
                                         BorderRadius.circular(14),
                                     border: Border.all(
                                       color: _isRecurring
-                                          ? _C.primary : Colors.transparent,
+                                          ? _C.primary : const Color(0xFFCCBFA3),
                                     ),
                                   ),
                                   child: Row(
@@ -398,11 +396,11 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                               style: TextStyle(
                                                 color:      _C.textDark,
                                                 fontSize:   14,
-                                                fontWeight: FontWeight.w600,
+                                                fontWeight: FontWeight.w700,
                                               ),
                                             ),
                                             Text(
-                                              'Auto-post daily for office commute',
+                                              'Auto-post daily for commute',
                                               style: TextStyle(
                                                 color:    _C.textMuted,
                                                 fontSize: 12,
@@ -416,6 +414,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                         onChanged: (v) =>
                                             setState(() => _isRecurring = v),
                                         activeColor: _C.primary,
+                                        activeTrackColor: _C.primary.withOpacity(0.5),
                                       ),
                                     ],
                                   ),
@@ -426,10 +425,22 @@ class _PostRideScreenState extends State<PostRideScreen> {
 
                           const SizedBox(height: 24),
 
-                          TealButton(
-                            label:     'Post Ride',
-                            isLoading: _isLoading,
-                            onTap:     _post,
+                          SizedBox(
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _post,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _C.primary,
+                                foregroundColor: _C.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(color: _C.white)
+                                  : const Text('Post Ride', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                            ),
                           ),
 
                           const SizedBox(height: 32),
@@ -455,15 +466,16 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color:        _C.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: [
           BoxShadow(
-            color:      _C.dark.withOpacity(0.07),
-            blurRadius: 12,
-            offset:     const Offset(0, 4),
+            color:      Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset:     const Offset(0, 6),
           ),
         ],
       ),
@@ -473,15 +485,17 @@ class _SectionCard extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color:      _C.textDark,
-              fontSize:   15,
-              fontWeight: FontWeight.w700,
+              color:      _C.black,
+              fontSize:   16,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           child,
         ],
       ),
     );
   }
 }
+
+

@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class ActiveRideScreen extends StatefulWidget {
@@ -35,14 +36,14 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
       backgroundColor: _C.bg,
       body: Stack(
         children: [
-          // Map takes full screen
+          // Map placeholder
           Positioned.fill(
             child: Container(
-              color: const Color(0xFFE8F4F3),
+              color: const Color(0xFFCCBFA3),
               child: Center(
                 child: Icon(
                   Icons.map_outlined,
-                  color: _C.primary.withOpacity(0.2),
+                  color: _C.accent.withOpacity(0.3),
                   size:  120,
                 ),
               ),
@@ -57,13 +58,14 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
+                        horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color:        _C.white,
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color:      _C.dark.withOpacity(0.1),
+                          color:      Colors.black.withOpacity(0.02),
                           blurRadius: 10,
                         ),
                       ],
@@ -75,35 +77,35 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           width: 8, height: 8,
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Color(0xFF4CAF50),
+                            color: Color(0xFF4A7C59),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         const Text(
                           'Ride in Progress',
                           style: TextStyle(
                             color:      _C.textDark,
                             fontSize:   12,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ],
                     ),
                   ),
                   const Spacer(),
-                  // SOS Button — always visible
+                  // SOS Button
                   GestureDetector(
                     onTap: _triggerSOS,
                     child: Container(
-                      width: 48, height: 48,
+                      width: 52, height: 52,
                       decoration: BoxDecoration(
-                        color:        Colors.red,
-                        borderRadius: BorderRadius.circular(14),
+                        color:        _C.primary,
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color:      Colors.red.withOpacity(0.4),
-                            blurRadius: 12,
-                            offset:     const Offset(0, 4),
+                            color:      _C.primary.withOpacity(0.3),
+                            blurRadius: 15,
+                            offset:     const Offset(0, 6),
                           ),
                         ],
                       ),
@@ -112,7 +114,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           'SOS',
                           style: TextStyle(
                             color:      _C.white,
-                            fontSize:   13,
+                            fontSize:   14,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.5,
                           ),
@@ -129,18 +131,19 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
               decoration: BoxDecoration(
                 color: _C.white,
                 borderRadius: const BorderRadius.only(
-                  topLeft:  Radius.circular(28),
-                  topRight: Radius.circular(28),
+                  topLeft:  Radius.circular(32),
+                  topRight: Radius.circular(32),
                 ),
+                border: const Border(top: BorderSide(color: Color(0xFFCCBFA3), width: 1)),
                 boxShadow: [
                   BoxShadow(
-                    color:      _C.dark.withOpacity(0.12),
-                    blurRadius: 24,
-                    offset:     const Offset(0, -4),
+                    color:      Colors.black.withOpacity(0.02),
+                    blurRadius: 30,
+                    offset:     const Offset(0, -10),
                   ),
                 ],
               ),
@@ -152,39 +155,39 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        radius: 24,
-                        backgroundColor: _C.light.withOpacity(0.5),
+                        radius: 26,
+                        backgroundColor: _C.primary.withOpacity(0.1),
                         child: const Text(
                           'A',
                           style: TextStyle(
                             color:      _C.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize:   18,
+                            fontWeight: FontWeight.w800,
+                            fontSize:   20,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
+                      const SizedBox(width: 14),
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Ali Hassan',
                               style: TextStyle(
                                 color:      _C.textDark,
-                                fontSize:   16,
-                                fontWeight: FontWeight.w700,
+                                fontSize:   18,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                             Row(
                               children: [
-                                const Icon(Icons.star_rounded,
-                                    color: Color(0xFFFFC107), size: 14),
-                                const SizedBox(width: 3),
-                                const Text(
+                                Icon(Icons.star_rounded,
+                                    color: _C.primary, size: 16),
+                                SizedBox(width: 4),
+                                Text(
                                   '4.9  •  Toyota Corolla  •  ABC-123',
                                   style: TextStyle(
-                                    color: _C.textMuted, fontSize: 12,
+                                    color: _C.textMuted, fontSize: 12, fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -192,50 +195,37 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           ],
                         ),
                       ),
-                      // Call button — masked number
+                      // Call button
                       Container(
-                        width: 42, height: 42,
+                        width: 46, height: 46,
                         decoration: BoxDecoration(
                           color:        _C.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
-                          Icons.phone_outlined,
-                          color: _C.primary, size: 20,
+                          Icons.phone_rounded,
+                          color: _C.primary, size: 22,
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 16),
-                  const Divider(color: Color(0xFFF0F0F0), height: 1),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
+                  const Divider(height: 1, color: Color(0xFFCCBFA3)),
+                  const SizedBox(height: 24),
 
                   // Route progress
                   Row(
                     children: [
                       Column(
                         children: [
+                          const Icon(Icons.circle, color: Color(0xFF4A7C59), size: 10),
                           Container(
-                            width: 10, height: 10,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _C.primary,
-                            ),
-                          ),
-                          Container(
-                              width: 2, height: 30, color: _C.light),
-                          Container(
-                            width: 10, height: 10,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: _C.primary, width: 2),
-                            ),
-                          ),
+                              width: 1.5, height: 36, color: const Color(0xFFCCBFA3)),
+                          const Icon(Icons.circle, color: _C.primary, size: 10),
                         ],
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,57 +233,52 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             Text(
                               'Gulberg, Lahore',
                               style: TextStyle(
-                                color: _C.textDark, fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                                color: _C.textDark, fontSize: 14,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            SizedBox(height: 18),
+                            SizedBox(height: 24),
                             Text(
                               'DHA Phase 5',
                               style: TextStyle(
-                                color: _C.textDark, fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                                color: _C.textDark, fontSize: 14,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color:        _C.light.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              '12 min away',
-                              style: TextStyle(
-                                color:      _C.primary,
-                                fontSize:   12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color:        _C.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          '12 min away',
+                          style: TextStyle(
+                            color:      _C.primary,
+                            fontSize:   12,
+                            fontWeight: FontWeight.w800,
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Fare chip
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _InfoChip(
-                        icon:  Icons.payments_outlined,
+                        icon:  Icons.payments_rounded,
                         label: 'Rs 120  •  Agreed fare',
                       ),
                       _InfoChip(
-                        icon:  Icons.shield_outlined,
+                        icon:  Icons.shield_rounded,
                         label: 'Masked number',
                       ),
                     ],
@@ -307,48 +292,50 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
           if (_showSosConfirm)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withOpacity(0.7),
                 child: Center(
                   child: Container(
                     margin: const EdgeInsets.all(32),
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
                       color:        _C.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(32),
+                      border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 64, height: 64,
+                          width: 72, height: 72,
                           decoration: BoxDecoration(
-                            color:        Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
+                            color:        _C.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                           child: const Icon(
                             Icons.warning_amber_rounded,
-                            color: Colors.red, size: 36,
+                            color: _C.primary, size: 40,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         const Text(
                           'Send SOS Alert?',
                           style: TextStyle(
                             color:      _C.textDark,
-                            fontSize:   20,
-                            fontWeight: FontWeight.w700,
+                            fontSize:   22,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         const Text(
                           'This will alert emergency contacts\nand share your live location.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: _C.textMuted, fontSize: 14,
+                            color: _C.textMuted, fontSize: 15,
                             height: 1.5,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
                         Row(
                           children: [
                             Expanded(
@@ -356,37 +343,36 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                                 onPressed: () =>
                                     setState(() => _showSosConfirm = false),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: _C.textMuted,
-                                  side: const BorderSide(color: _C.light),
+                                  foregroundColor: _C.textDark,
+                                  side: const BorderSide(color: Color(0xFFCCBFA3)),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 14),
+                                      vertical: 16),
                                 ),
-                                child: const Text('Cancel'),
+                                child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 14),
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // trigger SOS logic
                                   setState(() => _showSosConfirm = false);
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: _C.primary,
                                   foregroundColor: _C.white,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 14),
+                                      vertical: 16),
                                 ),
                                 child: const Text(
                                   'Send SOS',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                  style: TextStyle(fontWeight: FontWeight.w900),
                                 ),
                               ),
                             ),
@@ -412,21 +398,21 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color:        _C.light.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
+        color:        _C.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: _C.primary, size: 14),
-          const SizedBox(width: 5),
+          const SizedBox(width: 8),
           Text(
             label,
             style: const TextStyle(
               color: _C.primary, fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -434,3 +420,5 @@ class _InfoChip extends StatelessWidget {
     );
   }
 }
+
+

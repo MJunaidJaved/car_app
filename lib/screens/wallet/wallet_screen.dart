@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
   static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class WalletScreen extends StatelessWidget {
@@ -31,7 +32,7 @@ class WalletScreen extends StatelessWidget {
               height: 260,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [Color(0xFF2E3323), Color(0xFF414833), Color(0xFF737A5D)],
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -91,7 +92,7 @@ class WalletScreen extends StatelessWidget {
                         color:        _C.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: _C.white.withOpacity(0.25),
+                          color: _C.white.withOpacity(0.2),
                         ),
                       ),
                       child: Column(
@@ -151,9 +152,10 @@ class WalletScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color:        _C.white,
                         borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color:      _C.dark.withOpacity(0.07),
+                            color:      Colors.black.withOpacity(0.04),
                             blurRadius: 12,
                             offset:     const Offset(0, 4),
                           ),
@@ -164,7 +166,7 @@ class WalletScreen extends StatelessWidget {
                           Container(
                             width: 44, height: 44,
                             decoration: BoxDecoration(
-                              color:        _C.light.withOpacity(0.4),
+                              color:        _C.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(13),
                             ),
                             child: const Icon(
@@ -211,14 +213,7 @@ class WalletScreen extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            _C.primary.withOpacity(0.9),
-                            _C.dark,
-                          ],
-                          begin: Alignment.topLeft,
-                          end:   Alignment.bottomRight,
-                        ),
+                        color: _C.black,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -230,7 +225,7 @@ class WalletScreen extends StatelessWidget {
                                 const Text(
                                   'Refer & Earn',
                                   style: TextStyle(
-                                    color:      _C.white,
+                                    color:      Color(0xFFF5E3D2),
                                     fontSize:   16,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -248,16 +243,16 @@ class WalletScreen extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 14, vertical: 8),
                                   decoration: BoxDecoration(
-                                    color:        _C.white.withOpacity(0.15),
+                                    color:        _C.white.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: _C.white.withOpacity(0.3),
+                                      color: _C.primary.withOpacity(0.3),
                                     ),
                                   ),
-                                  child: Row(
+                                  child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Text(
+                                      Text(
                                         'POOL2024',
                                         style: TextStyle(
                                           color:      _C.white,
@@ -266,10 +261,10 @@ class WalletScreen extends StatelessWidget {
                                           letterSpacing: 1,
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
+                                      SizedBox(width: 10),
                                       Icon(
                                         Icons.copy_rounded,
-                                        color: _C.white.withOpacity(0.7),
+                                        color: _C.white,
                                         size:  16,
                                       ),
                                     ],
@@ -280,19 +275,19 @@ class WalletScreen extends StatelessWidget {
                           ),
                           const Icon(
                             Icons.card_giftcard_rounded,
-                            color: _C.white, size: 48,
+                            color: _C.primary, size: 48,
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Transaction History
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Text(
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
                       'Recent Transactions',
                       style: TextStyle(
                         color:      _C.textDark,
@@ -303,19 +298,19 @@ class WalletScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  _TransactionItem(
+                  const _TransactionItem(
                     title:    'Ride — Gulberg to DHA',
                     date:     'Today, 8:30 AM',
                     amount:   '-Rs 120',
                     isDebit:  true,
                   ),
-                  _TransactionItem(
+                  const _TransactionItem(
                     title:    'Referral Bonus',
                     date:     'Yesterday',
                     amount:   '+Rs 50',
                     isDebit:  false,
                   ),
-                  _TransactionItem(
+                  const _TransactionItem(
                     title:    'Easypaisa Top-up',
                     date:     '11 May',
                     amount:   '+Rs 500',
@@ -393,9 +388,10 @@ class _TransactionItem extends StatelessWidget {
       decoration: BoxDecoration(
         color:        _C.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: [
           BoxShadow(
-            color:      _C.dark.withOpacity(0.06),
+            color:      Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset:     const Offset(0, 3),
           ),
@@ -407,15 +403,15 @@ class _TransactionItem extends StatelessWidget {
             width: 40, height: 40,
             decoration: BoxDecoration(
               color: isDebit
-                  ? Colors.red.withOpacity(0.1)
-                  : _C.primary.withOpacity(0.1),
+                  ? _C.primary.withOpacity(0.1)
+                  : const Color(0xFF4A7C59).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               isDebit
                   ? Icons.arrow_upward_rounded
                   : Icons.arrow_downward_rounded,
-              color: isDebit ? Colors.red : _C.primary,
+              color: isDebit ? _C.primary : const Color(0xFF4A7C59),
               size:  20,
             ),
           ),
@@ -443,7 +439,7 @@ class _TransactionItem extends StatelessWidget {
           Text(
             amount,
             style: TextStyle(
-              color:      isDebit ? Colors.red : _C.primary,
+              color:      isDebit ? _C.primary : const Color(0xFF4A7C59),
               fontSize:   15,
               fontWeight: FontWeight.w700,
             ),
@@ -453,3 +449,5 @@ class _TransactionItem extends StatelessWidget {
     );
   }
 }
+
+

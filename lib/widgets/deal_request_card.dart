@@ -290,3 +290,6 @@ class DealRequestCard extends StatelessWidget {
     );
   }
 }
+
+
+

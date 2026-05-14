@@ -7,13 +7,14 @@ import '../../utils/helpers.dart';
 import '../../widgets/app_widgets.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class SignupScreen extends StatefulWidget {
@@ -96,14 +97,14 @@ class _SignupScreenState extends State<SignupScreen>
       backgroundColor: _C.bg,
       body: Stack(
         children: [
-          // Teal header
+          // Gradient header
           Positioned(
             top: 0, left: 0, right: 0,
             child: Container(
               height: size.height * 0.32,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -122,7 +123,7 @@ class _SignupScreenState extends State<SignupScreen>
               width: 160, height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _C.white.withOpacity(0.06),
+                color: _C.white.withOpacity(0.08),
               ),
             ),
           ),
@@ -139,7 +140,7 @@ class _SignupScreenState extends State<SignupScreen>
                     children: [
                       const SizedBox(height: 20),
 
-                      // Back + Title on teal
+                      // Back + Title
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Row(
@@ -166,16 +167,17 @@ class _SignupScreenState extends State<SignupScreen>
                                   'Create Account',
                                   style: TextStyle(
                                     color: _C.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: -0.3,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -1,
                                   ),
                                 ),
                                 Text(
-                                  'Join CarPool today',
+                                  'Join CarPool for premium rides',
                                   style: TextStyle(
-                                    color: _C.white.withOpacity(0.7),
-                                    fontSize: 13,
+                                    color: _C.white.withOpacity(0.8),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -186,36 +188,37 @@ class _SignupScreenState extends State<SignupScreen>
 
                       SizedBox(height: size.height * 0.04),
 
-                      // White form card
+                      // Sign Up Card
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Container(
                           decoration: BoxDecoration(
                             color: _C.white,
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(32),
+                            border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                             boxShadow: [
                               BoxShadow(
-                                color:      _C.dark.withOpacity(0.12),
-                                blurRadius: 24,
-                                offset:     const Offset(0, 8),
+                                color:      Colors.black.withOpacity(0.05),
+                                blurRadius: 25,
+                                offset:     const Offset(0, 10),
                               ),
                             ],
                           ),
-                          padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                          padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
                           child: Form(
                             key: _formKey,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                TealField(
+                                AppField(
                                   controller: _nameCtrl,
                                   label: 'Full Name',
                                   icon:  Icons.person_outline_rounded,
                                   validator: (v) => (v == null || v.isEmpty)
                                       ? 'Enter your name' : null,
                                 ),
-                                const SizedBox(height: 14),
-                                TealField(
+                                const SizedBox(height: 16),
+                                AppField(
                                   controller:  _emailCtrl,
                                   label:       'Email address',
                                   icon:        Icons.email_outlined,
@@ -228,8 +231,8 @@ class _SignupScreenState extends State<SignupScreen>
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 14),
-                                TealField(
+                                const SizedBox(height: 16),
+                                AppField(
                                   controller:  _phoneCtrl,
                                   label:       'Phone number',
                                   icon:        Icons.phone_outlined,
@@ -240,8 +243,8 @@ class _SignupScreenState extends State<SignupScreen>
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 14),
-                                TealField(
+                                const SizedBox(height: 16),
+                                AppField(
                                   controller:  _passwordCtrl,
                                   label:       'Password',
                                   icon:        Icons.lock_outline_rounded,
@@ -264,8 +267,8 @@ class _SignupScreenState extends State<SignupScreen>
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 14),
-                                TealField(
+                                const SizedBox(height: 16),
+                                AppField(
                                   controller:  _confirmCtrl,
                                   label:       'Confirm Password',
                                   icon:        Icons.lock_outline_rounded,
@@ -286,26 +289,26 @@ class _SignupScreenState extends State<SignupScreen>
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 24),
-                                TealButton(
+                                const SizedBox(height: 32),
+                                AppButton(
                                   label:     'Create Account',
                                   isLoading: _isLoading,
                                   onTap:     _signUp,
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 24),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text('Already have an account?  ',
+                                    const Text('Already have an account?  ',
                                         style: TextStyle(
-                                            color: _C.textMuted, fontSize: 14)),
+                                            color: _C.textMuted, fontSize: 14, fontWeight: FontWeight.w600)),
                                     GestureDetector(
                                       onTap: () => Navigator.pop(context),
-                                      child: Text('Sign In',
+                                      child: const Text('Sign In',
                                           style: TextStyle(
                                             color:      _C.primary,
                                             fontSize:   14,
-                                            fontWeight: FontWeight.w700,
+                                            fontWeight: FontWeight.w900,
                                           )),
                                     ),
                                   ],
@@ -315,17 +318,17 @@ class _SignupScreenState extends State<SignupScreen>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 32),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                      const SizedBox(height: 40),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 40),
                         child: Text(
                           'By signing up, you agree to our Terms of Service\nand Privacy Policy',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                              color: _C.textMuted, fontSize: 12, height: 1.5),
+                              color: _C.textMuted, fontSize: 11, height: 1.5, fontWeight: FontWeight.w500),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -337,3 +340,5 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 }
+
+

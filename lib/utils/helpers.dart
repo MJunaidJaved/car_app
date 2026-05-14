@@ -79,12 +79,16 @@ class AppHelpers {
   static void showSnackBar(BuildContext context, String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        content: Text(
+          message,
+          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+        ),
+        backgroundColor: isError ? const Color(0xFFB71C1C) : const Color(0xFF414833),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.all(20),
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -96,7 +100,7 @@ class AppHelpers {
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(color: Color(0xFF414833)),
       ),
     );
   }
@@ -121,7 +125,7 @@ class AppHelpers {
     }
     return false;
   }
-
+  
   /// Pakistan mobile to E.164 (+92…).
   static String phoneToE164Pk(String phone) {
     var d = phone.replaceAll(RegExp(r'\D'), '');
@@ -137,15 +141,15 @@ class AppHelpers {
   static Color getRideTypeColor(String rideType) {
     switch (rideType) {
       case 'office':
-        return Colors.blue;
+        return const Color(0xFF414833);
       case 'random':
-        return Colors.purple;
+        return const Color(0xFF737A5D);
       case 'delivery':
-        return Colors.orange;
+        return const Color(0xFFA4AC86);
       case 'tour':
-        return Colors.green;
+        return const Color(0xFF4A7C59);
       default:
-        return Colors.grey;
+        return const Color(0xFF737A5D);
     }
   }
   
@@ -153,15 +157,16 @@ class AppHelpers {
   static Color getStatusColor(String status) {
     switch (status) {
       case AppConstants.dealPending:
-        return Colors.orange;
+        return const Color(0xFFD4882A);
       case AppConstants.dealConfirmed:
-        return Colors.blue;
+        return const Color(0xFF414833);
       case AppConstants.dealCompleted:
-        return Colors.green;
+        return const Color(0xFF4A7C59);
       case AppConstants.dealCancelled:
-        return Colors.red;
+        return const Color(0xFFB71C1C);
       default:
-        return Colors.grey;
+        return const Color(0xFF737A5D);
     }
   }
 }
+

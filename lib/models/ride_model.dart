@@ -141,3 +141,6 @@ class RideModel {
   bool get isRecurring => false; // Default value, can be added to model if needed
   double get offeredFare => suggestedFare;
 }
+
+
+

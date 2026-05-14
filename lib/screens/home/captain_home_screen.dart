@@ -4,14 +4,14 @@ import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
-  static const accent    = Color(0xFFE2F1EF);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class CaptainHomeScreen extends StatelessWidget {
@@ -50,12 +50,12 @@ class CaptainHomeScreen extends StatelessWidget {
                           onTap: () => Navigator.pushNamed(context, '/profile'),
                           child: CircleAvatar(
                             radius: 22,
-                            backgroundColor: _C.light,
+                            backgroundColor: _C.primary.withOpacity(0.1),
                             backgroundImage: hasPhoto ? NetworkImage(p as String) : null,
                             child: !hasPhoto
                                 ? Text(
                                     (user?.name ?? 'C')[0].toUpperCase(),
-                                    style: const TextStyle(color: _C.dark, fontWeight: FontWeight.w800, fontSize: 18),
+                                    style: const TextStyle(color: _C.black, fontWeight: FontWeight.w800, fontSize: 18),
                                   )
                                 : null,
                           ),
@@ -75,7 +75,7 @@ class CaptainHomeScreen extends StatelessWidget {
                               ),
                               Row(
                                 children: [
-                                  Icon(Icons.star_rounded, color: Colors.amber[600], size: 14),
+                                  const Icon(Icons.star_rounded, color: _C.primary, size: 14),
                                   const SizedBox(width: 4),
                                   const Text('4.9 Rating', style: TextStyle(color: _C.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
                                 ],
@@ -90,9 +90,9 @@ class CaptainHomeScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: _C.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: _C.light.withOpacity(0.5)),
+                              border: Border.all(color: const Color(0xFFCCBFA3)),
                             ),
-                            child: const Icon(Icons.notifications_none_rounded, color: _C.dark, size: 22),
+                            child: const Icon(Icons.notifications_none_rounded, color: _C.black, size: 22),
                           ),
                         ),
                       ],
@@ -106,13 +106,13 @@ class CaptainHomeScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF8E1),
+                          color: _C.accent.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.5)),
+                          border: Border.all(color: _C.accent.withOpacity(0.3)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.verified_user_outlined, color: Color(0xFFFF9800), size: 28),
+                            const Icon(Icons.verified_user_outlined, color: _C.accent, size: 28),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -120,7 +120,7 @@ class CaptainHomeScreen extends StatelessWidget {
                                 children: [
                                   const Text(
                                     'Verification Pending',
-                                    style: TextStyle(color: Color(0xFFE65100), fontWeight: FontWeight.w700, fontSize: 14),
+                                    style: TextStyle(color: _C.textDark, fontWeight: FontWeight.w700, fontSize: 14),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -153,7 +153,7 @@ class CaptainHomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 16),
-                         Expanded(
+                        Expanded(
                           child: _DashboardCard(
                             title: 'Requests',
                             value: '12 New',
@@ -173,10 +173,10 @@ class CaptainHomeScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: _C.dark,
+                        color: _C.black,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
-                          BoxShadow(color: _C.dark.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
+                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10)),
                         ],
                       ),
                       child: Column(
@@ -191,7 +191,7 @@ class CaptainHomeScreen extends StatelessWidget {
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(color: _C.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                                      decoration: BoxDecoration(color: _C.white.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
                                       child: const Text('NO ACTIVE ROUTE', style: TextStyle(color: _C.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1)),
                                     ),
                                     const SizedBox(height: 12),
@@ -220,9 +220,9 @@ class CaptainHomeScreen extends StatelessWidget {
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: _C.primary,
-                                borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
+                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
                               ),
                               child: const Center(
                                 child: Text('POST A RIDE NOW', style: TextStyle(color: _C.white, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 1)),
@@ -255,8 +255,8 @@ class CaptainHomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  _ActivityCard(title: 'Ride Completed', subtitle: 'Gulberg to DHA', time: '2 hours ago', amount: '+ Rs 450'),
-                  _ActivityCard(title: 'Fare Negotiated', subtitle: 'Passenger agreed to Rs 300', time: '4 hours ago', amount: null),
+                  _ActivityCard(title: 'Ride Completed', subtitle: 'Gulberg to DHA', time: '2 hours ago', amount: '+ Rs 450', color: Colors.green),
+                  _ActivityCard(title: 'Fare Negotiated', subtitle: 'Passenger agreed to Rs 300', time: '4 hours ago', amount: null, color: _C.primary),
 
                   const SizedBox(height: 100),
                 ],
@@ -296,8 +296,8 @@ class _DashboardCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: highlight ? _C.white : _C.bg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: highlight ? _C.primary.withOpacity(0.3) : _C.light.withOpacity(0.5)),
-          boxShadow: highlight ? [BoxShadow(color: _C.primary.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 8))] : [],
+          border: Border.all(color: highlight ? _C.primary : const Color(0xFFCCBFA3)),
+          boxShadow: highlight ? [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 8))] : [],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,12 +308,12 @@ class _DashboardCard extends StatelessWidget {
                 color: highlight ? _C.primary.withOpacity(0.1) : _C.white,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: highlight ? _C.primary : _C.textDark, size: 20),
+              child: Icon(icon, color: highlight ? _C.primary : _C.black, size: 20),
             ),
             const SizedBox(height: 12),
-            Text(value, style: TextStyle(color: highlight ? _C.primary : _C.textDark, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(value, style: TextStyle(color: highlight ? _C.primary : _C.black, fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
-            Text(title, style: TextStyle(color: _C.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+            Text(title, style: const TextStyle(color: _C.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -326,12 +326,14 @@ class _ActivityCard extends StatelessWidget {
   final String subtitle;
   final String time;
   final String? amount;
+  final Color color;
 
   const _ActivityCard({
     required this.title,
     required this.subtitle,
     required this.time,
     this.amount,
+    required this.color,
   });
 
   @override
@@ -342,14 +344,21 @@ class _ActivityCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _C.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _C.light.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
           Container(
+            width: 3,
+            height: 40,
+            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(width: 12),
+          Container(
             width: 40, height: 40,
             decoration: BoxDecoration(color: _C.bg, borderRadius: BorderRadius.circular(10)),
-            child: Icon(amount != null ? Icons.check_circle_outline_rounded : Icons.handshake_outlined, color: _C.primary, size: 20),
+            child: Icon(amount != null ? Icons.check_circle_outline_rounded : Icons.handshake_outlined, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -365,7 +374,7 @@ class _ActivityCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (amount != null) Text(amount!, style: const TextStyle(color: _C.primary, fontSize: 14, fontWeight: FontWeight.w800)),
+              if (amount != null) Text(amount!, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w800)),
               if (amount != null) const SizedBox(height: 4),
               Text(time, style: const TextStyle(color: _C.textMuted, fontSize: 11)),
             ],
@@ -380,6 +389,7 @@ class _CaptainBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const activeIndex = 0;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     void onNavTap(int index) {
       if (index == activeIndex) return;
@@ -392,11 +402,17 @@ class _CaptainBottomNav extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 12,
+        bottom: bottomPadding > 0 ? bottomPadding : 16,
+      ),
       decoration: BoxDecoration(
         color: _C.white,
+        border: const Border(top: BorderSide(color: Color(0xFFCCBFA3), width: 1)),
         boxShadow: [
-          BoxShadow(color: _C.dark.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -4)),
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(0, -6)),
         ],
       ),
       child: Row(
@@ -426,25 +442,38 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: active ? _C.primary : _C.textMuted, size: 24),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              color: active ? _C.primary : _C.textMuted,
-              fontSize: 10,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+      child: SizedBox(
+        height: 56,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: active ? _C.primary : _C.textMuted, size: 26),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: active ? _C.primary : _C.textMuted,
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+              ),
             ),
-          ),
-          if (active) ...[
-            const SizedBox(height: 4),
-            Container(width: 4, height: 4, decoration: const BoxDecoration(shape: BoxShape.circle, color: _C.primary)),
-          ] else const SizedBox(height: 8),
-        ],
+            if (active) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20, height: 3,
+                decoration: BoxDecoration(
+                  color: _C.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ] else const SizedBox(height: 7),
+          ],
+        ),
       ),
     );
   }
 }
+
+
+

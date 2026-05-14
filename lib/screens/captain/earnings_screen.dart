@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class EarningsScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class EarningsScreen extends StatefulWidget {
 class _EarningsScreenState extends State<EarningsScreen> {
   String _period = 'week';
 
-  // Sample data — wire to real data
+  // Sample data
   final _weekData = [340.0, 520.0, 180.0, 620.0, 450.0, 730.0, 290.0];
   final _days     = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -46,7 +47,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
               height: 220,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -87,23 +88,23 @@ class _EarningsScreenState extends State<EarningsScreen> {
                           'Earnings',
                           style: TextStyle(
                             color: _C.white, fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
                   // Total earning card
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
                         color:        _C.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: _C.white.withOpacity(0.2),
                         ),
@@ -117,18 +118,18 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 Text(
                                   'This Week',
                                   style: TextStyle(
-                                    color:    _C.white.withOpacity(0.7),
+                                    color:    _C.white.withOpacity(0.75),
                                     fontSize: 13,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 Text(
                                   'Rs ${_totalEarnings.toStringAsFixed(0)}',
                                   style: const TextStyle(
                                     color:      _C.white,
-                                    fontSize:   30,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
+                                    fontSize:   36,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -1,
                                   ),
                                 ),
                               ],
@@ -136,22 +137,22 @@ class _EarningsScreenState extends State<EarningsScreen> {
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color:        _C.white.withOpacity(0.15),
+                              color:        _C.primary,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Row(
+                            child: const Row(
                               children: [
-                                const Icon(Icons.trending_up_rounded,
-                                    color: Color(0xFF4CAF50), size: 16),
-                                const SizedBox(width: 4),
+                                Icon(Icons.trending_up_rounded,
+                                    color: _C.white, size: 18),
+                                SizedBox(width: 6),
                                 Text(
-                                  '+12% vs last week',
+                                  '+12%',
                                   style: TextStyle(
-                                    color:    _C.white.withOpacity(0.9),
+                                    color:    _C.white,
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ],
@@ -162,7 +163,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Chart card
                   Padding(
@@ -171,12 +172,13 @@ class _EarningsScreenState extends State<EarningsScreen> {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color:        _C.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color:      _C.dark.withOpacity(0.08),
-                            blurRadius: 16,
-                            offset:     const Offset(0, 4),
+                            color:      Colors.black.withOpacity(0.02),
+                            blurRadius: 20,
+                            offset:     const Offset(0, 8),
                           ),
                         ],
                       ),
@@ -191,19 +193,20 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 onTap: () => setState(() => _period = p),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  margin: const EdgeInsets.only(right: 8),
+                                  margin: const EdgeInsets.only(right: 10),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 7),
+                                      horizontal: 16, vertical: 8),
                                   decoration: BoxDecoration(
                                     color:        sel ? _C.primary : _C.bg,
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: sel ? _C.primary : const Color(0xFFCCBFA3), width: 1),
                                   ),
                                   child: Text(
                                     p[0].toUpperCase() + p.substring(1),
                                     style: TextStyle(
                                       color:      sel ? _C.white : _C.textMuted,
                                       fontSize:   13,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ),
@@ -211,11 +214,11 @@ class _EarningsScreenState extends State<EarningsScreen> {
                             }).toList(),
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
 
                           // Bar chart
                           SizedBox(
-                            height: 140,
+                            height: 160,
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: List.generate(
@@ -230,35 +233,40 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                         mainAxisAlignment:
                                             MainAxisAlignment.end,
                                         children: [
-                                          // Value label
                                           Text(
-                                            '${(_weekData[i] / 1000).toStringAsFixed(1)}k',
+                                            '${(_weekData[i] / 100).toStringAsFixed(0)}0',
                                             style: const TextStyle(
                                               color:    _C.textMuted,
                                               fontSize: 9,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          // Bar
-                                          AnimatedContainer(
-                                            duration: const Duration(
-                                                milliseconds: 600),
-                                            curve: Curves.easeOutCubic,
-                                            height: 100 * ratio,
-                                            decoration: BoxDecoration(
-                                              color:        i == 5
-                                                  ? _C.primary
-                                                  : _C.light.withOpacity(0.5),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                           const SizedBox(height: 6),
+                                          // Bar
+                                          AnimatedContainer(
+                                            duration: const Duration(
+                                                milliseconds: 800),
+                                            curve: Curves.elasticOut,
+                                            height: 110 * ratio,
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: i == 5 
+                                                  ? [_C.primary, Color(0xFF414833)]
+                                                  : [const Color(0xFFCCBFA3), const Color(0xFFCCBFA3)],
+                                                begin: Alignment.bottomCenter,
+                                                end: Alignment.topCenter,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
                                           Text(
                                             _days[i],
-                                            style: const TextStyle(
-                                              color:    _C.textMuted,
+                                            style: TextStyle(
+                                              color:    i == 5 ? _C.primary : _C.textMuted,
                                               fontSize: 10,
+                                              fontWeight: i == 5 ? FontWeight.w800 : FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -274,14 +282,14 @@ class _EarningsScreenState extends State<EarningsScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Stats row
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
-                        Expanded(
+                        const Expanded(
                           child: _EarnStatCard(
                             label: 'Rides Done',
                             value: '18',
@@ -289,7 +297,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
+                        const Expanded(
                           child: _EarnStatCard(
                             label: 'Commission',
                             value: 'Rs 313',
@@ -297,7 +305,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
+                        const Expanded(
                           child: _EarnStatCard(
                             label: 'Net Earned',
                             value: 'Rs 2,817',
@@ -332,35 +340,43 @@ class _EarnStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color:        _C.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: [
           BoxShadow(
-            color:      _C.dark.withOpacity(0.07),
+            color:      Colors.black.withOpacity(0.02),
             blurRadius: 10,
-            offset:     const Offset(0, 3),
+            offset:     const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: _C.primary, size: 18),
-          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: _C.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: _C.primary, size: 16),
+          ),
+          const SizedBox(height: 12),
           Text(
             value,
             style: const TextStyle(
               color:      _C.textDark,
               fontSize:   13,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
           Text(
             label,
             style: const TextStyle(
-              color: _C.textMuted, fontSize: 10,
+              color: _C.textMuted, fontSize: 10, fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -368,3 +384,5 @@ class _EarnStatCard extends StatelessWidget {
     );
   }
 }
+
+

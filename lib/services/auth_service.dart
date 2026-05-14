@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/user_model.dart';
@@ -14,10 +15,20 @@ class AuthService {
 
   /// Opens the Google account picker; persists profile to SharedPreferences on success.
   Future<UserModel?> signInWithGoogle() async {
-    final account = await _googleSignIn.signIn();
-    if (account == null) return null;
-    await SessionStorage.saveGoogleAccount(account);
-    return SessionStorage.loadUserModel();
+    try {
+      debugPrint('AuthService: Starting Google Sign-In...');
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        debugPrint('AuthService: Google Sign-In cancelled by user or failed (null account).');
+        return null;
+      }
+      debugPrint('AuthService: Google Sign-In success: ${account.email}');
+      await SessionStorage.saveGoogleAccount(account);
+      return SessionStorage.loadUserModel();
+    } catch (e) {
+      debugPrint('AuthService: Google Sign-In EXCEPTION: $e');
+      rethrow;
+    }
   }
 
   Future<UserModel?> restoreSession() => SessionStorage.loadUserModel();
@@ -118,3 +129,6 @@ class AuthService {
 
   Future<void> updateUserData(String userId, Map<String, dynamic> data) async {}
 }
+
+
+

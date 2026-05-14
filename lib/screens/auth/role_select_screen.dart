@@ -7,13 +7,14 @@ import '../../providers/user_provider.dart';
 import '../../widgets/app_widgets.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class RoleSelectScreen extends StatefulWidget {
@@ -105,14 +106,14 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
       backgroundColor: _C.bg,
       body: Stack(
         children: [
-          // Full teal top half
+          // Gradient header
           Positioned(
             top: 0, left: 0, right: 0,
             child: Container(
               height: size.height * 0.45,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -120,17 +121,6 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
                   bottomLeft:  Radius.circular(48),
                   bottomRight: Radius.circular(48),
                 ),
-              ),
-            ),
-          ),
-
-          Positioned(
-            top: -50, left: -50,
-            child: Container(
-              width: 180, height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _C.white.withOpacity(0.05),
               ),
             ),
           ),
@@ -145,27 +135,28 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
                   children: [
                     const SizedBox(height: 32),
 
-                    // Header text on teal
+                    // Header text
                     const Text(
                       'How will you\nuse CarPool?',
                       style: TextStyle(
                         color:       _C.white,
-                        fontSize:    30,
-                        fontWeight:  FontWeight.w800,
-                        letterSpacing: -0.5,
-                        height:      1.25,
+                        fontSize:    32,
+                        fontWeight:  FontWeight.w900,
+                        letterSpacing: -1,
+                        height:      1.1,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Text(
                       'Choose your role to get started',
                       style: TextStyle(
-                        color:    _C.white.withOpacity(0.7),
-                        fontSize: 15,
+                        color:    _C.white.withOpacity(0.8),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
 
-                    SizedBox(height: size.height * 0.06),
+                    SizedBox(height: size.height * 0.08),
 
                     // Passenger Card
                     _RoleCard(
@@ -192,7 +183,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
                     AnimatedOpacity(
                       opacity:  _selected != null ? 1.0 : 0.4,
                       duration: const Duration(milliseconds: 250),
-                      child: TealButton(
+                      child: AppButton(
                         label:     'Continue as ${_selected == null ? '...' : _selected![0].toUpperCase() + _selected!.substring(1)}',
                         isLoading: _isBusy,
                         onTap:     _proceed,
@@ -232,41 +223,41 @@ class _RoleCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve:    Curves.easeInOut,
-        padding:  const EdgeInsets.all(20),
+        padding:  const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color:        isSelected ? _C.primary : _C.white,
-          borderRadius: BorderRadius.circular(24),
+          color:        isSelected ? _C.dark : _C.white,
+          borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: isSelected ? _C.primary : _C.light,
-            width: 1.5,
+            color: isSelected ? _C.primary : const Color(0xFFCCBFA3),
+            width: 2,
           ),
           boxShadow: [
             BoxShadow(
               color:      isSelected
-                  ? _C.primary.withOpacity(0.3)
-                  : _C.dark.withOpacity(0.07),
+                  ? Colors.black.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.02),
               blurRadius: 20,
-              offset:     const Offset(0, 6),
+              offset:     const Offset(0, 8),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 56, height: 56,
+              width: 58, height: 58,
               decoration: BoxDecoration(
                 color:        isSelected
-                    ? _C.white.withOpacity(0.2)
-                    : _C.light.withOpacity(0.4),
+                    ? _C.primary.withOpacity(0.2)
+                    : _C.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 icon,
-                color: isSelected ? _C.white : _C.primary,
+                color: isSelected ? _C.primary : _C.black,
                 size:  28,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 18),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,18 +267,19 @@ class _RoleCard extends StatelessWidget {
                     style: TextStyle(
                       color:      isSelected ? _C.white : _C.textDark,
                       fontSize:   18,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     subtitle,
                     style: TextStyle(
                       color:    isSelected
-                          ? _C.white.withOpacity(0.8)
+                          ? _C.white.withOpacity(0.7)
                           : _C.textMuted,
                       fontSize: 13,
                       height:   1.4,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -297,7 +289,7 @@ class _RoleCard extends StatelessWidget {
               isSelected
                   ? Icons.check_circle_rounded
                   : Icons.radio_button_unchecked_rounded,
-              color: isSelected ? _C.white : _C.light,
+              color: isSelected ? _C.primary : const Color(0xFFCCBFA3),
               size:  24,
             ),
           ],
@@ -306,3 +298,5 @@ class _RoleCard extends StatelessWidget {
     );
   }
 }
+
+

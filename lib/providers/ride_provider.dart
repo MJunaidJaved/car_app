@@ -64,3 +64,6 @@ class RideProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+
+
+

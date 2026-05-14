@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const ebony         = Color(0xFF414833);
+  static const deepEbony     = Color(0xFF2E3323);
+  static const resedaGreen   = Color(0xFF737A5D);
+  static const sage          = Color(0xFFA4AC86);
+  static const dun           = Color(0xFFCCBFA3);
+  static const linen         = Color(0xFFF5E3D2);
+  static const offWhite      = Color(0xFFEDE8DF);
+  
+  static const primary   = ebony;
+  static const secondary = resedaGreen;
+  static const accent    = sage;
+  static const bg        = linen;
+  static const textDark  = ebony;
+  static const textMuted = resedaGreen;
 }
 
-class TealField extends StatelessWidget {
+class AppField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final IconData icon;
@@ -19,7 +27,7 @@ class TealField extends StatelessWidget {
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
 
-  const TealField({
+  const AppField({
     super.key,
     required this.controller,
     required this.label,
@@ -37,18 +45,18 @@ class TealField extends StatelessWidget {
       obscureText:  obscureText,
       keyboardType: keyboardType,
       validator:    validator,
-      style: const TextStyle(
+      style: GoogleFonts.inter(
         color:      AppColors.textDark,
         fontSize:   15,
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         labelText:  label,
-        labelStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-        prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
+        labelStyle: GoogleFonts.inter(color: AppColors.resedaGreen, fontSize: 14, fontWeight: FontWeight.w500),
+        prefixIcon: Icon(icon, color: AppColors.resedaGreen, size: 20),
         suffixIcon: suffixIcon,
         filled:     true,
-        fillColor:  const Color(0xFFF0F7F6),
+        fillColor:  AppColors.offWhite,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide:   BorderSide.none,
@@ -59,71 +67,95 @@ class TealField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide:   const BorderSide(color: AppColors.ebony, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide:
-              const BorderSide(color: Colors.redAccent, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:
-              const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide:   const BorderSide(color: Colors.redAccent, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 16),
+            horizontal: 20, vertical: 18),
       ),
     );
   }
 }
 
-class TealButton extends StatelessWidget {
+class AppButton extends StatelessWidget {
   final String label;
   final bool isLoading;
   final VoidCallback onTap;
+  final bool isSecondary;
 
-  const TealButton({
+  const AppButton({
     super.key,
     required this.label,
     required this.isLoading,
     required this.onTap,
+    this.isSecondary = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 52,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor:         AppColors.primary,
-          foregroundColor:         AppColors.white,
-          disabledBackgroundColor: AppColors.light,
-          elevation:               0,
-          shadowColor:             Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 22, height: 22,
-                child: CircularProgressIndicator(
-                  color:       AppColors.white,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize:    16,
-                  fontWeight:  FontWeight.w700,
-                  letterSpacing: 0.3,
-                ),
+      height: 56,
+      child: isSecondary 
+        ? OutlinedButton(
+            onPressed: isLoading ? null : onTap,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.ebony,
+              side: const BorderSide(color: AppColors.ebony, width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
-      ),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+            ).copyWith(
+              backgroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.pressed)) return AppColors.sage.withOpacity(0.2);
+                return Colors.transparent;
+              }),
+            ),
+            child: isLoading
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(label, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          )
+        : ElevatedButton(
+            onPressed: isLoading ? null : onTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor:         AppColors.ebony,
+              foregroundColor:         Colors.white,
+              disabledBackgroundColor: AppColors.sage,
+              elevation:               0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ).copyWith(
+              backgroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.pressed)) return AppColors.deepEbony;
+                if (states.contains(MaterialState.disabled)) return AppColors.sage;
+                return AppColors.ebony;
+              }),
+            ),
+            child: isLoading
+                ? const SizedBox(
+                    width: 24, height: 24,
+                    child: CircularProgressIndicator(
+                      color:       Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize:    16,
+                      fontWeight:  FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+          ),
     );
   }
 }
+
+
+
+

@@ -4,13 +4,14 @@ import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class PassengerHomeScreen extends StatelessWidget {
@@ -39,7 +40,7 @@ class PassengerHomeScreen extends StatelessWidget {
               height: 240,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)], // Darker shades for depth
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -52,201 +53,208 @@ class PassengerHomeScreen extends StatelessWidget {
           ),
           
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Top bar
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: Row(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        // Top bar
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          child: Row(
                             children: [
-                              Text(
-                                'Where to next,',
-                                style: TextStyle(
-                                  color: _C.white.withOpacity(0.7),
-                                  fontSize: 13,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Where to next,',
+                                      style: TextStyle(
+                                        color: _C.white.withOpacity(0.7),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    Text(
+                                      user?.name ?? 'Passenger',
+                                      style: const TextStyle(
+                                        color: _C.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Text(
-                                user?.name ?? 'Passenger',
-                                style: const TextStyle(
-                                  color: _C.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
+                              GestureDetector(
+                                onTap: () => Navigator.pushNamed(context, '/notifications'),
+                                child: Container(
+                                  width: 42, height: 42,
+                                  decoration: BoxDecoration(
+                                    color: _C.white.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(13),
+                                  ),
+                                  child: const Icon(Icons.notifications_outlined, color: _C.white, size: 22),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              GestureDetector(
+                                onTap: () => Navigator.pushNamed(context, '/profile'),
+                                child: CircleAvatar(
+                                  radius: 21,
+                                  backgroundColor: _C.white.withOpacity(0.2),
+                                  backgroundImage: hasPhoto ? NetworkImage(p as String) : null,
+                                  child: !hasPhoto
+                                      ? Text(
+                                          (user?.name ?? 'P')[0].toUpperCase(),
+                                          style: const TextStyle(color: _C.white, fontWeight: FontWeight.w700, fontSize: 16),
+                                        )
+                                      : null,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/notifications'),
+
+                        const SizedBox(height: 30),
+
+                        // Search Hero Card
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Container(
-                            width: 42, height: 42,
+                            padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: _C.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(13),
+                              color: _C.white,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _C.black.withOpacity(0.08),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
-                            child: const Icon(Icons.notifications_outlined, color: _C.white, size: 22),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/profile'),
-                          child: CircleAvatar(
-                            radius: 21,
-                            backgroundColor: _C.white.withOpacity(0.2),
-                            backgroundImage: hasPhoto ? NetworkImage(p as String) : null,
-                            child: !hasPhoto
-                                ? Text(
-                                    (user?.name ?? 'P')[0].toUpperCase(),
-                                    style: const TextStyle(color: _C.white, fontWeight: FontWeight.w700, fontSize: 16),
-                                  )
-                                : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Search Hero Card
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _C.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _C.dark.withOpacity(0.15),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Find a ride',
-                            style: TextStyle(
-                              color: _C.textDark,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          GestureDetector(
-                            onTap: () => Navigator.pushNamed(context, '/find-ride'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: _C.bg,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.search_rounded, color: _C.primary.withOpacity(0.7), size: 24),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Where are you going?',
-                                    style: TextStyle(
-                                      color: _C.textMuted,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Find a ride',
+                                  style: TextStyle(
+                                    color: _C.black,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                GestureDetector(
+                                  onTap: () => Navigator.pushNamed(context, '/find-ride'),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: _C.bg,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.search_rounded, color: _C.primary, size: 24),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Where are you going?',
+                                          style: TextStyle(
+                                            color: _C.textMuted,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Category Tabs Redesign
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
+                              children: [
+                                _CategoryTab(label: 'Daily Commute', icon: Icons.work_outline_rounded, isSelected: true),
+                                const SizedBox(width: 12),
+                                _CategoryTab(label: 'Intercity', icon: Icons.location_city_rounded, isSelected: false),
+                                const SizedBox(width: 12),
+                                _CategoryTab(label: 'University', icon: Icons.school_outlined, isSelected: false),
+                                const SizedBox(width: 12),
+                                _CategoryTab(label: 'Events', icon: Icons.event_outlined, isSelected: false),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Live Ride Feed
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Available Rides Near You',
+                                style: TextStyle(
+                                  color: _C.black,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Category Tabs (Mock)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Row(
-                        children: [
-                          _CategoryTab(label: 'Daily Commute', icon: Icons.work_outline_rounded, isSelected: true),
-                          const SizedBox(width: 12),
-                          _CategoryTab(label: 'Intercity', icon: Icons.location_city_rounded, isSelected: false),
-                          const SizedBox(width: 12),
-                          _CategoryTab(label: 'University', icon: Icons.school_outlined, isSelected: false),
-                          const SizedBox(width: 12),
-                          _CategoryTab(label: 'Events', icon: Icons.event_outlined, isSelected: false),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Live Ride Feed
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Available Rides Near You',
-                          style: TextStyle(
-                            color: _C.textDark,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                              GestureDetector(
+                                onTap: () => Navigator.pushNamed(context, '/find-ride'),
+                                child: const Text(
+                                  'See all',
+                                  style: TextStyle(
+                                    color: _C.primary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/find-ride'),
-                          child: const Text(
-                            'See all',
-                            style: TextStyle(
-                              color: _C.primary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        const SizedBox(height: 16),
+
+                        const _LiveRideCard(
+                          from: 'Gulberg, Lahore',
+                          to: 'DHA Phase 5',
+                          time: 'In 15 mins',
+                          price: 'Rs 150',
+                          seatsLeft: 2,
+                          captainName: 'Ahmed A.',
                         ),
+                        const _LiveRideCard(
+                          from: 'Johar Town',
+                          to: 'Model Town',
+                          time: 'In 45 mins',
+                          price: 'Rs 120',
+                          seatsLeft: 1,
+                          captainName: 'Bilal M.',
+                        ),
+
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  _LiveRideCard(
-                    from: 'Gulberg, Lahore',
-                    to: 'DHA Phase 5',
-                    time: 'In 15 mins',
-                    price: 'Rs 150',
-                    seatsLeft: 2,
-                    captainName: 'Ahmed A.',
-                  ),
-                  _LiveRideCard(
-                    from: 'Johar Town',
-                    to: 'Model Town',
-                    time: 'In 45 mins',
-                    price: 'Rs 120',
-                    seatsLeft: 1,
-                    captainName: 'Bilal M.',
-                  ),
-
-                  const SizedBox(height: 100),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 
@@ -275,33 +283,29 @@ class _CategoryTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: 80, height: 76,
       decoration: BoxDecoration(
         color: isSelected ? _C.primary : _C.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
+        border: isSelected ? null : Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: isSelected ? [
           BoxShadow(
-            color: _C.primary.withOpacity(0.3),
-            blurRadius: 10,
+            color: _C.primary.withOpacity(0.25),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           )
-        ] : [
-          BoxShadow(
-            color: _C.dark.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          )
-        ],
+        ] : null,
       ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: isSelected ? _C.white : _C.primary, size: 20),
-          const SizedBox(width: 8),
+          Icon(icon, color: isSelected ? _C.white : _C.textMuted, size: 24),
+          const SizedBox(height: 6),
           Text(
-            label,
+            label.split(' ')[0], // Short label
             style: TextStyle(
               color: isSelected ? _C.white : _C.textDark,
-              fontSize: 13,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -336,9 +340,10 @@ class _LiveRideCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _C.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: [
           BoxShadow(
-            color: _C.dark.withOpacity(0.06),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 15,
             offset: const Offset(0, 6),
           ),
@@ -349,7 +354,7 @@ class _LiveRideCard extends StatelessWidget {
           Container(
             width: 48, height: 48,
             decoration: BoxDecoration(
-              color: _C.light.withOpacity(0.3),
+              color: _C.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(Icons.directions_car_rounded, color: _C.primary, size: 24),
@@ -362,7 +367,7 @@ class _LiveRideCard extends StatelessWidget {
                 Text(
                   '$from → $to',
                   style: const TextStyle(
-                    color: _C.textDark,
+                    color: _C.black,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -370,11 +375,11 @@ class _LiveRideCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.access_time_rounded, color: _C.textMuted, size: 14),
+                    const Icon(Icons.access_time_rounded, color: _C.textMuted, size: 14),
                     const SizedBox(width: 4),
                     Text(time, style: const TextStyle(color: _C.textMuted, fontSize: 12)),
                     const SizedBox(width: 12),
-                    Icon(Icons.person_outline_rounded, color: _C.textMuted, size: 14),
+                    const Icon(Icons.person_outline_rounded, color: _C.textMuted, size: 14),
                     const SizedBox(width: 4),
                     Text('$seatsLeft seat${seatsLeft > 1 ? 's' : ''}', style: const TextStyle(color: _C.textMuted, fontSize: 12)),
                   ],
@@ -397,13 +402,13 @@ class _LiveRideCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _C.light.withOpacity(0.4),
+                  color: _C.accent.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   captainName,
                   style: const TextStyle(
-                    color: _C.dark,
+                    color: _C.black,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
@@ -421,6 +426,7 @@ class _PassengerBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const activeIndex = 0;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     void onNavTap(int index) {
       if (index == activeIndex) return;
@@ -433,14 +439,20 @@ class _PassengerBottomNav extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 12,
+        bottom: bottomPadding > 0 ? bottomPadding : 16,
+      ),
       decoration: BoxDecoration(
         color: _C.white,
+        border: const Border(top: BorderSide(color: Color(0xFFCCBFA3), width: 1)),
         boxShadow: [
           BoxShadow(
-            color: _C.dark.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
           ),
         ],
       ),
@@ -471,25 +483,38 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: active ? _C.primary : _C.textMuted, size: 24),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              color: active ? _C.primary : _C.textMuted,
-              fontSize: 10,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+      child: SizedBox(
+        height: 56,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: active ? _C.primary : _C.textMuted, size: 26),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: active ? _C.primary : _C.textMuted,
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+              ),
             ),
-          ),
-          if (active) ...[
-            const SizedBox(height: 4),
-            Container(width: 4, height: 4, decoration: const BoxDecoration(shape: BoxShape.circle, color: _C.primary)),
-          ] else const SizedBox(height: 8),
-        ],
+            if (active) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20, height: 3,
+                decoration: BoxDecoration(
+                  color: _C.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ] else const SizedBox(height: 7),
+          ],
+        ),
       ),
     );
   }
 }
+
+
+

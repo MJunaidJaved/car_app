@@ -19,3 +19,6 @@ class AppModeService {
     await p.remove(_personaKey);
   }
 }
+
+
+

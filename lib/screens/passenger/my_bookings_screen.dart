@@ -6,13 +6,14 @@ import '../../services/ride_service.dart';
 import '../../models/ride_model.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class MyBookingsScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               height: 200,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin:  Alignment.topLeft,
                   end:    Alignment.bottomRight,
                 ),
@@ -88,7 +89,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                             style: TextStyle(
                               color:      _C.white,
                               fontSize:   20,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                           Text(
@@ -108,12 +109,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
                 // Filter chips
                 SizedBox(
-                  height: 36,
+                  height: 40,
                   child: ListView.separated(
                     padding:          const EdgeInsets.symmetric(horizontal: 20),
                     scrollDirection:  Axis.horizontal,
                     itemCount:        _filters.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
                     itemBuilder: (context, i) {
                       final f          = _filters[i];
                       final isSelected = _selectedFilter == f;
@@ -122,24 +123,24 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding:  const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 6),
+                              horizontal: 18, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? _C.white
                                 : _C.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: isSelected
-                                  ? _C.primary
+                                  ? _C.white
                                   : _C.white.withOpacity(0.3),
                             ),
                           ),
                           child: Text(
                             f[0].toUpperCase() + f.substring(1),
                             style: TextStyle(
-                              color:      isSelected ? _C.primary : _C.white,
+                              color:      isSelected ? _C.dark : _C.white,
                               fontSize:   13,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -173,7 +174,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                             children: [
                               Icon(
                                 Icons.bookmark_outline_rounded,
-                                color: _C.light,
+                                color: _C.accent.withOpacity(0.4),
                                 size:  64,
                               ),
                               const SizedBox(height: 12),
@@ -182,7 +183,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                 style: TextStyle(
                                   color:      _C.textMuted,
                                   fontSize:   15,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -201,7 +202,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     style: TextStyle(
                                       color:      _C.white,
                                       fontSize:   14,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ),
@@ -236,8 +237,8 @@ class _BookingCard extends StatelessWidget {
 
   Color get _statusColor {
     switch (ride.status) {
-      case 'upcoming':  return const Color(0xFFFF9800);
-      case 'completed': return _C.primary;
+      case 'upcoming':  return Colors.orange;
+      case 'completed': return Colors.green;
       case 'cancelled': return Colors.red;
       default:          return _C.textMuted;
     }
@@ -255,16 +256,17 @@ class _BookingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin:  const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin:  const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color:        _C.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: [
           BoxShadow(
-            color:      _C.dark.withOpacity(0.07),
-            blurRadius: 12,
-            offset:     const Offset(0, 4),
+            color:      Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset:     const Offset(0, 6),
           ),
         ],
       ),
@@ -275,18 +277,18 @@ class _BookingCard extends StatelessWidget {
           Row(
             children: [
               CircleAvatar(
-                radius: 18,
-                backgroundColor: _C.light.withOpacity(0.5),
+                radius: 20,
+                backgroundColor: _C.primary.withOpacity(0.1),
                 child: Text(
                   (ride.captainName ?? 'C')[0].toUpperCase(),
                   style: const TextStyle(
                     color:      _C.primary,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     fontSize:   14,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,18 +298,18 @@ class _BookingCard extends StatelessWidget {
                       style: const TextStyle(
                         color:      _C.textDark,
                         fontSize:   14,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     Row(
                       children: [
                         const Icon(Icons.star_rounded,
-                            color: Color(0xFFFFC107), size: 12),
-                        const SizedBox(width: 3),
+                            color: _C.primary, size: 12),
+                        const SizedBox(width: 4),
                         Text(
                           '${ride.captainRating ?? 4.8}  •  Trust Score',
                           style: const TextStyle(
-                              color: _C.textMuted, fontSize: 11),
+                              color: _C.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -316,26 +318,26 @@ class _BookingCard extends StatelessWidget {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
+                    horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color:        _statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   _statusLabel,
                   style: TextStyle(
                     color:      _statusColor,
-                    fontSize:   12,
-                    fontWeight: FontWeight.w700,
+                    fontSize:   11,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
-          const Divider(color: Color(0xFFF0F0F0), height: 1),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
+          const Divider(height: 1, color: Color(0xFFCCBFA3)),
+          const SizedBox(height: 20),
 
           // Route
           Row(
@@ -343,14 +345,14 @@ class _BookingCard extends StatelessWidget {
               Column(
                 children: [
                   const Icon(Icons.circle,
-                      color: _C.primary, size: 10),
+                      color: Color(0xFF4A7C59), size: 10),
                   Container(
-                      width: 2, height: 20, color: _C.light),
-                  Icon(Icons.circle_outlined,
+                      width: 1.5, height: 16, color: const Color(0xFFCCBFA3)),
+                  const Icon(Icons.circle,
                       color: _C.primary, size: 10),
                 ],
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,8 +361,8 @@ class _BookingCard extends StatelessWidget {
                       ride.from,
                       style: const TextStyle(
                         color:      _C.textDark,
-                        fontSize:   13,
-                        fontWeight: FontWeight.w600,
+                        fontSize:   14,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -368,8 +370,8 @@ class _BookingCard extends StatelessWidget {
                       ride.to,
                       style: const TextStyle(
                         color:      _C.textDark,
-                        fontSize:   13,
-                        fontWeight: FontWeight.w600,
+                        fontSize:   14,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -379,14 +381,14 @@ class _BookingCard extends StatelessWidget {
                 'Rs ${ride.offeredFare ?? '--'}',
                 style: const TextStyle(
                   color:      _C.primary,
-                  fontSize:   16,
-                  fontWeight: FontWeight.w800,
+                  fontSize:   18,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
 
           // Bottom chips
           Row(
@@ -395,7 +397,7 @@ class _BookingCard extends StatelessWidget {
                 icon:  Icons.access_time_rounded,
                 label: '${ride.departureTime.hour}:${ride.departureTime.minute.toString().padLeft(2, '0')} ${ride.departureTime.hour >= 12 ? 'PM' : 'AM'}',
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               _InfoPill(
                 icon:  Icons.event_seat_rounded,
                 label: '${ride.availableSeats ?? 1} seat booked',
@@ -408,7 +410,7 @@ class _BookingCard extends StatelessWidget {
                       context, '/active-ride'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                        horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color:        _C.primary,
                       borderRadius: BorderRadius.circular(10),
@@ -418,7 +420,7 @@ class _BookingCard extends StatelessWidget {
                       style: TextStyle(
                         color:      _C.white,
                         fontSize:   12,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -439,22 +441,22 @@ class _InfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color:        _C.light.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
+        color:        _C.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: _C.primary, size: 12),
-          const SizedBox(width: 4),
+          Icon(icon, color: _C.primary, size: 14),
+          const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
               color:      _C.primary,
-              fontSize:   11,
-              fontWeight: FontWeight.w600,
+              fontSize:   12,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -462,3 +464,5 @@ class _InfoPill extends StatelessWidget {
     );
   }
 }
+
+

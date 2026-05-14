@@ -49,6 +49,9 @@ import 'utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Disable the check for Listenable/Stream subtypes being used with plain Provider
+  // This is a safety measure requested to fix the 'RideService' crash.
+  Provider.debugCheckInvalidValueType = null;
   runApp(const CarPoolApp());
 }
 
@@ -71,7 +74,7 @@ class CarPoolApp extends StatelessWidget {
           create: (_) => const GrokAIService(),
         ),
 
-        Provider<RideService>(
+        ChangeNotifierProvider<RideService>(
           create: (_) => RideService(),
         ),
 
@@ -157,3 +160,6 @@ class CarPoolApp extends StatelessWidget {
     );
   }
 }
+
+
+

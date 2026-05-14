@@ -4,16 +4,17 @@ import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../providers/user_provider.dart';
 import '../../utils/helpers.dart';
+import '../../widgets/app_widgets.dart';
 
-// ─── Brand Colors ────────────────────────────────────────────────────────────
 class _C {
-  static const primary    = Color(0xFF39988E); // Mediterranean Green
-  static const dark       = Color(0xFF1F6059); // Dark Teal
-  static const light      = Color(0xFFB6D7D1); // Jet Stream Blue
-  static const bg         = Color(0xFFF5F5F5); // Off white
-  static const white      = Color(0xFFFFFFFF);
-  static const textDark   = Color(0xFF0D1F1E);
-  static const textMuted  = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFFFFFFF);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class LoginScreen extends StatefulWidget {
@@ -80,7 +81,6 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Status bar icons white on teal header
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor:            Colors.transparent,
       statusBarIconBrightness:   Brightness.light,
@@ -92,14 +92,14 @@ class _LoginScreenState extends State<LoginScreen>
       backgroundColor: _C.bg,
       body: Stack(
         children: [
-          // ── Teal header blob ────────────────────────────────────────────
+          // Gradient header
           Positioned(
             top: 0, left: 0, right: 0,
             child: Container(
               height: size.height * 0.42,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [Color(0xFF2E3323), Color(0xFF414833), Color(0xFF737A5D)],
                   begin:  Alignment.topLeft,
                   end:    Alignment.bottomRight,
                 ),
@@ -111,21 +111,11 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
 
-          // ── Decorative circles ───────────────────────────────────────────
+          // Decorative circles
           Positioned(
             top: -40, right: -40,
             child: Container(
               width: 160, height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _C.white.withOpacity(0.06),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 60, right: 20,
-            child: Container(
-              width: 60, height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _C.white.withOpacity(0.08),
@@ -133,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
 
-          // ── Main content ─────────────────────────────────────────────────
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -144,54 +133,53 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Logo area (on teal) ────────────────────────────
-                      SizedBox(height: size.height * 0.06),
-                      _LogoSection(),
-
                       SizedBox(height: size.height * 0.05),
+                      const _LogoSection(),
+                      SizedBox(height: size.height * 0.04),
 
-                      // ── White card ────────────────────────────────────
+                      // Login Card
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Container(
                           decoration: BoxDecoration(
                             color:        _C.white,
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(32),
+                            border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                             boxShadow: [
                               BoxShadow(
-                                color:       _C.dark.withOpacity(0.12),
-                                blurRadius:  24,
-                                offset:      const Offset(0, 8),
+                                color:       const Color(0xFF414833).withOpacity(0.08),
+                                blurRadius:  30,
+                                offset:      const Offset(0, 10),
                               ),
                             ],
                           ),
-                          padding: const EdgeInsets.fromLTRB(24, 32, 24, 28),
+                          padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
                           child: Form(
                             key: _formKey,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Text(
+                                const Text(
                                   'Welcome Back!',
                                   style: TextStyle(
-                                    fontSize:   24,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize:   26,
+                                    fontWeight: FontWeight.w900,
                                     color:      _C.textDark,
-                                    letterSpacing: -0.3,
+                                    letterSpacing: -1,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Sign in to continue',
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Sign in to continue your journey',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color:    _C.textMuted,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const SizedBox(height: 28),
+                                const SizedBox(height: 32),
 
-                                // Email
-                                _TealField(
+                                AppField(
                                   controller:  _emailCtrl,
                                   label:       'Email address',
                                   icon:        Icons.email_outlined,
@@ -206,8 +194,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Password
-                                _TealField(
+                                AppField(
                                   controller:   _passwordCtrl,
                                   label:        'Password',
                                   icon:         Icons.lock_outline_rounded,
@@ -232,21 +219,16 @@ class _LoginScreenState extends State<LoginScreen>
                                   },
                                 ),
 
-                                // Forgot password
                                 Align(
                                   alignment: Alignment.centerRight,
                                   child: TextButton(
                                     onPressed: () {},
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                    ),
-                                    child: Text(
+                                    child: const Text(
                                       'Forgot password?',
                                       style: TextStyle(
                                         color:    _C.primary,
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
                                   ),
@@ -254,50 +236,49 @@ class _LoginScreenState extends State<LoginScreen>
 
                                 const SizedBox(height: 8),
 
-                                // Sign In button
-                                _TealButton(
+                                AppButton(
                                   label:     'Sign In',
                                   isLoading: _isLoading,
                                   onTap:     _signIn,
                                 ),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 24),
 
                                 // Divider
                                 Row(children: [
-                                  Expanded(child: Divider(color: _C.light)),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
+                                  const Expanded(child: Divider(color: Color(0xFFCCBFA3))),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(
                                         horizontal: 12),
                                     child: Text(
-                                      'or',
+                                      'OR',
                                       style: TextStyle(
-                                          color: _C.textMuted, fontSize: 13),
+                                          color: _C.textMuted, fontSize: 11, fontWeight: FontWeight.w800),
                                     ),
                                   ),
-                                  Expanded(child: Divider(color: _C.light)),
+                                  const Expanded(child: Divider(color: Color(0xFFCCBFA3))),
                                 ]),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 24),
 
                                 // Sign up link
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(
+                                    const Text(
                                       "Don't have an account?  ",
                                       style: TextStyle(
-                                          color: _C.textMuted, fontSize: 14),
+                                          color: _C.textMuted, fontSize: 14, fontWeight: FontWeight.w600),
                                     ),
                                     GestureDetector(
                                       onTap: () => Navigator.pushNamed(
                                           context, '/signup'),
-                                      child: Text(
+                                      child: const Text(
                                         'Sign Up',
                                         style: TextStyle(
                                           color:      _C.primary,
                                           fontSize:   14,
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w900,
                                         ),
                                       ),
                                     ),
@@ -309,22 +290,22 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 40),
 
-                      // Terms
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 40),
                         child: Text(
                           'By signing in, you agree to our Terms of Service\nand Privacy Policy',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color:    _C.textMuted,
-                            fontSize: 12,
+                            fontSize: 11,
                             height:   1.5,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -337,47 +318,46 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-// ─── Logo Section ─────────────────────────────────────────────────────────────
 class _LogoSection extends StatelessWidget {
+  const _LogoSection();
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Icon badge
         Container(
-          width: 72, height: 72,
+          width: 80, height: 80,
           decoration: BoxDecoration(
             color:        _C.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: _C.white.withOpacity(0.25),
-              width: 1.5,
+              color: _C.white.withOpacity(0.3),
+              width: 2,
             ),
           ),
           child: const Icon(
             Icons.directions_car_filled_rounded,
             color: _C.white,
-            size:  38,
+            size:  44,
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 18),
         const Text(
           'CarPool',
           style: TextStyle(
             color:       _C.white,
-            fontSize:    32,
-            fontWeight:  FontWeight.w800,
-            letterSpacing: -0.5,
+            fontSize:    36,
+            fontWeight:  FontWeight.w900,
+            letterSpacing: -1,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
-          'Your Trip. Our Driver.',
+          'Premium City Rides',
           style: TextStyle(
-            color:    _C.white.withOpacity(0.75),
+            color:    _C.white.withOpacity(0.85),
             fontSize: 14,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.2,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
         ),
       ],
@@ -385,117 +365,4 @@ class _LogoSection extends StatelessWidget {
   }
 }
 
-// ─── Reusable Teal Input Field ────────────────────────────────────────────────
-class _TealField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final IconData icon;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final TextInputType? keyboardType;
-  final String? Function(String?)? validator;
 
-  const _TealField({
-    required this.controller,
-    required this.label,
-    required this.icon,
-    this.obscureText  = false,
-    this.suffixIcon,
-    this.keyboardType,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller:   controller,
-      obscureText:  obscureText,
-      keyboardType: keyboardType,
-      validator:    validator,
-      style: const TextStyle(
-        color:      _C.textDark,
-        fontSize:   15,
-        fontWeight: FontWeight.w500,
-      ),
-      decoration: InputDecoration(
-        labelText:    label,
-        labelStyle:   TextStyle(color: _C.textMuted, fontSize: 14),
-        prefixIcon:   Icon(icon, color: _C.primary, size: 20),
-        suffixIcon:   suffixIcon,
-        filled:       true,
-        fillColor:    const Color(0xFFF0F7F6),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:   BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:   BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:   const BorderSide(color: _C.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:   const BorderSide(color: Colors.redAccent, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:   const BorderSide(color: Colors.redAccent, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 16),
-      ),
-    );
-  }
-}
-
-// ─── Reusable Teal CTA Button ─────────────────────────────────────────────────
-class _TealButton extends StatelessWidget {
-  final String label;
-  final bool isLoading;
-  final VoidCallback onTap;
-
-  const _TealButton({
-    required this.label,
-    required this.isLoading,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _C.primary,
-          foregroundColor: _C.white,
-          disabledBackgroundColor: _C.light,
-          elevation:   0,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-          width: 22, height: 22,
-          child: CircularProgressIndicator(
-            color:       _C.white,
-            strokeWidth: 2.5,
-          ),
-        )
-            : Text(
-          label,
-          style: const TextStyle(
-            fontSize:    16,
-            fontWeight:  FontWeight.w700,
-            letterSpacing: 0.3,
-          ),
-        ),
-      ),
-    );
-  }
-}

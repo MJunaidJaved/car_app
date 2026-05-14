@@ -6,13 +6,14 @@ import '../../services/ride_service.dart';
 import '../../models/ride_model.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class MyRidesScreen extends StatefulWidget {
@@ -23,21 +24,8 @@ class MyRidesScreen extends StatefulWidget {
 
 class _MyRidesScreenState extends State<MyRidesScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabCtrl;
   String _selectedFilter = 'all';
   final _filters = ['all', 'active', 'completed', 'cancelled'];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +40,14 @@ class _MyRidesScreenState extends State<MyRidesScreen>
       backgroundColor: _C.bg,
       body: Stack(
         children: [
-          // Teal header
+          // Gradient header
           Positioned(
             top: 0, left: 0, right: 0,
             child: Container(
               height: 200,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin:  Alignment.topLeft,
                   end:    Alignment.bottomRight,
                 ),
@@ -103,7 +91,7 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                             style: TextStyle(
                               color:      _C.white,
                               fontSize:   20,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                           Text(
@@ -140,12 +128,12 @@ class _MyRidesScreenState extends State<MyRidesScreen>
 
                 // Filter chips
                 SizedBox(
-                  height: 36,
+                  height: 40,
                   child: ListView.separated(
                     padding:         const EdgeInsets.symmetric(horizontal: 20),
                     scrollDirection: Axis.horizontal,
                     itemCount:       _filters.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
                     itemBuilder: (context, i) {
                       final f          = _filters[i];
                       final isSelected = _selectedFilter == f;
@@ -154,13 +142,13 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding:  const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 6),
+                              horizontal: 18, vertical: 8),
                           decoration: BoxDecoration(
                             color:        isSelected ? _C.white : _C.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: isSelected
-                                  ? _C.primary
+                                  ? _C.white
                                   : _C.white.withOpacity(0.3),
                             ),
                           ),
@@ -169,7 +157,7 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                             style: TextStyle(
                               color:      isSelected ? _C.primary : _C.white,
                               fontSize:   13,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -190,7 +178,7 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                           ConnectionState.waiting) {
                         return const Center(
                           child: CircularProgressIndicator(
-                            color: _C.primary,
+                            color: _C.white,
                           ),
                         );
                       }
@@ -204,7 +192,7 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                             children: [
                               Icon(
                                 Icons.directions_car_outlined,
-                                color: _C.light,
+                                color: _C.accent.withOpacity(0.4),
                                 size:  64,
                               ),
                               const SizedBox(height: 12),
@@ -213,7 +201,7 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                                 style: TextStyle(
                                   color:      _C.textMuted,
                                   fontSize:   15,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -232,7 +220,7 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                                     style: TextStyle(
                                       color:      _C.white,
                                       fontSize:   14,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ),
@@ -267,9 +255,9 @@ class _CaptainRideCard extends StatelessWidget {
 
   Color get _statusColor {
     switch (ride.status) {
-      case 'active':    return const Color(0xFF4CAF50);
+      case 'active':    return const Color(0xFF4A7C59);
       case 'completed': return _C.primary;
-      case 'cancelled': return Colors.red;
+      case 'cancelled': return const Color(0xFF414833);
       default:          return _C.textMuted;
     }
   }
@@ -286,16 +274,17 @@ class _CaptainRideCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin:  const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin:  const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color:        _C.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: [
           BoxShadow(
-            color:      _C.dark.withOpacity(0.07),
-            blurRadius: 12,
-            offset:     const Offset(0, 4),
+            color:      Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset:     const Offset(0, 6),
           ),
         ],
       ),
@@ -312,14 +301,14 @@ class _CaptainRideCard extends StatelessWidget {
                     Row(
                       children: [
                         const Icon(Icons.circle,
-                            color: _C.primary, size: 10),
-                        const SizedBox(width: 6),
+                            color: Color(0xFF4A7C59), size: 10),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             ride.from,
                             style: const TextStyle(
                               color:      _C.textDark,
-                              fontSize:   14,
+                              fontSize:   15,
                               fontWeight: FontWeight.w700,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -330,20 +319,20 @@ class _CaptainRideCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(left: 4),
                       child: Container(
-                          width: 2, height: 14,
-                          color: _C.light),
+                          width: 1.5, height: 16,
+                          color: const Color(0xFFCCBFA3)),
                     ),
                     Row(
                       children: [
-                        Icon(Icons.circle_outlined,
+                        const Icon(Icons.circle,
                             color: _C.primary, size: 10),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             ride.to,
                             style: const TextStyle(
                               color:      _C.textDark,
-                              fontSize:   14,
+                              fontSize:   15,
                               fontWeight: FontWeight.w700,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -357,26 +346,26 @@ class _CaptainRideCard extends StatelessWidget {
               const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
+                    horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color:        _statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  color:        _statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _statusLabel,
                   style: TextStyle(
                     color:      _statusColor,
-                    fontSize:   12,
-                    fontWeight: FontWeight.w700,
+                    fontSize:   11,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
-          const Divider(color: Color(0xFFF0F0F0), height: 1),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
+          const Divider(height: 1, color: Color(0xFFCCBFA3)),
+          const SizedBox(height: 20),
 
           // Bottom info row
           Row(
@@ -385,24 +374,18 @@ class _CaptainRideCard extends StatelessWidget {
                 icon:  Icons.access_time_rounded,
                 label: '${ride.departureTime.hour}:${ride.departureTime.minute.toString().padLeft(2, '0')} ${ride.departureTime.hour >= 12 ? 'PM' : 'AM'}',
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               _InfoPill(
                 icon:  Icons.event_seat_rounded,
                 label: '${ride.availableSeats ?? 0} seats',
               ),
-              const SizedBox(width: 8),
-              if (ride.isRecurring == true)
-                _InfoPill(
-                  icon:  Icons.repeat_rounded,
-                  label: 'Recurring',
-                ),
               const Spacer(),
               Text(
                 'Rs ${ride.offeredFare ?? '--'}',
                 style: const TextStyle(
                   color:      _C.primary,
-                  fontSize:   16,
-                  fontWeight: FontWeight.w800,
+                  fontSize:   18,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
@@ -421,22 +404,22 @@ class _InfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color:        _C.light.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
+        color:        _C.accent.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: _C.primary, size: 12),
-          const SizedBox(width: 4),
+          Icon(icon, color: _C.black, size: 14),
+          const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
-              color:      _C.primary,
-              fontSize:   11,
-              fontWeight: FontWeight.w600,
+              color:      _C.black,
+              fontSize:   12,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -444,3 +427,5 @@ class _InfoPill extends StatelessWidget {
     );
   }
 }
+
+

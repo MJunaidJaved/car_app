@@ -3,13 +3,14 @@ import 'package:flutter/services.dart';
 import '../../models/ride_model.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class FareNegotiateScreen extends StatefulWidget {
@@ -73,7 +74,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
             ));
             _isConfirmed = true;
           } else if (diff <= 20) {
-            final counter = offerDouble + (diff / 2).round();
+            final counter = (offerDouble + (diff / 2)).round();
             _messages.add(_ChatMessage(
               text: 'How about Rs $counter? That works for me.',
               isMe: false,
@@ -120,7 +121,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
               height: 160,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -225,12 +226,13 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                 // Input area
                 if (!_isConfirmed)
                   Container(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
                     decoration: BoxDecoration(
                       color: _C.white,
+                      border: const Border(top: BorderSide(color: Color(0xFFCCBFA3), width: 1)),
                       boxShadow: [
                         BoxShadow(
-                          color:      _C.dark.withOpacity(0.08),
+                          color:      Colors.black.withOpacity(0.02),
                           blurRadius: 20,
                           offset:     const Offset(0, -4),
                         ),
@@ -241,23 +243,24 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color:        const Color(0xFFF0F7F6),
-                              borderRadius: BorderRadius.circular(14),
+                              color:        _C.bg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFCCBFA3)),
                             ),
                             child: TextField(
                               controller:   _offerCtrl,
                               keyboardType: TextInputType.number,
                               style:        const TextStyle(
                                 color: _C.textDark, fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                               decoration: const InputDecoration(
                                 hintText:       'Your offer in Rs...',
-                                hintStyle:      TextStyle(color: _C.textMuted),
+                                hintStyle:      TextStyle(color: _C.textMuted, fontWeight: FontWeight.w500),
                                 prefixText:     'Rs  ',
                                 prefixStyle:    TextStyle(
-                                  color:      _C.primary,
-                                  fontWeight: FontWeight.w700,
+                                  color:      _C.textDark,
+                                  fontWeight: FontWeight.w800,
                                   fontSize:   15,
                                 ),
                                 border:         InputBorder.none,
@@ -272,11 +275,11 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                           onTap: _isSending ? null : _sendOffer,
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 48, height: 48,
+                            width: 52, height: 52,
                             decoration: BoxDecoration(
                               color:        _isSending
-                                  ? _C.light : _C.primary,
-                              borderRadius: BorderRadius.circular(14),
+                                  ? const Color(0xFFCCBFA3) : _C.primary,
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             child: _isSending
                                 ? const Center(
@@ -289,7 +292,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                                   )
                                 : const Icon(
                                     Icons.send_rounded,
-                                    color: _C.white, size: 20,
+                                    color: _C.white, size: 22,
                                   ),
                           ),
                         ),
@@ -299,8 +302,11 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                 else
                   // Confirmed state
                   Container(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                    decoration: const BoxDecoration(color: _C.white),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+                    decoration: BoxDecoration(
+                      color: _C.white,
+                      border: const Border(top: BorderSide(color: Color(0xFFCCBFA3), width: 1)),
+                    ),
                     child: ElevatedButton(
                       onPressed: () =>
                           Navigator.pushReplacementNamed(
@@ -308,16 +314,16 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _C.primary,
                         foregroundColor: _C.white,
-                        minimumSize: const Size(double.infinity, 52),
+                        minimumSize: const Size(double.infinity, 56),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       child: const Text(
-                        'Confirm & start ride',
+                        'Confirm & Start Ride',
                         style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700,
+                          fontSize: 16, fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
@@ -355,18 +361,18 @@ class _ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     if (message.isSystem) {
       return Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 12),
         child: Center(
           child: Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 8),
+                horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
               color:        message.isAccepted
-                  ? _C.primary.withOpacity(0.12)
-                  : _C.light.withOpacity(0.4),
+                  ? _C.primary.withOpacity(0.1)
+                  : const Color(0xFFCCBFA3).withOpacity(0.3),
               borderRadius: BorderRadius.circular(20),
               border: message.isAccepted
-                  ? Border.all(color: _C.primary.withOpacity(0.3))
+                  ? Border.all(color: _C.primary.withOpacity(0.4))
                   : null,
             ),
             child: Row(
@@ -375,16 +381,15 @@ class _ChatBubble extends StatelessWidget {
                 if (message.isAccepted) ...[
                   const Icon(Icons.check_circle_rounded,
                       color: _C.primary, size: 16),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                 ],
                 Text(
                   message.text,
                   style: TextStyle(
-                    color:      message.isAccepted
-                        ? _C.primary : _C.textMuted,
+                    color:      _C.textDark,
                     fontSize:   13,
                     fontWeight: message.isAccepted
-                        ? FontWeight.w700 : FontWeight.w500,
+                        ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
               ],
@@ -398,46 +403,48 @@ class _ChatBubble extends StatelessWidget {
       alignment: message.isMe
           ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
+        margin: const EdgeInsets.symmetric(vertical: 6),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.68,
+          maxWidth: MediaQuery.of(context).size.width * 0.72,
         ),
         padding: const EdgeInsets.symmetric(
-            horizontal: 14, vertical: 10),
+            horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color:        message.isMe ? _C.primary : _C.white,
           borderRadius: BorderRadius.only(
-            topLeft:     const Radius.circular(18),
-            topRight:    const Radius.circular(18),
-            bottomLeft:  Radius.circular(message.isMe ? 18 : 4),
-            bottomRight: Radius.circular(message.isMe ? 4 : 18),
+            topLeft:     const Radius.circular(20),
+            topRight:    const Radius.circular(20),
+            bottomLeft:  Radius.circular(message.isMe ? 20 : 4),
+            bottomRight: Radius.circular(message.isMe ? 4 : 20),
           ),
+          border: message.isMe ? null : Border.all(color: const Color(0xFFCCBFA3), width: 1),
           boxShadow: [
             BoxShadow(
-              color:      _C.dark.withOpacity(0.07),
-              blurRadius: 8,
-              offset:     const Offset(0, 2),
+              color:      Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset:     const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             Text(
               message.text,
               style: TextStyle(
                 color:    message.isMe ? _C.white : _C.textDark,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               message.time,
               style: TextStyle(
                 color:    message.isMe
                     ? _C.white.withOpacity(0.6) : _C.textMuted,
                 fontSize: 10,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -446,3 +453,5 @@ class _ChatBubble extends StatelessWidget {
     );
   }
 }
+
+

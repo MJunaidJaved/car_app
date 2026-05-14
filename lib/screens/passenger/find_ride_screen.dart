@@ -6,13 +6,14 @@ import '../../models/ride_model.dart';
 import '../../services/ride_service.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class FindRideScreen extends StatefulWidget {
@@ -72,7 +73,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
               height: 280,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin: Alignment.topLeft,
                   end:   Alignment.bottomRight,
                 ),
@@ -129,9 +130,10 @@ class _FindRideScreenState extends State<FindRideScreen> {
                     decoration: BoxDecoration(
                       color: _C.white,
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color:      _C.dark.withOpacity(0.15),
+                          color:      Colors.black.withOpacity(0.04),
                           blurRadius: 24,
                           offset:     const Offset(0, 8),
                         ),
@@ -175,7 +177,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
                               Container(
                                 width: 2,
                                 height: 24,
-                                color: _C.light,
+                                color: _C.primary.withOpacity(0.2),
                                 margin: const EdgeInsets.symmetric(vertical: 4),
                               ),
                             ],
@@ -214,7 +216,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
                         // Search Button
                         SizedBox(
                           width: double.infinity,
-                          height: 48,
+                          height: 52,
                           child: ElevatedButton(
                             onPressed: _isSearching ? null : _search,
                             style: ElevatedButton.styleFrom(
@@ -222,7 +224,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
                               foregroundColor: _C.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                             child: _isSearching
@@ -235,7 +237,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
                                 : const Text(
                                     'Search Rides',
                                     style: TextStyle(
-                                      fontSize: 15, fontWeight: FontWeight.w700,
+                                      fontSize: 15, fontWeight: FontWeight.w800,
                                     ),
                                   ),
                           ),
@@ -249,12 +251,12 @@ class _FindRideScreenState extends State<FindRideScreen> {
 
                 // Filter chips
                 SizedBox(
-                  height: 36,
+                  height: 40,
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     scrollDirection: Axis.horizontal,
                     itemCount: _types.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
                     itemBuilder: (context, i) {
                       final t          = _types[i];
                       final isSelected = _selectedType == t;
@@ -263,12 +265,13 @@ class _FindRideScreenState extends State<FindRideScreen> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 6),
+                              horizontal: 18, vertical: 8),
                           decoration: BoxDecoration(
                             color:        isSelected ? _C.primary : _C.white,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: isSelected ? [BoxShadow(color: _C.primary.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))] : [],
                             border: Border.all(
-                              color: isSelected ? _C.primary : _C.light,
+                              color: isSelected ? _C.primary : const Color(0xFFCCBFA3),
                             ),
                           ),
                           child: Text(
@@ -276,7 +279,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
                             style: TextStyle(
                               color:      isSelected ? _C.white : _C.textMuted,
                               fontSize:   13,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -295,12 +298,12 @@ class _FindRideScreenState extends State<FindRideScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.search_rounded,
-                                  color: _C.light, size: 64),
+                                  color: const Color(0xFF737A5D).withOpacity(0.4), size: 64),
                               const SizedBox(height: 12),
                               Text(
                                 'Search to find available rides',
                                 style: TextStyle(
-                                    color: _C.textMuted, fontSize: 14),
+                                    color: _C.textMuted, fontSize: 14, fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -328,19 +331,20 @@ class _RideResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final matchScore = 92; // wire to matching logic
+    const matchScore = 92;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color:        _C.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: [
           BoxShadow(
-            color:      _C.dark.withOpacity(0.07),
-            blurRadius: 12,
-            offset:     const Offset(0, 4),
+            color:      Colors.black.withOpacity(0.03),
+            blurRadius: 15,
+            offset:     const Offset(0, 6),
           ),
         ],
       ),
@@ -350,16 +354,16 @@ class _RideResultCard extends StatelessWidget {
           Row(
             children: [
               CircleAvatar(
-                radius: 20,
-                backgroundColor: _C.light.withOpacity(0.5),
+                radius: 22,
+                backgroundColor: _C.primary.withOpacity(0.1),
                 child: Text(
                   (ride.captainName ?? 'C')[0].toUpperCase(),
                   style: const TextStyle(
-                    color: _C.primary, fontWeight: FontWeight.w700,
+                    color: _C.primary, fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,62 +371,61 @@ class _RideResultCard extends StatelessWidget {
                     Text(
                       ride.captainName ?? 'Captain',
                       style: const TextStyle(
-                        color: _C.textDark, fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                        color: _C.textDark, fontSize: 15,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     Row(
                       children: [
                         const Icon(Icons.star_rounded,
-                            color: Color(0xFFFFC107), size: 14),
-                        const SizedBox(width: 3),
+                            color: _C.primary, size: 14),
+                        const SizedBox(width: 4),
                         Text(
                           '${ride.captainRating ?? 4.8}  •  Trust Score',
                           style: const TextStyle(
-                              color: _C.textMuted, fontSize: 12),
+                              color: _C.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              // Match score badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
+                    horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color:        _C.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  color:        _C.accent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text(
+                child: const Text(
                   '$matchScore% match',
-                  style: const TextStyle(
-                    color:      _C.primary,
-                    fontSize:   12,
-                    fontWeight: FontWeight.w700,
+                  style: TextStyle(
+                    color:      _C.black,
+                    fontSize:   11,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
-          const Divider(color: Color(0xFFF0F0F0), height: 1),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
+          const Divider(height: 1, color: Color(0xFFCCBFA3)),
+          const SizedBox(height: 20),
 
           // Route
           Row(
             children: [
               Column(
                 children: [
-                  const Icon(Icons.circle, color: _C.primary, size: 10),
+                  const Icon(Icons.circle, color: Color(0xFF4A7C59), size: 10),
                   Container(
                       width: 1.5, height: 24,
-                      color: _C.light),
-                  Icon(Icons.circle_outlined, color: _C.primary, size: 10),
+                      color: const Color(0xFFCCBFA3)),
+                  const Icon(Icons.circle, color: _C.primary, size: 10),
                 ],
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,16 +433,16 @@ class _RideResultCard extends StatelessWidget {
                     Text(
                       ride.from,
                       style: const TextStyle(
-                        color: _C.textDark, fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        color: _C.black, fontSize: 14,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 14),
                     Text(
                       ride.to,
                       style: const TextStyle(
-                        color: _C.textDark, fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        color: _C.black, fontSize: 14,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -448,9 +451,9 @@ class _RideResultCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
 
-          // Bottom row
+          // Chips
           Row(
             children: [
               _RideChip(
@@ -462,32 +465,24 @@ class _RideResultCard extends StatelessWidget {
                 icon:  Icons.event_seat_rounded,
                 label: '${ride.availableSeats ?? 2} seats',
               ),
-              const SizedBox(width: 8),
-              // Seats filling fast
-              if ((ride.availableSeats ?? 2) <= 1)
-                _RideChip(
-                  icon:  Icons.local_fire_department_rounded,
-                  label: 'Filling fast!',
-                  isAlert: true,
-                ),
               const Spacer(),
               Text(
                 'Rs ${ride.offeredFare ?? '--'}',
                 style: const TextStyle(
                   color:      _C.primary,
-                  fontSize:   16,
-                  fontWeight: FontWeight.w800,
+                  fontSize:   18,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
 
           // Book button
           SizedBox(
             width: double.infinity,
-            height: 44,
+            height: 48,
             child: ElevatedButton(
               onPressed: () =>
                   Navigator.pushNamed(context, '/fare-negotiate',
@@ -497,13 +492,13 @@ class _RideResultCard extends StatelessWidget {
                 foregroundColor: _C.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
               child: const Text(
                 'Negotiate & Book',
                 style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w700,
+                  fontSize: 14, fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -528,28 +523,28 @@ class _RideChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color:        isAlert
-            ? Colors.orange.withOpacity(0.1)
-            : _C.light.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
+            ? _C.primary.withOpacity(0.1)
+            : _C.accent.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            size:  13,
-            color: isAlert ? Colors.orange : _C.primary,
+            size:  14,
+            color: isAlert ? _C.primary : _C.black,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
-              color:      isAlert ? Colors.orange : _C.primary,
-              fontSize:   11,
-              fontWeight: FontWeight.w600,
+              color:      isAlert ? _C.primary : _C.black,
+              fontSize:   12,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -557,3 +552,5 @@ class _RideChip extends StatelessWidget {
     );
   }
 }
+
+

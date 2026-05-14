@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // The "black"
+  static const accent    = Color(0xFF737A5D); // Secondary Accent
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class AccountCreatedScreen extends StatefulWidget {
@@ -55,7 +55,7 @@ class _AccountCreatedScreenState extends State<AccountCreatedScreen>
       body: Stack(
         children: [
           // Simple Confetti effect
-          ...List.generate(20, (index) => _ConfettiPiece(index: index)),
+          ...List.generate(25, (index) => _ConfettiPiece(index: index)),
           
           SafeArea(
             child: Padding(
@@ -72,77 +72,79 @@ class _AccountCreatedScreenState extends State<AccountCreatedScreen>
                       child: ScaleTransition(
                         scale: _scaleAnim,
                         child: Container(
-                          width: 100, height: 100,
+                          width: 110, height: 110,
                           decoration: BoxDecoration(
-                            color:        _C.primary.withOpacity(0.1),
+                            color:        _C.primary.withOpacity(0.15),
                             shape:        BoxShape.circle,
                             border: Border.all(
-                                color: _C.primary.withOpacity(0.2),
-                                width: 2),
+                                color: _C.primary.withOpacity(0.3),
+                                width: 3),
                           ),
                           child: const Icon(
                             Icons.check_rounded,
                             color: _C.primary,
-                            size:  54,
+                            size:  58,
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 32),
 
                     const Text(
                       "You're all set!",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color:        _C.textDark,
-                        fontSize:     28,
-                        fontWeight:   FontWeight.w800,
-                        letterSpacing: -0.5,
+                        fontSize:     30,
+                        fontWeight:   FontWeight.w900,
+                        letterSpacing: -1,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 10),
+                    const Text(
                       'Welcome to CarPool. Your account is\nactive and ready to use.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color:    _C.textMuted,
                         fontSize: 15,
                         height:   1.5,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
 
-                    const SizedBox(height: 36),
+                    const SizedBox(height: 40),
 
                     // Status checklist card
                     Container(
-                      padding:     const EdgeInsets.all(18),
+                      padding:     const EdgeInsets.all(22),
                       decoration: BoxDecoration(
                         color:        _C.white,
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color:      _C.dark.withOpacity(0.08),
-                            blurRadius: 16,
-                            offset:     const Offset(0, 4),
+                            color:      Colors.black.withOpacity(0.04),
+                            blurRadius: 20,
+                            offset:     const Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: Column(
+                      child: const Column(
                         children: [
-                          const _StatusItem(
+                          _StatusItem(
                             icon:      Icons.link_rounded,
                             label:     'Google account linked securely',
                             isDone:    true,
                           ),
-                          const SizedBox(height: 14),
-                          const _StatusItem(
+                          SizedBox(height: 18),
+                          _StatusItem(
                             icon:      Icons.account_balance_wallet_outlined,
-                            label:     'Wallet created · Top up to start',
+                            label:     'Wallet created · Ready to use',
                             isDone:    true,
                           ),
-                          const SizedBox(height: 14),
-                          const _StatusItem(
+                          SizedBox(height: 18),
+                          _StatusItem(
                             icon:      Icons.description_outlined,
                             label:     'Docs under review (24 hrs)',
                             isDone:    false,
@@ -156,7 +158,7 @@ class _AccountCreatedScreenState extends State<AccountCreatedScreen>
 
                     // CTA
                     SizedBox(
-                      height: 52,
+                      height: 56,
                       child: ElevatedButton(
                         onPressed: () =>
                             Navigator.pushReplacementNamed(context, '/home'),
@@ -164,22 +166,21 @@ class _AccountCreatedScreenState extends State<AccountCreatedScreen>
                           backgroundColor: _C.primary,
                           foregroundColor: _C.white,
                           elevation:   0,
-                          shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: const Text(
                           'Go to Dashboard',
                           style: TextStyle(
                             fontSize:   16,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
                     const Center(
                       child: Text(
@@ -189,6 +190,7 @@ class _AccountCreatedScreenState extends State<AccountCreatedScreen>
                           color:    _C.textMuted,
                           fontSize: 12,
                           height:   1.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -227,7 +229,8 @@ class _ConfettiPieceState extends State<_ConfettiPiece> with SingleTickerProvide
     _left = random.nextDouble() * 400;
     _top = -20.0;
     _size = random.nextDouble() * 10 + 5;
-    _color = [_C.primary, _C.light, Colors.amber, Colors.orange, Colors.pink][random.nextInt(5)];
+    // Using the earthy palette for confetti
+    _color = [_C.primary, _C.dark, _C.accent, const Color(0xFFCCBFA3), const Color(0xFF414833)][random.nextInt(5)];
     
     _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: 2000 + random.nextInt(1000)));
     _ctrl.forward();
@@ -279,27 +282,27 @@ class _StatusItem extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 40, height: 40,
+          width: 44, height: 44,
           decoration: BoxDecoration(
             color: isPending
-                ? const Color(0xFFFFF8E1)
-                : _C.light.withOpacity(0.4),
-            borderRadius: BorderRadius.circular(12),
+                ? _C.accent.withOpacity(0.12)
+                : _C.primary.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(
             icon,
-            color: isPending ? const Color(0xFFFF9800) : _C.primary,
-            size:  20,
+            color: isPending ? _C.accent : _C.primary,
+            size:  22,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         Expanded(
           child: Text(
             label,
             style: const TextStyle(
               color:      _C.textDark,
               fontSize:   14,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -307,10 +310,12 @@ class _StatusItem extends StatelessWidget {
           isDone
               ? Icons.check_circle_rounded
               : Icons.access_time_rounded,
-          color: isDone ? _C.primary : const Color(0xFFFF9800),
-          size:  20,
+          color: isDone ? Colors.green : _C.accent,
+          size:  22,
         ),
       ],
     );
   }
 }
+
+

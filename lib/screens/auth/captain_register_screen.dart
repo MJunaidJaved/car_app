@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,13 +8,14 @@ import '../../providers/user_provider.dart';
 import '../../utils/helpers.dart';
 
 class _C {
-  static const primary   = Color(0xFF39988E);
-  static const dark      = Color(0xFF1F6059);
-  static const light     = Color(0xFFB6D7D1);
-  static const bg        = Color(0xFFF5F5F5);
-  static const white     = Color(0xFFFFFFFF);
-  static const textDark  = Color(0xFF0D1F1E);
-  static const textMuted = Color(0xFF7A9E9B);
+  static const primary   = Color(0xFF414833); // Primary Action
+  static const dark      = Color(0xFF414833); // Header/Black
+  static const accent    = Color(0xFF737A5D); // Accent
+  static const black     = Color(0xFF414833);
+  static const white     = Color(0xFFF5E3D2);
+  static const textDark  = Color(0xFF414833);
+  static const textMuted = Color(0xFF737A5D);
+  static const bg        = Color(0xFFF5E3D2);
 }
 
 class CaptainRegisterScreen extends StatefulWidget {
@@ -39,23 +39,26 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: _C.black),
+                title: const Text('Choose from gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined, color: _C.black),
+                title: const Text('Take a photo', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -129,14 +132,14 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
       backgroundColor: _C.bg,
       body: Stack(
         children: [
-          // Teal header
+          // Gradient header
           Positioned(
             top: 0, left: 0, right: 0,
             child: Container(
               height: 200,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_C.dark, _C.primary],
+                  colors: [_C.dark, Color(0xFF414833)],
                   begin:  Alignment.topLeft,
                   end:    Alignment.bottomRight,
                 ),
@@ -144,18 +147,6 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                   bottomLeft:  Radius.circular(36),
                   bottomRight: Radius.circular(36),
                 ),
-              ),
-            ),
-          ),
-
-          // Decorative circle
-          Positioned(
-            top: -40, right: -40,
-            child: Container(
-              width: 160, height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _C.white.withOpacity(0.05),
               ),
             ),
           ),
@@ -194,15 +185,16 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                                 'Complete your profile',
                                 style: TextStyle(
                                   color:      _C.white,
-                                  fontSize:   18,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize:   20,
+                                  fontWeight: FontWeight.w900,
                                 ),
                               ),
                               Text(
                                 'Step 3 of 3  •  Captain Verification',
                                 style: TextStyle(
-                                  color:    _C.white.withOpacity(0.65),
+                                  color:    _C.white.withOpacity(0.75),
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
@@ -212,7 +204,7 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
                   // Progress bar
                   Padding(
@@ -222,8 +214,8 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                         return Expanded(
                           child: Container(
                             margin: EdgeInsets.only(
-                                right: i < 2 ? 6 : 0),
-                            height: 4,
+                                right: i < 2 ? 8 : 0),
+                            height: 6,
                             decoration: BoxDecoration(
                               color:        i <= 2
                                   ? _C.white
@@ -236,7 +228,7 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -245,18 +237,18 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-
-                          // Profile photo + name card
+                          // Profile card
                           Container(
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(22),
                             decoration: BoxDecoration(
                               color:        _C.white,
-                              borderRadius: BorderRadius.circular(22),
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
                               boxShadow: [
                                 BoxShadow(
-                                  color:      _C.dark.withOpacity(0.08),
-                                  blurRadius: 16,
-                                  offset:     const Offset(0, 4),
+                                  color:      Colors.black.withOpacity(0.02),
+                                  blurRadius: 20,
+                                  offset:     const Offset(0, 8),
                                 ),
                               ],
                             ),
@@ -265,37 +257,37 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                                 Stack(
                                   children: [
                                     CircleAvatar(
-                                      radius: 30,
+                                      radius: 32,
                                       backgroundColor:
-                                          _C.light.withOpacity(0.5),
+                                          _C.primary.withOpacity(0.1),
                                       child: Text(
                                         ((user?.name ?? 'U')[0]).toUpperCase(),
                                         style: const TextStyle(
                                           color:      _C.primary,
                                           fontSize:   24,
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w900,
                                         ),
                                       ),
                                     ),
                                     Positioned(
                                       bottom: 0, right: 0,
                                       child: Container(
-                                        width: 22, height: 22,
+                                        width: 24, height: 24,
                                         decoration: BoxDecoration(
                                           color:  _C.primary,
                                           shape:  BoxShape.circle,
                                           border: Border.all(
-                                              color: _C.white, width: 2),
+                                              color: _C.white, width: 2.5),
                                         ),
                                         child: const Icon(
                                           Icons.camera_alt_rounded,
-                                          color: _C.white, size: 11,
+                                          color: _C.white, size: 12,
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -305,8 +297,8 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                                         user?.name ?? 'Your Name',
                                         style: const TextStyle(
                                           color:      _C.textDark,
-                                          fontSize:   16,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize:   18,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
                                       Text(
@@ -314,25 +306,26 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                                         style: const TextStyle(
                                           color:    _C.textMuted,
                                           fontSize: 12,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 3),
+                                            horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color:        _C.primary
                                               .withOpacity(0.1),
                                           borderRadius:
-                                              BorderRadius.circular(20),
+                                              BorderRadius.circular(10),
                                         ),
                                         child: const Text(
-                                          'Captain Account',
+                                          'Captain Profile',
                                           style: TextStyle(
                                             color:      _C.primary,
                                             fontSize:   11,
-                                            fontWeight: FontWeight.w700,
+                                            fontWeight: FontWeight.w800,
                                           ),
                                         ),
                                       ),
@@ -343,9 +336,9 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
 
-                          // Phone number card
+                          // Phone card
                           _SectionCard(
                             title: 'Phone Number',
                             child: TextFormField(
@@ -354,12 +347,12 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                               style: const TextStyle(
                                 color:      _C.textDark,
                                 fontSize:   15,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w700,
                               ),
                               decoration: InputDecoration(
-                                hintText:  '+92 3XX XXXXXXX',
+                                hintText:  '03XX XXXXXXX',
                                 hintStyle: const TextStyle(
-                                    color: _C.textMuted),
+                                    color: _C.textMuted, fontWeight: FontWeight.w500),
                                 prefixIcon: Padding(
                                   padding: const EdgeInsets.all(12),
                                   child: Row(
@@ -369,34 +362,29 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                                         '🇵🇰',
                                         style: TextStyle(fontSize: 18),
                                       ),
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 10),
                                       Container(
-                                        width: 1, height: 20,
-                                        color: _C.light,
+                                        width: 1.5, height: 20,
+                                        color: const Color(0xFFCCBFA3),
                                       ),
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 10),
                                     ],
                                   ),
                                 ),
                                 filled:     true,
-                                fillColor:  const Color(0xFFF0F7F6),
+                                fillColor:  _C.white,
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide:   BorderSide.none,
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide:   const BorderSide(color: Color(0xFFCCBFA3)),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide:   BorderSide.none,
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide:   const BorderSide(color: Color(0xFFCCBFA3)),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(16),
                                   borderSide: const BorderSide(
-                                      color: _C.primary, width: 1.5),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: const BorderSide(
-                                      color: Colors.redAccent, width: 1.5),
+                                      color: _C.primary, width: 2),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 16),
@@ -411,70 +399,64 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
 
-                          // CNIC Upload Card
+                          // CNIC Card
                           _SectionCard(
                             title:    'CNIC & Documents',
                             trailing: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                                  horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
                                 color:        _C.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Text(
                                 'Captain only',
                                 style: TextStyle(
                                   color:      _C.primary,
                                   fontSize:   11,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
                             child: Column(
                               children: [
-                                // Upload area
-                                GestureDetector(
-                                  onTap: () => _pickCnic(front: true),
-                                  child: _UploadTile(
-                                    label:    'CNIC Front Side',
-                                    image:    _cnicFront,
-                                    onTap:    () => _pickCnic(front: true),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                GestureDetector(
-                                  onTap: () => _pickCnic(front: false),
-                                  child: _UploadTile(
-                                    label: 'CNIC Back Side',
-                                    image: _cnicBack,
-                                    onTap: () => _pickCnic(front: false),
-                                  ),
+                                _UploadTile(
+                                  label:    'CNIC Front Side',
+                                  image:    _cnicFront,
+                                  onTap:    () => _pickCnic(front: true),
                                 ),
                                 const SizedBox(height: 12),
-                                // Note
+                                _UploadTile(
+                                  label: 'CNIC Back Side',
+                                  image: _cnicBack,
+                                  onTap: () => _pickCnic(front: false),
+                                ),
+                                const SizedBox(height: 16),
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color:        const Color(0xFFFFF8E1),
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFFFD54F), width: 1),
                                   ),
                                   child: Row(
                                     children: [
                                       const Icon(
                                         Icons.info_outline_rounded,
                                         color: Color(0xFFFF9800),
-                                        size:  16,
+                                        size:  18,
                                       ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
+                                      const SizedBox(width: 10),
+                                      const Expanded(
                                         child: Text(
-                                          'JPG, PNG or PDF  •  Max 5MB each  •  Admin verifies within 24 hrs',
+                                          'Admin verifies docs within 24 hrs for Captain access.',
                                           style: TextStyle(
-                                            color:    _C.textMuted,
+                                            color:    _C.textDark,
                                             fontSize: 11,
                                             height:   1.4,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
@@ -485,54 +467,41 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 32),
 
                           // Submit button
                           SizedBox(
-                            height: 52,
+                            height: 56,
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _submit,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:         _C.primary,
                                 foregroundColor:         _C.white,
-                                disabledBackgroundColor: _C.light,
+                                disabledBackgroundColor: const Color(0xFFCCBFA3),
                                 elevation:   0,
-                                shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
                               child: _isLoading
                                   ? const SizedBox(
-                                      width: 22, height: 22,
+                                      width: 24, height: 24,
                                       child: CircularProgressIndicator(
                                         color:       _C.white,
-                                        strokeWidth: 2.5,
+                                        strokeWidth: 3,
                                       ),
                                     )
                                   : const Text(
                                       'Submit for Review',
                                       style: TextStyle(
                                         fontSize:   16,
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w900,
                                       ),
                                     ),
                             ),
                           ),
 
-                          const SizedBox(height: 12),
-
-                          Center(
-                            child: Text(
-                              'Admin verifies docs within 24 hours',
-                              style: TextStyle(
-                                color:    _C.textMuted,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 40),
                         ],
                       ),
                     ),
@@ -560,15 +529,16 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color:        _C.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
         boxShadow: [
           BoxShadow(
-            color:      _C.dark.withOpacity(0.07),
-            blurRadius: 12,
-            offset:     const Offset(0, 4),
+            color:      Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset:     const Offset(0, 6),
           ),
         ],
       ),
@@ -581,8 +551,8 @@ class _SectionCard extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   color:      _C.textDark,
-                  fontSize:   15,
-                  fontWeight: FontWeight.w700,
+                  fontSize:   16,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               if (trailing != null) ...[
@@ -591,7 +561,7 @@ class _SectionCard extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
           child,
         ],
       ),
@@ -616,15 +586,15 @@ class _UploadTile extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        padding:  const EdgeInsets.all(14),
+        padding:  const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color:        isDone
-              ? _C.primary.withOpacity(0.06)
-              : const Color(0xFFF0F7F6),
-          borderRadius: BorderRadius.circular(14),
+              ? _C.primary.withOpacity(0.05)
+              : _C.bg,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isDone ? _C.primary : _C.light,
-            width: isDone ? 1.5 : 1,
+            color: isDone ? _C.primary : const Color(0xFFCCBFA3),
+            width: isDone ? 2 : 1,
           ),
         ),
         child: Row(
@@ -632,52 +602,55 @@ class _UploadTile extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: SizedBox(
-                width:  48,
-                height: 48,
+                width:  52,
+                height: 52,
                 child: image != null
                     ? Image.file(
                         File(image!.path),
                         fit: BoxFit.cover,
                       )
                     : Container(
-                        color:        _C.light.withOpacity(0.4),
-                        child: Icon(
-                          Icons.upload_rounded,
-                          color: _C.textMuted,
-                          size:  22,
+                        color:        _C.primary.withOpacity(0.1),
+                        child: const Icon(
+                          Icons.add_photo_alternate_rounded,
+                          color: _C.primary,
+                          size:  24,
                         ),
                       ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
-                      color:      isDone ? _C.primary : _C.textDark,
-                      fontSize:   13,
-                      fontWeight: FontWeight.w600,
+                    style: const TextStyle(
+                      color:      _C.textDark,
+                      fontSize:   14,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
-                    isDone ? (image!.name) : 'Tap to upload',
+                    isDone ? (image!.name) : 'Tap to upload side',
                     style: TextStyle(
                       color:    isDone ? _C.primary : _C.textMuted,
                       fontSize: 11,
+                      fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
             Icon(
               isDone
-                  ? Icons.edit_outlined
+                  ? Icons.check_circle_rounded
                   : Icons.chevron_right_rounded,
-              color: isDone ? _C.primary : _C.textMuted,
-              size:  18,
+              color: isDone ? const Color(0xFF4A7C59) : const Color(0xFFCCBFA3),
+              size:  22,
             ),
           ],
         ),
@@ -685,3 +658,5 @@ class _UploadTile extends StatelessWidget {
     );
   }
 }
+
+
