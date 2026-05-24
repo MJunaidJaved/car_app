@@ -1,0 +1,114 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+import '../navigation/app_navigator.dart';
+import 'api_service.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('FCM background: ${message.data}');
+}
+
+class FcmService {
+  static Future<void> initialize() async {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    final messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission(alert: true, badge: true, sound: true);
+
+    await _registerToken();
+
+    messaging.onTokenRefresh.listen((token) async {
+      try {
+        await ApiService.patch('/auth/fcm-token', {'fcmToken': token});
+      } catch (e) {
+        debugPrint('FCM token refresh upload failed: $e');
+      }
+    });
+
+    FirebaseMessaging.onMessage.listen((message) {
+      final title = message.notification?.title ?? 'CarPool';
+      final body = message.notification?.body ?? '';
+      _showForegroundBanner(title, body);
+      debugPrint('FCM foreground: $title — $body');
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+    final initial = await messaging.getInitialMessage();
+    if (initial != null) {
+      _handleMessage(initial);
+    }
+  }
+
+  static Future<void> _registerToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await ApiService.patch('/auth/fcm-token', {'fcmToken': token});
+      }
+    } catch (e) {
+      debugPrint('FCM token register failed: $e');
+    }
+  }
+
+  static void _showForegroundBanner(String title, String body) {
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null) return;
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Text(body.isNotEmpty ? '$title\n$body' : title),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'View',
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
+  static void _handleMessage(RemoteMessage message) {
+    final data = message.data;
+    final type = data['type'] ?? '';
+    final rideId = data['rideId'];
+    final dealId = data['dealId'];
+
+    switch (type) {
+      case 'new_deal':
+        if (rideId != null && rideId.isNotEmpty) {
+          AppNavigator.state?.pushNamed('/requests', arguments: rideId);
+        } else {
+          AppNavigator.state?.pushNamed('/my-rides');
+        }
+        break;
+      case 'deal_confirmed':
+      case 'deal_cancelled':
+        AppNavigator.state?.pushNamed('/my-bookings');
+        break;
+      case 'ride_started':
+        if (rideId != null && rideId.isNotEmpty && dealId != null && dealId.isNotEmpty) {
+          AppNavigator.state?.pushNamed('/active-ride', arguments: {
+            'rideId': rideId,
+            'dealId': dealId,
+          });
+        } else {
+          AppNavigator.state?.pushNamed('/my-bookings');
+        }
+        break;
+      case 'ride_completed':
+        if (dealId != null && dealId.isNotEmpty) {
+          AppNavigator.state?.pushNamed('/rate-review', arguments: dealId);
+        } else {
+          AppNavigator.state?.pushNamed('/my-bookings');
+        }
+        break;
+      case 'deal_message':
+        if (dealId != null && dealId.isNotEmpty) {
+          AppNavigator.state?.pushNamed('/my-bookings');
+        }
+        break;
+      default:
+        AppNavigator.state?.pushNamed('/notifications');
+    }
+  }
+}
