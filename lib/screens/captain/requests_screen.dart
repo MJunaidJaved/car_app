@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_tracking_service.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/phone_utils.dart';
 import '../../widgets/deal_chat_panel.dart';
 
 class RequestsScreen extends StatefulWidget {
@@ -17,7 +19,8 @@ class RequestsScreen extends StatefulWidget {
   State<RequestsScreen> createState() => _RequestsScreenState();
 }
 
-class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProviderStateMixin {
+class _RequestsScreenState extends State<RequestsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
   String? _rideId;
   List<Map<String, dynamic>> _deals = [];
@@ -36,7 +39,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       _rideId = ModalRoute.of(context)?.settings.arguments as String?;
       _loadDeals();
       _subscribeDeals();
-      _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadDeals());
+      _pollTimer =
+          Timer.periodic(const Duration(seconds: 30), (_) => _loadDeals());
     });
   }
 
@@ -52,12 +56,19 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
 
   void _updateSeatCounts() {
     _confirmedSeats = _deals
-        .where((d) => ['confirmed', 'started', 'completed'].contains(d['status']))
+        .where(
+            (d) => ['confirmed', 'started', 'completed'].contains(d['status']))
         .length;
-    final ride = _deals.isNotEmpty ? _deals.first['ride'] as Map<String, dynamic>? : null;
+    final ride = _deals.isNotEmpty
+        ? _deals.first['ride'] as Map<String, dynamic>?
+        : null;
     _totalSeats = (ride?['totalSeats'] ?? 0) as int;
     if (_totalSeats == 0 && _rideId != null) {
-      FirebaseFirestore.instance.collection('rides').doc(_rideId).get().then((doc) {
+      FirebaseFirestore.instance
+          .collection('rides')
+          .doc(_rideId)
+          .get()
+          .then((doc) {
         if (doc.exists && mounted) {
           setState(() => _totalSeats = (doc.data()?['totalSeats'] ?? 0) as int);
         }
@@ -85,28 +96,74 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to load: $e')));
       }
     }
   }
 
   Future<void> _accept(String dealId) async {
     try {
-      await Provider.of<FirestoreService>(context, listen: false).confirmDeal(dealId);
+      await Provider.of<FirestoreService>(context, listen: false)
+          .confirmDeal(dealId);
       await Provider.of<UserProvider>(context, listen: false).reloadWallet();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request accepted — commission deducted')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Request accepted')),
+        );
         await _loadDeals();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      final insufficient = _parseInsufficientBalance(e.toString());
+      if (insufficient != null && mounted) {
+        final topUp = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Wallet Balance Low'),
+            content: Text(
+              'Wallet balance Rs.${insufficient.current.toStringAsFixed(0)}. Need Rs.${insufficient.required.toStringAsFixed(0)} to confirm. Top up?',
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel')),
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Top Up')),
+            ],
+          ),
+        );
+        if (topUp == true && mounted) {
+          Navigator.pushNamed(context, '/wallet');
+        }
+        return;
+      }
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  _InsufficientBalanceData? _parseInsufficientBalance(String errorText) {
+    try {
+      final start = errorText.indexOf('{');
+      if (start == -1) return null;
+      final jsonPart = errorText.substring(start);
+      final payload = jsonDecode(jsonPart) as Map<String, dynamic>;
+      if (payload['code'] != 'INSUFFICIENT_BALANCE') return null;
+      final required = (payload['required'] as num?)?.toDouble() ?? 0;
+      final current = (payload['current'] as num?)?.toDouble() ?? 0;
+      return _InsufficientBalanceData(required: required, current: current);
+    } catch (_) {
+      return null;
     }
   }
 
   Future<void> _startRide(String dealId) async {
     if (_rideId == null) return;
     try {
-      await Provider.of<FirestoreService>(context, listen: false).startDeal(dealId);
+      await Provider.of<FirestoreService>(context, listen: false)
+          .startDeal(dealId);
       _locationService.startCaptainTracking(_rideId!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -116,20 +173,25 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
 
   Future<void> _decline(String dealId) async {
     try {
-      await Provider.of<FirestoreService>(context, listen: false).cancelDeal(dealId);
+      await Provider.of<FirestoreService>(context, listen: false)
+          .cancelDeal(dealId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request declined')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Request declined')));
         await _loadDeals();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -160,7 +222,9 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       body: Stack(
         children: [
           Positioned(
-            top: 0, left: 0, right: 0,
+            top: 0,
+            left: 0,
+            right: 0,
             child: Container(
               height: 200,
               decoration: const BoxDecoration(
@@ -186,12 +250,14 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
-                          width: 40, height: 40,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: AppColors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.white, size: 18),
+                          child: const Icon(Icons.arrow_back_ios_new_rounded,
+                              color: AppColors.white, size: 18),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -199,12 +265,17 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Ride Requests', style: TextStyle(color: AppColors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+                            const Text('Ride Requests',
+                                style: TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800)),
                             Text(
                               _totalSeats > 0
                                   ? '$_confirmedSeats / $_totalSeats seats confirmed'
                                   : 'Accept or decline passengers',
-                              style: const TextStyle(color: Color(0xAAFFFFFF), fontSize: 13),
+                              style: const TextStyle(
+                                  color: Color(0xAAFFFFFF), fontSize: 13),
                             ),
                           ],
                         ),
@@ -223,10 +294,13 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                     ),
                     child: TabBar(
                       controller: _tabCtrl,
-                      indicator: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(14)),
+                      indicator: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(14)),
                       labelColor: AppColors.bark,
                       unselectedLabelColor: AppColors.white,
-                      labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                      labelStyle: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 14),
                       tabs: const [
                         Tab(text: 'Pending'),
                         Tab(text: 'Confirmed'),
@@ -256,6 +330,52 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
     );
   }
 
+  Widget _contactActions(String? phone) {
+    if (phone == null || phone.trim().isEmpty) {
+      return const Text(
+        'Customer phone not available yet',
+        style: TextStyle(color: AppColors.sage, fontSize: 12),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Customer: $phone',
+          style: const TextStyle(
+            color: AppColors.bark,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => dialPhone(context, phone),
+                icon: const Icon(Icons.call_outlined),
+                label: const Text('Call'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => openWhatsApp(context, phone),
+                icon: const Icon(Icons.chat_outlined),
+                label: const Text('WhatsApp'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.moss,
+                  foregroundColor: AppColors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildConfirmedList() {
     if (_confirmed.isEmpty) {
       return const Center(
@@ -273,6 +393,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
         final d = _confirmed[i];
         final customer = d['customer'] as Map<String, dynamic>? ?? {};
         final name = customer['name'] ?? d['customerName'] ?? 'Passenger';
+        final customerPhone =
+            customer['phone'] ?? d['customerPhone'] ?? d['passengerPhone'];
         final pickup = d['passengerPickupAddress']?.toString() ?? '';
         final drop = d['passengerDropAddress']?.toString() ?? '';
         final lat = (d['passengerPickupLat'] ?? 0).toDouble();
@@ -290,16 +412,26 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-              Text('Rs ${(d['agreedFare'] ?? 0).toString()}', style: const TextStyle(color: AppColors.moss, fontWeight: FontWeight.w800)),
+              Text(name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 16)),
+              Text('Rs ${(d['agreedFare'] ?? 0).toString()}',
+                  style: const TextStyle(
+                      color: AppColors.moss, fontWeight: FontWeight.w800)),
               if (pickup.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text('Pickup: $pickup', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text('Pickup: $pickup',
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600)),
               ],
               if (drop.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text('Drop: $drop', style: const TextStyle(fontSize: 12, color: AppColors.sage)),
+                Text('Drop: $drop',
+                    style:
+                        const TextStyle(fontSize: 12, color: AppColors.sage)),
               ],
+              const SizedBox(height: 10),
+              _contactActions(customerPhone?.toString()),
               if (lat != 0 && lng != 0) ...[
                 const SizedBox(height: 10),
                 ClipRRect(
@@ -349,17 +481,22 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildList(List<Map<String, dynamic>> deals, {required bool isPending}) {
+  Widget _buildList(List<Map<String, dynamic>> deals,
+      {required bool isPending}) {
     if (deals.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isPending ? Icons.hail_rounded : Icons.history_rounded, color: AppColors.moss.withOpacity(0.3), size: 64),
+            Icon(isPending ? Icons.hail_rounded : Icons.history_rounded,
+                color: AppColors.moss.withOpacity(0.3), size: 64),
             const SizedBox(height: 12),
             Text(
               isPending ? 'No pending requests.' : 'No responded requests yet.',
-              style: const TextStyle(color: AppColors.sage, fontSize: 16, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  color: AppColors.sage,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -373,7 +510,10 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
         final d = deals[i];
         final customer = d['customer'] as Map<String, dynamic>? ?? {};
         final name = customer['name'] ?? d['customerName'] ?? 'Passenger';
-        final initials = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
+        final customerPhone =
+            customer['phone'] ?? d['customerPhone'] ?? d['passengerPhone'];
+        final initials =
+            name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
         final fare = (d['agreedFare'] ?? 0).toDouble();
         final dealId = d['id'] ?? '';
 
@@ -393,40 +533,61 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: AppColors.moss.withOpacity(0.1),
-                    child: Text(initials, style: const TextStyle(color: AppColors.moss, fontWeight: FontWeight.w800)),
+                    child: Text(initials,
+                        style: const TextStyle(
+                            color: AppColors.moss,
+                            fontWeight: FontWeight.w800)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.bark)),
-                        Text('${(customer['rating'] ?? 0).toString()} rating', style: const TextStyle(color: AppColors.sage, fontSize: 12)),
+                        Text(name,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                color: AppColors.bark)),
+                        Text('${(customer['rating'] ?? 0).toString()} rating',
+                            style: const TextStyle(
+                                color: AppColors.sage, fontSize: 12)),
                       ],
                     ),
                   ),
-                  Text('Rs ${fare.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.moss, fontWeight: FontWeight.w900, fontSize: 16)),
+                  Text('Rs ${fare.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                          color: AppColors.moss,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16)),
                 ],
               ),
               if ((d['customerMessage'] ?? '').toString().isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text(d['customerMessage'], style: const TextStyle(color: AppColors.sage, fontSize: 13)),
+                Text(d['customerMessage'],
+                    style:
+                        const TextStyle(color: AppColors.sage, fontSize: 13)),
               ],
               if (isPending &&
-                  (d['passengerPickupAddress']?.toString() ?? '').isNotEmpty) ...[
+                  (d['passengerPickupAddress']?.toString() ?? '')
+                      .isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Pickup: ${d['passengerPickupAddress']}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
               if (!isPending && dealId.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 DealChatPanel(dealId: dealId, height: 120),
+                const SizedBox(height: 12),
+                _contactActions(customerPhone?.toString()),
               ],
               if (!isPending) ...[
                 const SizedBox(height: 12),
-                Text('Status: ${d['status']}', style: const TextStyle(color: AppColors.bark, fontWeight: FontWeight.w700)),
+                Text('Status: ${d['status']}',
+                    style: const TextStyle(
+                        color: AppColors.bark, fontWeight: FontWeight.w700)),
                 if (d['status'] == 'confirmed') ...[
                   const SizedBox(height: 12),
                   SizedBox(
@@ -437,13 +598,15 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                         backgroundColor: AppColors.bark,
                         foregroundColor: AppColors.white,
                       ),
-                      child: const Text('Start Ride', style: TextStyle(fontWeight: FontWeight.w800)),
+                      child: const Text('Start Ride',
+                          style: TextStyle(fontWeight: FontWeight.w800)),
                     ),
                   ),
                 ],
                 if (d['status'] == 'started') ...[
                   const SizedBox(height: 8),
-                  const Text('Location sharing active', style: TextStyle(color: AppColors.moss, fontSize: 12)),
+                  const Text('Location sharing active',
+                      style: TextStyle(color: AppColors.moss, fontSize: 12)),
                 ],
               ],
               if (isPending) ...[
@@ -460,7 +623,9 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () => _accept(dealId),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.moss, foregroundColor: AppColors.white),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.moss,
+                            foregroundColor: AppColors.white),
                         child: const Text('Accept'),
                       ),
                     ),
@@ -473,4 +638,10 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       },
     );
   }
+}
+
+class _InsufficientBalanceData {
+  final double required;
+  final double current;
+  _InsufficientBalanceData({required this.required, required this.current});
 }

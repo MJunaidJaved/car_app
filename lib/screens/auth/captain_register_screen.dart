@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 
 import '../../providers/user_provider.dart';
 import '../../services/auth_service.dart';
-import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/helpers.dart';
 
@@ -36,12 +35,20 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
   final _emergencyPhoneCtrl = TextEditingController();
 
   static const _cities = [
-    'Lahore', 'Karachi', 'Islamabad', 'Rawalpindi',
-    'Faisalabad', 'Multan', 'Peshawar', 'Quetta',
+    'Lahore',
+    'Karachi',
+    'Islamabad',
+    'Rawalpindi',
+    'Faisalabad',
+    'Multan',
+    'Peshawar',
+    'Quetta',
   ];
 
   final ImagePicker _picker = ImagePicker();
   String? _city;
+  String? _gender;
+  String? _captainVehicleType;
   bool _isLoading = false;
 
   XFile? _cnicFront;
@@ -127,25 +134,36 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
       AppHelpers.showSnackBar(context, 'Select your city', isError: true);
       return;
     }
+      if (_gender == null) {
+        AppHelpers.showSnackBar(context, 'Select your gender', isError: true);
+        return;
+      }
+      if (_captainVehicleType == null) {
+        AppHelpers.showSnackBar(context, 'Select your vehicle type', isError: true);
+        return;
+      }
 
     // CNIC Front is REQUIRED
     if (_cnicFront == null) {
       debugPrint('DEBUG: Validation failed - CNIC Front image missing!');
-      AppHelpers.showSnackBar(context, 'Please upload CNIC Front', isError: true);
+      AppHelpers.showSnackBar(context, 'Please upload CNIC Front',
+          isError: true);
       return;
     }
 
     // CNIC Back is REQUIRED
     if (_cnicBack == null) {
       debugPrint('DEBUG: Validation failed - CNIC Back image missing!');
-      AppHelpers.showSnackBar(context, 'Please upload CNIC Back', isError: true);
+      AppHelpers.showSnackBar(context, 'Please upload CNIC Back',
+          isError: true);
       return;
     }
 
     // Car Photo is REQUIRED
     if (_vehiclePhoto == null) {
       debugPrint('DEBUG: Validation failed - Car photo missing!');
-      AppHelpers.showSnackBar(context, 'Please upload car photo', isError: true);
+      AppHelpers.showSnackBar(context, 'Please upload car photo',
+          isError: true);
       return;
     }
 
@@ -160,27 +178,34 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
       final cnicBackUrl = await _uploadImageToImgBB(_cnicBack!, 'cnic_back');
 
       // Upload car photo (REQUIRED)
-      final vehiclePhotoUrl = await _uploadImageToImgBB(_vehiclePhoto!, 'vehicle');
+      final vehiclePhotoUrl =
+          await _uploadImageToImgBB(_vehiclePhoto!, 'vehicle');
 
       // Send captain data to backend
       debugPrint('DEBUG: Sending data to backend...');
-      await ApiService.patch('/auth/profile/captain', {
-        'phone': _phoneCtrl.text.trim(),
-        'captainVerificationStatus': 'pending_verification',
-        'cnicFrontUrl': cnicFrontUrl,
-        'cnicBackUrl': cnicBackUrl,
-        'vehiclePhotoUrl': vehiclePhotoUrl,
-        'cnic': _cnicCtrl.text.trim(),
-        'city': _city,
-        'vehicleMake': _makeCtrl.text.trim(),
-        'vehicleModel': _modelCtrl.text.trim(),
-        'vehicleColor': _colorCtrl.text.trim(),
-        'vehicleRegistration': _regCtrl.text.trim(),
-        'vehicleYear': int.parse(_yearCtrl.text.trim()),
-        'vehicleSeats': int.parse(_seatsCtrl.text.trim()),
-        'emergencyContactName': _emergencyNameCtrl.text.trim(),
-        'emergencyContactPhone': _emergencyPhoneCtrl.text.trim(),
-      });
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = await authService.syncRole(
+        role: 'captain',
+        phone: _phoneCtrl.text.trim(),
+        gender: _gender,
+        captainVerificationStatus: 'pending_verification',
+        cnicFrontUrl: cnicFrontUrl,
+        cnicBackUrl: cnicBackUrl,
+        vehiclePhotoUrl: vehiclePhotoUrl,
+        cnic: _cnicCtrl.text.trim(),
+        city: _city,
+        vehicleMake: _makeCtrl.text.trim(),
+        vehicleModel: _modelCtrl.text.trim(),
+        captainVehicleType: _captainVehicleType,
+        vehicleColor: _colorCtrl.text.trim(),
+        vehicleRegistration: _regCtrl.text.trim(),
+        vehicleYear: int.parse(_yearCtrl.text.trim()),
+        vehicleSeats: int.parse(_seatsCtrl.text.trim()),
+        emergencyContactName: _emergencyNameCtrl.text.trim(),
+        emergencyContactPhone: _emergencyPhoneCtrl.text.trim(),
+      );
+      userProvider.setUser(user);
 
       debugPrint('DEBUG: Captain registration successful!');
       if (!mounted) return;
@@ -243,7 +268,8 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
             _UploadTile(
               label: 'Upload Car Photo',
               image: _vehiclePhoto,
-              onTap: () => _pickImage(onPicked: (f) => setState(() => _vehiclePhoto = f)),
+              onTap: () => _pickImage(
+                  onPicked: (f) => setState(() => _vehiclePhoto = f)),
             ),
             const SizedBox(height: 20),
 
@@ -264,9 +290,37 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
             DropdownButtonFormField<String>(
               value: _city,
               decoration: _inputDecoration('City'),
-              items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+              items: _cities
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .toList(),
               onChanged: (v) => setState(() => _city = v),
               validator: (v) => v == null ? 'Select city' : null,
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _gender,
+              decoration: _inputDecoration('Gender'),
+              items: const [
+                DropdownMenuItem(value: 'male', child: Text('Male')),
+                DropdownMenuItem(value: 'female', child: Text('Female')),
+              ],
+              onChanged: (v) => setState(() => _gender = v),
+              validator: (v) => v == null ? 'Select gender' : null,
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _captainVehicleType,
+              decoration: _inputDecoration('Captain Vehicle Type'),
+              items: const [
+                DropdownMenuItem(value: 'car', child: Text('Car')),
+                DropdownMenuItem(value: 'bike', child: Text('Bike')),
+                DropdownMenuItem(value: 'bus', child: Text('Bus')),
+                DropdownMenuItem(value: 'truck', child: Text('Truck')),
+                DropdownMenuItem(value: 'shazore', child: Text('Shazore')),
+                DropdownMenuItem(value: 'tour', child: Text('Tour')),
+              ],
+              onChanged: (v) => setState(() => _captainVehicleType = v),
+              validator: (v) => v == null ? 'Select vehicle type' : null,
             ),
             const SizedBox(height: 20),
 
@@ -286,13 +340,15 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
             _UploadTile(
               label: 'CNIC Front (Required)',
               image: _cnicFront,
-              onTap: () => _pickImage(onPicked: (f) => setState(() => _cnicFront = f)),
+              onTap: () =>
+                  _pickImage(onPicked: (f) => setState(() => _cnicFront = f)),
             ),
             const SizedBox(height: 10),
             _UploadTile(
               label: 'CNIC Back (Required)',
               image: _cnicBack,
-              onTap: () => _pickImage(onPicked: (f) => setState(() => _cnicBack = f)),
+              onTap: () =>
+                  _pickImage(onPicked: (f) => setState(() => _cnicBack = f)),
             ),
             const SizedBox(height: 20),
 
@@ -330,7 +386,9 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                     decoration: _inputDecoration('Year'),
                     validator: (v) {
                       final y = int.tryParse(v ?? '');
-                      if (y == null || y < 1990 || y > DateTime.now().year + 1) {
+                      if (y == null ||
+                          y < 1990 ||
+                          y > DateTime.now().year + 1) {
                         return 'Invalid year';
                       }
                       return null;
@@ -386,9 +444,9 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                 child: _isLoading
                     ? const CircularProgressIndicator(color: AppColors.white)
                     : const Text(
-                  'Submit for Review',
-                  style: TextStyle(fontWeight: FontWeight.w900),
-                ),
+                        'Submit for Review',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
               ),
             ),
             const SizedBox(height: 32),
@@ -402,23 +460,23 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
       (v == null || v.trim().isEmpty) ? 'Required' : null;
 
   Widget _sectionTitle(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: Text(
-      text,
-      style: const TextStyle(
-        color: AppColors.textDark,
-        fontSize: 16,
-        fontWeight: FontWeight.w800,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: AppColors.textDark,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
 
   InputDecoration _inputDecoration(String label) => InputDecoration(
-    labelText: label,
-    filled: true,
-    fillColor: AppColors.white,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-  );
+        labelText: label,
+        filled: true,
+        fillColor: AppColors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      );
 }
 
 class _UploadTile extends StatelessWidget {
@@ -456,7 +514,8 @@ class _UploadTile extends StatelessWidget {
                 height: 48,
                 child: done
                     ? Image.file(File(image!.path), fit: BoxFit.cover)
-                    : const Icon(Icons.add_a_photo_outlined, color: AppColors.primary),
+                    : const Icon(Icons.add_a_photo_outlined,
+                        color: AppColors.primary),
               ),
             ),
             const SizedBox(width: 12),

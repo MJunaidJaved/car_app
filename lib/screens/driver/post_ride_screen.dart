@@ -7,9 +7,8 @@ import 'package:geocoding/geocoding.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/helpers.dart';
 import '../../widgets/app_widgets.dart';
-import '../../widgets/places_autocomplete_field.dart';
 import '../../utils/captain_profile_utils.dart';
-import '../../models/ride_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/ride_service.dart';
 
@@ -28,6 +27,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
   final _descCtrl  = TextEditingController();
 
   String    _rideType    = 'office';
+  String    _rideMode    = 'share';
   bool      _isLoading   = false;
   DateTime  _date        = DateTime.now();
   TimeOfDay _time        = const TimeOfDay(hour: 8, minute: 0);
@@ -41,6 +41,15 @@ class _PostRideScreenState extends State<PostRideScreen> {
   final _types = ['office', 'random', 'delivery', 'tour'];
 
   String get _aiSuggestedFare => 'Rs 120';
+
+  String _vehicleTypeForCaptain(UserModel? user) {
+    final saved = (user?.captainVehicleType ?? '').trim().toLowerCase();
+    if (_rideType == 'tour') return 'tour';
+    if (['car', 'bike', 'bus', 'truck', 'shazore'].contains(saved)) {
+      return saved;
+    }
+    return 'car';
+  }
 
   @override
   void initState() {
@@ -190,23 +199,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
         return;
       }
 
-      if (_startLat == 0.0 && _startLng == 0.0) {
-        AppHelpers.showSnackBar(
-          context,
-          'Select pickup from location suggestions',
-          isError: true,
-        );
-        return;
-      }
-      if (_endLat == 0.0 && _endLng == 0.0) {
-        AppHelpers.showSnackBar(
-          context,
-          'Select destination from location suggestions',
-          isError: true,
-        );
-        return;
-      }
-
       final departureTime = DateTime(
         _date.year, _date.month, _date.day,
         _time.hour, _time.minute,
@@ -216,8 +208,10 @@ class _PostRideScreenState extends State<PostRideScreen> {
         startLocation:   _fromCtrl.text.trim(),
         endLocation:     _toCtrl.text.trim(),
         suggestedFare:   double.tryParse(_fareCtrl.text) ?? 0.0,
-        totalSeats:      int.tryParse(_seatsCtrl.text) ?? 1,
+        totalSeats:      _rideMode == 'solo' ? 1 : (int.tryParse(_seatsCtrl.text) ?? 1),
         rideType:        _rideType,
+        vehicleType:     _vehicleTypeForCaptain(user),
+        rideMode:        _rideMode,
         departureTime:   departureTime.toIso8601String(),
         acceptsDelivery: _rideType == 'delivery',
         startLat:        _startLat,
@@ -323,33 +317,25 @@ class _PostRideScreenState extends State<PostRideScreen> {
                             title: 'Route',
                             child: Column(
                               children: [
-                                PlacesAutocompleteField(
+                                TextFormField(
                                   controller: _fromCtrl,
-                                  label: 'From',
-                                  icon: Icons.my_location_rounded,
+                                  decoration: const InputDecoration(
+                                    labelText: 'From',
+                                    border: OutlineInputBorder(),
+                                  ),
                                   validator: (v) =>
                                       (v == null || v.isEmpty) ? 'Enter pickup' : null,
-                                  onPlaceSelected: (latLng) {
-                                    setState(() {
-                                      _startLat = latLng.latitude;
-                                      _startLng = latLng.longitude;
-                                    });
-                                  },
                                 ),
                                 const SizedBox(height: 12),
-                                PlacesAutocompleteField(
+                                TextFormField(
                                   controller: _toCtrl,
-                                  label: 'To',
-                                  icon: Icons.location_on_outlined,
+                                  decoration: const InputDecoration(
+                                    labelText: 'To',
+                                    border: OutlineInputBorder(),
+                                  ),
                                   validator: (v) => (v == null || v.isEmpty)
                                       ? 'Enter destination'
                                       : null,
-                                  onPlaceSelected: (latLng) {
-                                    setState(() {
-                                      _endLat = latLng.latitude;
-                                      _endLng = latLng.longitude;
-                                    });
-                                  },
                                 ),
                                 const SizedBox(height: 8),
                                 Align(
@@ -359,14 +345,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                       final temp = _fromCtrl.text;
                                       _fromCtrl.text = _toCtrl.text;
                                       _toCtrl.text = temp;
-                                      final tmpLat = _startLat;
-                                      final tmpLng = _startLng;
-                                      setState(() {
-                                        _startLat = _endLat;
-                                        _startLng = _endLng;
-                                        _endLat = tmpLat;
-                                        _endLng = tmpLng;
-                                      });
+                                      setState(() {});
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(8),
@@ -412,6 +391,31 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                       ),
                                     ),
                                   ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          _SectionCard(
+                            title: 'Ride Mode',
+                            child: Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: ['share', 'solo'].map((mode) {
+                                final selected = _rideMode == mode;
+                                return ChoiceChip(
+                                  label: Text(mode[0].toUpperCase() + mode.substring(1)),
+                                  selected: selected,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _rideMode = mode;
+                                      if (_rideMode == 'solo') {
+                                        _seatsCtrl.text = '1';
+                                      }
+                                    });
+                                  },
                                 );
                               }).toList(),
                             ),
@@ -465,17 +469,25 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 12),
-                                AppField(
+                                TextFormField(
                                   controller: _seatsCtrl,
-                                  label: 'Available seats',
-                                  icon: Icons.event_seat_rounded,
                                   keyboardType: TextInputType.number,
+                                  enabled: _rideMode != 'solo',
                                   validator: (v) {
+                                    if (_rideMode == 'solo') return null;
                                     if (v == null || v.isEmpty) return 'Enter seats';
                                     final n = int.tryParse(v);
                                     if (n == null || n < 1 || n > 6) return '1 to 6 seats';
                                     return null;
                                   },
+                                  decoration: InputDecoration(
+                                    labelText: 'Available seats',
+                                    prefixIcon: const Icon(Icons.event_seat_rounded),
+                                    helperText: _rideMode == 'solo'
+                                        ? 'Solo ride keeps seats fixed to 1'
+                                        : null,
+                                    border: const OutlineInputBorder(),
+                                  ),
                                 ),
                               ],
                             ),

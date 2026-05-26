@@ -6,7 +6,6 @@ import 'package:geolocator/geolocator.dart';
 import '../../providers/user_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
-import '../../models/ride_model.dart';
 import '../../utils/captain_profile_utils.dart';
 
 class CaptainHomeScreen extends StatefulWidget {
@@ -19,6 +18,8 @@ class CaptainHomeScreen extends StatefulWidget {
 class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
   bool _isOnline = true;
   Map<String, dynamic>? _activeRide;
+  List<Map<String, dynamic>> _latestRides = [];
+  Map<String, int> _pendingRequestsByRide = {};
   double _walletBalance = 0;
   List<Map<String, dynamic>> _recentTransactions = [];
   GoogleMapController? _mapController;
@@ -36,6 +37,13 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
     try {
       final ridesRes = await ApiService.get('/rides/my-rides');
       final rides = List<Map<String, dynamic>>.from(ridesRes['rides'] ?? []);
+      rides.sort((a, b) {
+        final aAt = DateTime.tryParse((a['createdAt'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final bAt = DateTime.tryParse((b['createdAt'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        return bAt.compareTo(aAt);
+      });
       Map<String, dynamic>? active;
       for (final r in rides) {
         if (r['status'] == 'active') {
@@ -45,9 +53,25 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       }
       final walletRes = await ApiService.get('/wallet');
       final txRes = await ApiService.get('/wallet/transactions');
+      final pendingMap = <String, int>{};
+      for (final ride in rides.take(10)) {
+        final rideId = (ride['id'] ?? '').toString();
+        if (rideId.isEmpty) continue;
+        try {
+          final dealsRes = await ApiService.get('/deals/ride/$rideId');
+          final deals = List<Map<String, dynamic>>.from(dealsRes['deals'] ?? []);
+          pendingMap[rideId] = deals
+              .where((d) => (d['status'] ?? '').toString().toLowerCase() == 'pending')
+              .length;
+        } catch (_) {
+          pendingMap[rideId] = 0;
+        }
+      }
       if (mounted) {
         setState(() {
           _activeRide = active;
+          _latestRides = rides.take(10).toList();
+          _pendingRequestsByRide = pendingMap;
           _walletBalance = (walletRes['wallet']?['balance'] ?? 0).toDouble();
           _recentTransactions =
               List<Map<String, dynamic>>.from(txRes['transactions'] ?? [])
@@ -72,7 +96,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
     if (!CaptainProfileUtils.isProfileComplete(user)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Complete your captain profile checklist before posting rides.'),
+          content: Text(
+              'Complete your captain profile checklist before posting rides.'),
         ),
       );
       return;
@@ -167,13 +192,17 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                               ),
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded, color: AppColors.moss, size: 14),
+                                  const Icon(Icons.star_rounded,
+                                      color: AppColors.moss, size: 14),
                                   const SizedBox(width: 4),
                                   Text(
                                     (user?.totalRides ?? 0) == 0
                                         ? 'New Captain'
                                         : '${(user?.rating ?? 0).toStringAsFixed(1)} Rating',
-                                    style: const TextStyle(color: AppColors.sage, fontSize: 12, fontWeight: FontWeight.w600),
+                                    style: const TextStyle(
+                                        color: AppColors.sage,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -181,15 +210,19 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/notifications'),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/notifications'),
                           child: Container(
-                            width: 42, height: 42,
+                            width: 42,
+                            height: 42,
                             decoration: BoxDecoration(
                               color: AppColors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.sage.withOpacity(0.3)),
+                              border: Border.all(
+                                  color: AppColors.sage.withOpacity(0.3)),
                             ),
-                            child: const Icon(Icons.notifications_none_rounded, color: AppColors.bark, size: 22),
+                            child: const Icon(Icons.notifications_none_rounded,
+                                color: AppColors.bark, size: 22),
                           ),
                         ),
                       ],
@@ -205,11 +238,13 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                         decoration: BoxDecoration(
                           color: Colors.orange.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                          border:
+                              Border.all(color: Colors.orange.withOpacity(0.3)),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.verified_user_outlined, color: Colors.orange, size: 28),
+                            Icon(Icons.verified_user_outlined,
+                                color: Colors.orange, size: 28),
                             SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -246,7 +281,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.sage.withOpacity(0.3)),
+                          border: Border.all(
+                              color: AppColors.sage.withOpacity(0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,7 +297,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             ),
                             const SizedBox(height: 12),
                             ...profileItems.map(
-                                  (item) => Padding(
+                              (item) => Padding(
                                 padding: const EdgeInsets.only(bottom: 6),
                                 child: Row(
                                   children: [
@@ -335,7 +371,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                 Marker(
                                   markerId: const MarkerId('captain'),
                                   position: _currentLocation,
-                                  infoWindow: const InfoWindow(title: 'Your Location'),
+                                  infoWindow:
+                                      const InfoWindow(title: 'Your Location'),
                                   icon: BitmapDescriptor.defaultMarkerWithHue(
                                     _isOnline
                                         ? BitmapDescriptor.hueGreen
@@ -352,39 +389,65 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
 
                             // Online/Offline overlay at bottom of map
                             Positioned(
-                              bottom: 0, left: 0, right: 0,
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
                                 decoration: BoxDecoration(
                                   color: AppColors.bark.withOpacity(0.92),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          _isOnline ? 'Waiting for requests...' : 'Go online to start earning',
-                                          style: const TextStyle(color: AppColors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                                          _isOnline
+                                              ? 'Waiting for requests...'
+                                              : 'Go online to start earning',
+                                          style: const TextStyle(
+                                              color: AppColors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700),
                                         ),
                                         Text(
-                                          _isOnline ? 'Visible to passengers' : 'Currently Offline',
-                                          style: TextStyle(color: AppColors.white.withOpacity(0.7), fontSize: 11),
+                                          _isOnline
+                                              ? 'Visible to passengers'
+                                              : 'Currently Offline',
+                                          style: TextStyle(
+                                              color: AppColors.white
+                                                  .withOpacity(0.7),
+                                              fontSize: 11),
                                         ),
                                       ],
                                     ),
                                     GestureDetector(
-                                      onTap: () => setState(() => _isOnline = !_isOnline),
+                                      onTap: () => setState(
+                                          () => _isOnline = !_isOnline),
                                       child: AnimatedContainer(
-                                        duration: const Duration(milliseconds: 300),
-                                        width: 44, height: 44,
+                                        duration:
+                                            const Duration(milliseconds: 300),
+                                        width: 44,
+                                        height: 44,
                                         decoration: BoxDecoration(
-                                          color: _isOnline ? AppColors.moss : AppColors.sage.withOpacity(0.3),
+                                          color: _isOnline
+                                              ? AppColors.moss
+                                              : AppColors.sage.withOpacity(0.3),
                                           shape: BoxShape.circle,
-                                          border: Border.all(color: AppColors.white.withOpacity(0.2), width: 2),
+                                          border: Border.all(
+                                              color: AppColors.white
+                                                  .withOpacity(0.2),
+                                              width: 2),
                                         ),
-                                        child: const Icon(Icons.power_settings_new_rounded, color: AppColors.white, size: 20),
+                                        child: const Icon(
+                                            Icons.power_settings_new_rounded,
+                                            color: AppColors.white,
+                                            size: 20),
                                       ),
                                     ),
                                   ],
@@ -409,7 +472,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             title: 'Wallet Balance',
                             value: 'Rs ${_walletBalance.toStringAsFixed(0)}',
                             icon: Icons.payments_rounded,
-                            onTap: () => Navigator.pushNamed(context, '/wallet'),
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/wallet'),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -420,7 +484,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             icon: Icons.inbox_rounded,
                             onTap: () {
                               if (_activeRide != null) {
-                                Navigator.pushNamed(context, '/requests', arguments: _activeRide!['id']);
+                                Navigator.pushNamed(context, '/requests',
+                                    arguments: _activeRide!['id']);
                               } else {
                                 Navigator.pushNamed(context, '/my-rides');
                               }
@@ -439,34 +504,42 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
                       'Quick Actions',
-                      style: TextStyle(color: AppColors.bark, fontSize: 18, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                          color: AppColors.bark,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _QuickActionCard(
-                          label: 'Post a Ride',
-                          icon: Icons.directions_car_rounded,
-                          onTap: () => _tryOpenPostRide(context),
-                        ),
-                        _QuickActionCard(
-                          label: 'Create Tour',
-                          icon: Icons.map_rounded,
-                          onTap: () => _tryOpenPostRide(
-                            context,
-                            args: {'type': 'tour'},
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _QuickActionCard(
+                            label: 'Post a Ride',
+                            icon: Icons.directions_car_rounded,
+                            onTap: () => _tryOpenPostRide(context),
                           ),
-                        ),
-                        _QuickActionCard(
-                          label: 'My Rides',
-                          icon: Icons.list_alt_rounded,
-                          onTap: () => Navigator.pushNamed(context, '/my-rides'),
-                        ),
-                      ],
+                          const SizedBox(width: 16),
+                          _QuickActionCard(
+                            label: 'Create Tour',
+                            icon: Icons.map_rounded,
+                            onTap: () => _tryOpenPostRide(
+                              context,
+                              args: {'type': 'tour'},
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          _QuickActionCard(
+                            label: 'My Rides',
+                            icon: Icons.list_alt_rounded,
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/my-rides'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -480,51 +553,148 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                       children: [
                         const Text(
                           'Recent Requests',
-                          style: TextStyle(color: AppColors.bark, fontSize: 18, fontWeight: FontWeight.w800),
+                          style: TextStyle(
+                              color: AppColors.bark,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800),
                         ),
                         GestureDetector(
                           onTap: () {
                             if (_activeRide != null) {
-                              Navigator.pushNamed(context, '/requests', arguments: _activeRide!['id']);
+                              Navigator.pushNamed(context, '/requests',
+                                  arguments: _activeRide!['id']);
                             } else {
                               Navigator.pushNamed(context, '/my-rides');
                             }
                           },
-                          child: const Text('See all', style: TextStyle(color: AppColors.moss, fontSize: 14, fontWeight: FontWeight.w700)),
+                          child: const Text('See all',
+                              style: TextStyle(
+                                  color: AppColors.moss,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700)),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (_activeRide != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.sage.withOpacity(0.2)),
+                  if (_latestRides.isNotEmpty)
+                    ..._latestRides.map((ride) {
+                      final rideId = (ride['id'] ?? '').toString();
+                      final start = (ride['startLocation'] ?? 'Unknown').toString();
+                      final end = (ride['endLocation'] ?? 'Unknown').toString();
+                      final fare = (ride['suggestedFare'] ?? 0).toString();
+                      final status = (ride['status'] ?? '').toString();
+                      final pendingCount = _pendingRequestsByRide[rideId] ?? 0;
+                      return Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (rideId.isEmpty) return;
+                            Navigator.pushNamed(
+                              context,
+                              '/requests',
+                              arguments: rideId,
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: AppColors.sage.withOpacity(0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$start -> $end',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.bark,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Rs $fare',
+                                      style: const TextStyle(
+                                        color: AppColors.moss,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.bg,
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        status.toUpperCase(),
+                                        style: const TextStyle(
+                                          color: AppColors.bark,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (pendingCount > 0) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'New requests: $pendingCount',
+                                    style: const TextStyle(
+                                      color: AppColors.moss,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'Tap to open ride details and all customer requests',
+                                        style: TextStyle(
+                                          color: AppColors.sage,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    OutlinedButton(
+                                      onPressed: () {
+                                        if (rideId.isEmpty) return;
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/requests',
+                                          arguments: rideId,
+                                        );
+                                      },
+                                      child: const Text('Details'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${_activeRide!['startLocation']} → ${_activeRide!['endLocation']}',
-                                style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.bark)),
-                            const SizedBox(height: 8),
-                            Text('Rs ${(_activeRide!['suggestedFare'] ?? 0).toString()}',
-                                style: const TextStyle(color: AppColors.moss, fontWeight: FontWeight.w900)),
-                          ],
-                        ),
-                      ),
-                    )
+                      );
+                    })
                   else
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Text('No active rides. Post a ride to receive requests.',
+                      child: Text(
+                          'No active rides. Post a ride to receive requests.',
                           style: TextStyle(color: AppColors.sage)),
                     ),
-
                   const SizedBox(height: 30),
 
                   // Recent Activity Section
@@ -532,7 +702,10 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
                       'Recent Activity',
-                      style: TextStyle(color: AppColors.bark, fontSize: 18, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                          color: AppColors.bark,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -543,7 +716,11 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                           style: TextStyle(color: AppColors.sage)),
                     )
                   else
-                    ..._recentTransactions.map((tx) {
+                    ..._recentTransactions
+                        .where((tx) =>
+                            (tx['type'] ?? '').toString().toLowerCase() !=
+                            'commission')
+                        .map((tx) {
                       final type = tx['type']?.toString() ?? '';
                       final amount = (tx['amount'] ?? 0).toDouble();
                       final isCredit = type.contains('earning') ||
@@ -554,7 +731,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                         subtitle: type.replaceAll('_', ' '),
                         time: _formatTxTime(tx['createdAt']),
                         amount:
-                        '${isCredit ? '+' : '-'} Rs ${amount.toStringAsFixed(0)}',
+                            '${isCredit ? '+' : '-'} Rs ${amount.toStringAsFixed(0)}',
                       );
                     }),
 
@@ -586,7 +763,12 @@ class _StatCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool isBadge;
 
-  const _StatCard({required this.title, required this.value, required this.icon, required this.onTap, this.isBadge = false});
+  const _StatCard(
+      {required this.title,
+      required this.value,
+      required this.icon,
+      required this.onTap,
+      this.isBadge = false});
 
   @override
   Widget build(BuildContext context) {
@@ -598,7 +780,12 @@ class _StatCard extends StatelessWidget {
           color: AppColors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.sage.withOpacity(0.3)),
-          boxShadow: [BoxShadow(color: AppColors.bark.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 8))],
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.bark.withOpacity(0.04),
+                blurRadius: 15,
+                offset: const Offset(0, 8))
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -609,15 +796,25 @@ class _StatCard extends StatelessWidget {
                 Icon(icon, color: AppColors.moss, size: 20),
                 if (isBadge)
                   Container(
-                    width: 8, height: 8,
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                        color: Colors.red, shape: BoxShape.circle),
                   ),
               ],
             ),
             const SizedBox(height: 12),
-            Text(value, style: const TextStyle(color: AppColors.bark, fontSize: 20, fontWeight: FontWeight.w900)),
+            Text(value,
+                style: const TextStyle(
+                    color: AppColors.bark,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900)),
             const SizedBox(height: 2),
-            Text(title, style: const TextStyle(color: AppColors.sage, fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(title,
+                style: const TextStyle(
+                    color: AppColors.sage,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -630,7 +827,8 @@ class _QuickActionCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _QuickActionCard({required this.label, required this.icon, required this.onTap});
+  const _QuickActionCard(
+      {required this.label, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -639,17 +837,27 @@ class _QuickActionCard extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 64, height: 64,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               color: AppColors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: AppColors.sage.withOpacity(0.3)),
-              boxShadow: [BoxShadow(color: AppColors.bark.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: AppColors.bark.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Icon(icon, color: AppColors.moss, size: 28),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: AppColors.bark, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: const TextStyle(
+                  color: AppColors.bark,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -662,7 +870,11 @@ class _ActivityCard extends StatelessWidget {
   final String time;
   final String amount;
 
-  const _ActivityCard({required this.title, required this.subtitle, required this.time, required this.amount});
+  const _ActivityCard(
+      {required this.title,
+      required this.subtitle,
+      required this.time,
+      required this.amount});
 
   @override
   Widget build(BuildContext context) {
@@ -676,22 +888,34 @@ class _ActivityCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_outline_rounded, color: AppColors.moss, size: 20),
+          const Icon(Icons.check_circle_outline_rounded,
+              color: AppColors.moss, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: AppColors.bark, fontSize: 14, fontWeight: FontWeight.w700)),
-                Text(subtitle, style: const TextStyle(color: AppColors.sage, fontSize: 12)),
+                Text(title,
+                    style: const TextStyle(
+                        color: AppColors.bark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700)),
+                Text(subtitle,
+                    style:
+                        const TextStyle(color: AppColors.sage, fontSize: 12)),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(amount, style: const TextStyle(color: AppColors.bark, fontSize: 14, fontWeight: FontWeight.w800)),
-              Text(time, style: const TextStyle(color: AppColors.sage, fontSize: 10)),
+              Text(amount,
+                  style: const TextStyle(
+                      color: AppColors.bark,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800)),
+              Text(time,
+                  style: const TextStyle(color: AppColors.sage, fontSize: 10)),
             ],
           ),
         ],
@@ -713,32 +937,69 @@ class _CaptainBottomNav extends StatelessWidget {
     void onNavTap(int index) {
       if (index == activeIndex) return;
       switch (index) {
-        case 0: break;
-        case 1: onPostRide(); break;
-        case 2: Navigator.pushNamed(context, '/my-rides'); break;
-        case 3: Navigator.pushNamed(context, '/requests'); break;
-        case 4: Navigator.pushNamed(context, '/profile'); break;
+        case 0:
+          break;
+        case 1:
+          onPostRide();
+          break;
+        case 2:
+          Navigator.pushNamed(context, '/my-rides');
+          break;
+        case 3:
+          Navigator.pushNamed(context, '/requests');
+          break;
+        case 4:
+          Navigator.pushNamed(context, '/profile');
+          break;
       }
     }
 
     return Container(
       padding: EdgeInsets.only(
-        left: 20, right: 20, top: 12,
+        left: 20,
+        right: 20,
+        top: 12,
         bottom: bottomPadding > 0 ? bottomPadding : 16,
       ),
       decoration: BoxDecoration(
         color: AppColors.white,
-        border: Border(top: BorderSide(color: AppColors.sage.withOpacity(0.2), width: 1)),
-        boxShadow: [BoxShadow(color: AppColors.bark.withOpacity(0.04), blurRadius: 24, offset: const Offset(0, -6))],
+        border: Border(
+            top: BorderSide(color: AppColors.sage.withOpacity(0.2), width: 1)),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.bark.withOpacity(0.04),
+              blurRadius: 24,
+              offset: const Offset(0, -6))
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _NavItem(icon: Icons.dashboard_rounded, label: 'Home', active: activeIndex == 0, onTap: () => onNavTap(0)),
-          _NavItem(icon: Icons.add_circle_outline_rounded, label: 'Post Ride', active: activeIndex == 1, onTap: () => onNavTap(1)),
-          _NavItem(icon: Icons.directions_car_rounded, label: 'My Rides', active: activeIndex == 2, onTap: () => onNavTap(2)),
-          _NavItem(icon: Icons.inbox_rounded, label: 'Requests', active: activeIndex == 3, onTap: () => onNavTap(3)),
-          _NavItem(icon: Icons.person_outline_rounded, label: 'Profile', active: activeIndex == 4, onTap: () => onNavTap(4)),
+          _NavItem(
+              icon: Icons.dashboard_rounded,
+              label: 'Home',
+              active: activeIndex == 0,
+              onTap: () => onNavTap(0)),
+          _NavItem(
+              icon: Icons.add_circle_outline_rounded,
+              label: 'Post Ride',
+              active: activeIndex == 1,
+              onTap: () => onNavTap(1)),
+          _NavItem(
+              icon: Icons.directions_car_rounded,
+              label: 'My Rides',
+              active: activeIndex == 2,
+              onTap: () => onNavTap(2)),
+          _NavItem(
+              icon: Icons.inbox_rounded,
+              label: 'Requests',
+              active: activeIndex == 3,
+              onTap: () => onNavTap(3)),
+          _NavItem(
+              icon: Icons.person_outline_rounded,
+              label: 'Profile',
+              active: activeIndex == 4,
+              onTap: () => onNavTap(4)),
         ],
       ),
     );
@@ -751,7 +1012,11 @@ class _NavItem extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
-  const _NavItem({required this.icon, required this.label, required this.active, required this.onTap});
+  const _NavItem(
+      {required this.icon,
+      required this.label,
+      required this.active,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -776,3 +1041,4 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+

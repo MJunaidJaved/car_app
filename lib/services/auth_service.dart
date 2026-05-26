@@ -46,6 +46,7 @@ class AuthService {
 
   Map<String, dynamic> _buildSyncBody({
     required String role,
+    String? gender,
     String? name,
     String? phone,
     String? cnic,
@@ -53,6 +54,7 @@ class AuthService {
     String? cnicBackUrl,
     String? vehicleMake,
     String? vehicleModel,
+    String? captainVehicleType,
     String? vehicleColor,
     String? vehicleRegistration,
     int? vehicleYear,
@@ -71,6 +73,7 @@ class AuthService {
       }
     }
 
+    put('gender', gender);
     put('name', name);
     put('phone', phone);
     put('cnic', cnic);
@@ -78,6 +81,7 @@ class AuthService {
     put('cnicBackUrl', cnicBackUrl);
     put('vehicleMake', vehicleMake);
     put('vehicleModel', vehicleModel);
+    put('captainVehicleType', captainVehicleType);
     put('vehicleColor', vehicleColor);
     put('vehicleRegistration', vehicleRegistration);
     if (vehicleYear != null) body['vehicleYear'] = vehicleYear;
@@ -93,6 +97,7 @@ class AuthService {
 
   Future<UserModel> syncRole({
     required String role,
+    String? gender,
     String? name,
     String? phone,
     String? cnic,
@@ -100,6 +105,7 @@ class AuthService {
     String? cnicBackUrl,
     String? vehicleMake,
     String? vehicleModel,
+    String? captainVehicleType,
     String? vehicleColor,
     String? vehicleRegistration,
     int? vehicleYear,
@@ -116,6 +122,7 @@ class AuthService {
 
     final body = _buildSyncBody(
       role: role,
+      gender: gender,
       name: name,
       phone: phone,
       cnic: cnic,
@@ -123,6 +130,7 @@ class AuthService {
       cnicBackUrl: cnicBackUrl,
       vehicleMake: vehicleMake,
       vehicleModel: vehicleModel,
+      captainVehicleType: captainVehicleType,
       vehicleColor: vehicleColor,
       vehicleRegistration: vehicleRegistration,
       vehicleYear: vehicleYear,
@@ -138,13 +146,16 @@ class AuthService {
     debugPrint('DEBUG: Calling ApiService.post(/auth/sync) with body: $body');
     try {
       final response = await ApiService.post('/auth/sync', body);
-      debugPrint('DEBUG: ApiService.post(/auth/sync) response received: $response');
-      final user = _userFromResponse(response['user'] as Map<String, dynamic>, uid);
+      debugPrint(
+          'DEBUG: ApiService.post(/auth/sync) response received: $response');
+      final user =
+          _userFromResponse(response['user'] as Map<String, dynamic>, uid);
       await _persistUser(user);
       await _pushFcmToken();
       return user;
     } catch (e) {
-      debugPrint('DEBUG: ApiService.post(/auth/sync) failed with exception: $e');
+      debugPrint(
+          'DEBUG: ApiService.post(/auth/sync) failed with exception: $e');
       rethrow;
     }
   }
@@ -155,6 +166,7 @@ class AuthService {
     required String name,
     required String phone,
     required String role,
+    String? gender,
   }) async {
     final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
       email: email,
@@ -162,7 +174,7 @@ class AuthService {
     );
     final uid = cred.user?.uid;
     if (uid == null) throw Exception('Failed to create user');
-    return syncRole(role: role, name: name, phone: phone);
+    return syncRole(role: role, name: name, phone: phone, gender: gender);
   }
 
   Future<UserModel> signIn({
@@ -177,7 +189,8 @@ class AuthService {
     if (uid == null) throw Exception('Failed to sign in');
 
     final response = await ApiService.get('/auth/profile');
-    final user = _userFromResponse(response['user'] as Map<String, dynamic>, uid);
+    final user =
+        _userFromResponse(response['user'] as Map<String, dynamic>, uid);
     await _persistUser(user);
     await _pushFcmToken();
     return user;
@@ -233,14 +246,16 @@ class AuthService {
       idToken: googleAuth.idToken,
     );
 
-    final authResult = await FirebaseAuth.instance.signInWithCredential(credential);
+    final authResult =
+        await FirebaseAuth.instance.signInWithCredential(credential);
     final uid = authResult.user?.uid;
     final name = authResult.user?.displayName ?? 'User';
     if (uid == null) throw Exception('Google sign-in failed');
 
     try {
       final response = await ApiService.get('/auth/profile');
-      final user = _userFromResponse(response['user'] as Map<String, dynamic>, uid);
+      final user =
+          _userFromResponse(response['user'] as Map<String, dynamic>, uid);
       await _persistUser(user);
       await _pushFcmToken();
       return user;
@@ -256,6 +271,7 @@ class AuthService {
       role: 'passenger',
       name: stored?.name,
       phone: stored?.phone,
+      gender: stored?.gender,
     );
   }
 
@@ -276,6 +292,7 @@ class AuthService {
     XFile? profilePhoto,
     XFile? vehiclePhoto,
     String? name,
+    String? gender,
   }) async {
     final stored = await SessionStorage.loadUserModel();
     final displayName = (name ?? stored?.name ?? '').trim();
@@ -331,7 +348,8 @@ class AuthService {
           file: File(vehiclePhoto.path),
           path: 'vehicle.jpg',
         );
-        debugPrint('DEBUG: Vehicle Photo upload complete! URL: $vehiclePhotoUrl');
+        debugPrint(
+            'DEBUG: Vehicle Photo upload complete! URL: $vehiclePhotoUrl');
       } catch (e) {
         debugPrint('DEBUG: Vehicle Photo upload FAILED: $e');
         rethrow;
@@ -341,6 +359,7 @@ class AuthService {
     debugPrint('DEBUG: All files uploaded. Calling syncRole...');
     return syncRole(
       role: 'captain',
+      gender: gender,
       name: displayName.isNotEmpty ? displayName : null,
       phone: phone,
       cnic: cnic,
@@ -364,7 +383,8 @@ class AuthService {
   Future<UserModel> updateProfile(Map<String, dynamic> data) async {
     final response = await ApiService.patch('/auth/profile', data);
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    final user = _userFromResponse(response['user'] as Map<String, dynamic>, uid);
+    final user =
+        _userFromResponse(response['user'] as Map<String, dynamic>, uid);
     await _persistUser(user);
     return user;
   }

@@ -15,28 +15,30 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
-  final _formKey       = GlobalKey<FormState>();
-  final _nameCtrl      = TextEditingController();
-  final _emailCtrl     = TextEditingController();
-  final _phoneCtrl     = TextEditingController();
-  final _passwordCtrl  = TextEditingController();
-  final _confirmCtrl   = TextEditingController();
-  bool _isLoading      = false;
-  bool _obscurePass    = true;
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  String? _gender;
+  bool _isLoading = false;
+  bool _obscurePass = true;
   bool _obscureConfirm = true;
 
   late AnimationController _animCtrl;
-  late Animation<double>   _fadeAnim;
-  late Animation<Offset>   _slideAnim;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
 
   @override
   void initState() {
     super.initState();
     _animCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 900));
-    _fadeAnim  = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.08), end: Offset.zero,
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
     _animCtrl.forward();
   }
@@ -56,14 +58,15 @@ class _SignupScreenState extends State<SignupScreen>
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      final authService  = Provider.of<AuthService>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final userData = await authService.signUp(
-        email:    _emailCtrl.text.trim(),
+        email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
-        name:     _nameCtrl.text.trim(),
-        phone:    _phoneCtrl.text.trim(),
-        role:     'passenger',
+        name: _nameCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
+        role: 'passenger',
+        gender: _gender,
       );
       userProvider.setUser(userData);
       if (mounted) Navigator.pushReplacementNamed(context, '/role-select');
@@ -78,7 +81,7 @@ class _SignupScreenState extends State<SignupScreen>
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      final authService  = Provider.of<AuthService>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
       final userData = await authService.signInWithGoogle();
@@ -87,7 +90,8 @@ class _SignupScreenState extends State<SignupScreen>
         if (mounted) Navigator.pushReplacementNamed(context, '/role-select');
       }
     } catch (e) {
-      if (mounted) AppHelpers.showSnackBar(context, e.toString(), isError: true);
+      if (mounted)
+        AppHelpers.showSnackBar(context, e.toString(), isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -107,17 +111,19 @@ class _SignupScreenState extends State<SignupScreen>
         children: [
           // Gradient header
           Positioned(
-            top: 0, left: 0, right: 0,
+            top: 0,
+            left: 0,
+            right: 0,
             child: Container(
               height: size.height * 0.32,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppColors.bark, AppColors.moss],
                   begin: Alignment.topLeft,
-                  end:   Alignment.bottomRight,
+                  end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.only(
-                  bottomLeft:  Radius.circular(40),
+                  bottomLeft: Radius.circular(40),
                   bottomRight: Radius.circular(40),
                 ),
               ),
@@ -126,9 +132,11 @@ class _SignupScreenState extends State<SignupScreen>
 
           // Decorative circles
           Positioned(
-            top: -40, right: -40,
+            top: -40,
+            right: -40,
             child: Container(
-              width: 160, height: 160,
+              width: 160,
+              height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.white.withOpacity(0.08),
@@ -156,14 +164,16 @@ class _SignupScreenState extends State<SignupScreen>
                             GestureDetector(
                               onTap: () => Navigator.pop(context),
                               child: Container(
-                                width: 40, height: 40,
+                                width: 40,
+                                height: 40,
                                 decoration: BoxDecoration(
                                   color: AppColors.white.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
                                   Icons.arrow_back_ios_new_rounded,
-                                  color: AppColors.white, size: 18,
+                                  color: AppColors.white,
+                                  size: 18,
                                 ),
                               ),
                             ),
@@ -203,12 +213,14 @@ class _SignupScreenState extends State<SignupScreen>
                           decoration: BoxDecoration(
                             color: AppColors.white,
                             borderRadius: BorderRadius.circular(32),
-                            border: Border.all(color: AppColors.sage.withOpacity(0.3), width: 1),
+                            border: Border.all(
+                                color: AppColors.sage.withOpacity(0.3),
+                                width: 1),
                             boxShadow: [
                               BoxShadow(
-                                color:      AppColors.dark.withOpacity(0.05),
+                                color: AppColors.dark.withOpacity(0.05),
                                 blurRadius: 25,
-                                offset:     const Offset(0, 10),
+                                offset: const Offset(0, 10),
                               ),
                             ],
                           ),
@@ -221,15 +233,16 @@ class _SignupScreenState extends State<SignupScreen>
                                 AppField(
                                   controller: _nameCtrl,
                                   label: 'Full Name',
-                                  icon:  Icons.person_outline_rounded,
+                                  icon: Icons.person_outline_rounded,
                                   validator: (v) => (v == null || v.isEmpty)
-                                      ? 'Enter your name' : null,
+                                      ? 'Enter your name'
+                                      : null,
                                 ),
                                 const SizedBox(height: 16),
                                 AppField(
-                                  controller:  _emailCtrl,
-                                  label:       'Email address',
-                                  icon:        Icons.email_outlined,
+                                  controller: _emailCtrl,
+                                  label: 'Email address',
+                                  icon: Icons.email_outlined,
                                   keyboardType: TextInputType.emailAddress,
                                   validator: (v) {
                                     if (v == null || v.isEmpty)
@@ -241,9 +254,9 @@ class _SignupScreenState extends State<SignupScreen>
                                 ),
                                 const SizedBox(height: 16),
                                 AppField(
-                                  controller:  _phoneCtrl,
-                                  label:       'Phone number',
-                                  icon:        Icons.phone_outlined,
+                                  controller: _phoneCtrl,
+                                  label: 'Phone number',
+                                  icon: Icons.phone_outlined,
                                   keyboardType: TextInputType.phone,
                                   validator: (v) {
                                     if (v == null || v.isEmpty)
@@ -252,17 +265,37 @@ class _SignupScreenState extends State<SignupScreen>
                                   },
                                 ),
                                 const SizedBox(height: 16),
+                                DropdownButtonFormField<String>(
+                                  value: _gender,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Gender',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'male', child: Text('Male')),
+                                    DropdownMenuItem(
+                                        value: 'female', child: Text('Female')),
+                                  ],
+                                  onChanged: (value) =>
+                                      setState(() => _gender = value),
+                                  validator: (value) => value == null
+                                      ? 'Select your gender'
+                                      : null,
+                                ),
+                                const SizedBox(height: 16),
                                 AppField(
-                                  controller:  _passwordCtrl,
-                                  label:       'Password',
-                                  icon:        Icons.lock_outline_rounded,
+                                  controller: _passwordCtrl,
+                                  label: 'Password',
+                                  icon: Icons.lock_outline_rounded,
                                   obscureText: _obscurePass,
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePass
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: AppColors.sage, size: 20,
+                                      color: AppColors.sage,
+                                      size: 20,
                                     ),
                                     onPressed: () => setState(
                                         () => _obscurePass = !_obscurePass),
@@ -277,19 +310,20 @@ class _SignupScreenState extends State<SignupScreen>
                                 ),
                                 const SizedBox(height: 16),
                                 AppField(
-                                  controller:  _confirmCtrl,
-                                  label:       'Confirm Password',
-                                  icon:        Icons.lock_outline_rounded,
+                                  controller: _confirmCtrl,
+                                  label: 'Confirm Password',
+                                  icon: Icons.lock_outline_rounded,
                                   obscureText: _obscureConfirm,
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscureConfirm
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: AppColors.sage, size: 20,
+                                      color: AppColors.sage,
+                                      size: 20,
                                     ),
-                                    onPressed: () => setState(
-                                        () => _obscureConfirm = !_obscureConfirm),
+                                    onPressed: () => setState(() =>
+                                        _obscureConfirm = !_obscureConfirm),
                                   ),
                                   validator: (v) {
                                     if (v != _passwordCtrl.text)
@@ -299,32 +333,43 @@ class _SignupScreenState extends State<SignupScreen>
                                 ),
                                 const SizedBox(height: 32),
                                 AppButton(
-                                  label:     'Create Account',
+                                  label: 'Create Account',
                                   isLoading: _isLoading,
-                                  onTap:     _signUp,
+                                  onTap: _signUp,
                                 ),
                                 const SizedBox(height: 24),
                                 // Divider
                                 Row(children: [
-                                  Expanded(child: Divider(color: AppColors.sage.withOpacity(0.2))),
+                                  Expanded(
+                                      child: Divider(
+                                          color:
+                                              AppColors.sage.withOpacity(0.2))),
                                   const Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 12),
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 12),
                                     child: Text(
                                       'OR',
                                       style: TextStyle(
-                                          color: AppColors.sage, fontSize: 11, fontWeight: FontWeight.w800),
+                                          color: AppColors.sage,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800),
                                     ),
                                   ),
-                                  Expanded(child: Divider(color: AppColors.sage.withOpacity(0.2))),
+                                  Expanded(
+                                      child: Divider(
+                                          color:
+                                              AppColors.sage.withOpacity(0.2))),
                                 ]),
                                 const SizedBox(height: 24),
                                 // Google Login
                                 OutlinedButton(
-                                  onPressed: _isLoading ? null : _signInWithGoogle,
+                                  onPressed:
+                                      _isLoading ? null : _signInWithGoogle,
                                   style: OutlinedButton.styleFrom(
-                                    minimumSize: const Size(double.infinity, 54),
-                                    side: BorderSide(color: AppColors.sage.withOpacity(0.3)),
+                                    minimumSize:
+                                        const Size(double.infinity, 54),
+                                    side: BorderSide(
+                                        color: AppColors.sage.withOpacity(0.3)),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
@@ -355,13 +400,15 @@ class _SignupScreenState extends State<SignupScreen>
                                   children: [
                                     const Text('Already have an account?  ',
                                         style: TextStyle(
-                                            color: AppColors.sage, fontSize: 14, fontWeight: FontWeight.w600)),
+                                            color: AppColors.sage,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600)),
                                     GestureDetector(
                                       onTap: () => Navigator.pop(context),
                                       child: const Text('Sign In',
                                           style: TextStyle(
-                                            color:      AppColors.primary,
-                                            fontSize:   14,
+                                            color: AppColors.primary,
+                                            fontSize: 14,
                                             fontWeight: FontWeight.w900,
                                           )),
                                     ),
@@ -379,7 +426,10 @@ class _SignupScreenState extends State<SignupScreen>
                           'By signing up, you agree to our Terms of Service\nand Privacy Policy',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                              color: AppColors.sage, fontSize: 11, height: 1.5, fontWeight: FontWeight.w500),
+                              color: AppColors.sage,
+                              fontSize: 11,
+                              height: 1.5,
+                              fontWeight: FontWeight.w500),
                         ),
                       ),
                       const SizedBox(height: 32),

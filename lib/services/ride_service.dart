@@ -9,26 +9,44 @@ class RideService with ChangeNotifier {
     required double suggestedFare,
     required int totalSeats,
     required String rideType,
+    required String vehicleType,
+    required String rideMode,
     required String departureTime,
     double startLat = 0.0,
     double startLng = 0.0,
     double endLat = 0.0,
     double endLng = 0.0,
     bool acceptsDelivery = false,
+    String? tourType,
+    int? maxPassengers,
+    String? cargoType,
+    double? weightCapacity,
+    String? truckSize,
   }) async {
-    await ApiService.post('/rides', {
-      'startLocation': startLocation,
-      'endLocation': endLocation,
-      'suggestedFare': suggestedFare,
-      'totalSeats': totalSeats,
-      'rideType': rideType,
-      'departureTime': departureTime,
-      'startLat': startLat,
-      'startLng': startLng,
-      'endLat': endLat,
-      'endLng': endLng,
-      'acceptsDelivery': acceptsDelivery,
-    });
+    try {
+      await ApiService.post('/rides', {
+        'startLocation': startLocation,
+        'endLocation': endLocation,
+        'suggestedFare': suggestedFare,
+        'totalSeats': totalSeats,
+        'rideType': rideType,
+        'vehicleType': vehicleType,
+        'rideMode': rideMode,
+        'departureTime': departureTime,
+        'startLat': startLat,
+        'startLng': startLng,
+        'endLat': endLat,
+        'endLng': endLng,
+        'acceptsDelivery': acceptsDelivery,
+        if (tourType != null) 'tourType': tourType,
+        if (maxPassengers != null) 'maxPassengers': maxPassengers,
+        if (cargoType != null) 'cargoType': cargoType,
+        if (weightCapacity != null) 'weightCapacity': weightCapacity,
+        if (truckSize != null) 'truckSize': truckSize,
+      });
+    } catch (e) {
+      rethrow;
+    }
     notifyListeners();
   }
 
@@ -36,17 +54,27 @@ class RideService with ChangeNotifier {
     String? startLocation,
     String? endLocation,
     String? type,
+    String? rideMode,
   }) async {
     final queryParams = <String, String>{
-      if (startLocation != null && startLocation.isNotEmpty) 'startLocation': startLocation,
-      if (endLocation != null && endLocation.isNotEmpty) 'endLocation': endLocation,
+      if (startLocation != null && startLocation.isNotEmpty)
+        'startLocation': startLocation,
+      if (endLocation != null && endLocation.isNotEmpty)
+        'endLocation': endLocation,
       if (type != null && type.isNotEmpty && type != 'all') 'rideType': type,
+      if (rideMode != null && rideMode.isNotEmpty) 'rideMode': rideMode,
     };
 
-    final response = await ApiService.get('/rides', queryParams: queryParams);
+    Map<String, dynamic> response;
+    try {
+      response = await ApiService.get('/rides', queryParams: queryParams);
+    } catch (e) {
+      rethrow;
+    }
     final ridesData = response['rides'] as List<dynamic>? ?? [];
     return ridesData
-        .map((r) => RideModel.fromMap(r as Map<String, dynamic>, r['id']?.toString() ?? ''))
+        .map((r) => RideModel.fromMap(
+            r as Map<String, dynamic>, r['id']?.toString() ?? ''))
         .toList();
   }
 
@@ -61,7 +89,8 @@ class RideService with ChangeNotifier {
     final response = await ApiService.get('/rides/my-rides');
     final ridesData = response['rides'] as List<dynamic>? ?? [];
     return ridesData
-        .map((r) => RideModel.fromMap(r as Map<String, dynamic>, r['id']?.toString() ?? ''))
+        .map((r) => RideModel.fromMap(
+            r as Map<String, dynamic>, r['id']?.toString() ?? ''))
         .toList();
   }
 }

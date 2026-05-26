@@ -61,6 +61,21 @@ final _locationService = LocationTrackingService();
   }
 
   String get _dealStatus => _deal?['status']?.toString() ?? '';
+  String get _captainDistanceLabel {
+    if (_captainLocation == null || _deal == null) return 'Distance unavailable';
+    final pickupLat = (_deal!['passengerPickupLat'] ?? 0).toDouble();
+    final pickupLng = (_deal!['passengerPickupLng'] ?? 0).toDouble();
+    final baseLat = pickupLat != 0 ? pickupLat : _defaultLocation.latitude;
+    final baseLng = pickupLng != 0 ? pickupLng : _defaultLocation.longitude;
+    final meters = Geolocator.distanceBetween(
+      _captainLocation!.latitude,
+      _captainLocation!.longitude,
+      baseLat,
+      baseLng,
+    );
+    final km = meters / 1000;
+    return '${km.toStringAsFixed(1)} km away';
+  }
 
   String get _statusHeaderLabel => dealStatusLabel(_dealStatus);
 
@@ -583,13 +598,27 @@ final _locationService = LocationTrackingService();
                           color:        AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          _captainLocation != null ? 'Captain nearby' : 'Waiting for captain',
-                          style: const TextStyle(
-                            color:      AppColors.primary,
-                            fontSize:   12,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              _captainLocation != null ? 'Captain live' : 'Waiting for captain',
+                              style: const TextStyle(
+                                color:      AppColors.primary,
+                                fontSize:   12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (_captainLocation != null)
+                              Text(
+                                _captainDistanceLabel,
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],
@@ -606,12 +635,10 @@ final _locationService = LocationTrackingService();
                         label: 'Rs ${_fare.toStringAsFixed(0)}  •  Agreed fare',
                       ),
                       GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Live location sharing enabled')));
-                        },
+                        onTap: () => openWhatsApp(context, _captainPhone),
                         child: const _InfoChip(
-                          icon:  Icons.share_location_rounded,
-                          label: 'Share Live',
+                          icon:  Icons.chat_rounded,
+                          label: 'WhatsApp',
                         ),
                       ),
                     ],
@@ -898,5 +925,3 @@ class _InfoChip extends StatelessWidget {
     );
   }
 }
-
-

@@ -17,6 +17,7 @@ class RoleSelectScreen extends StatefulWidget {
 class _RoleSelectScreenState extends State<RoleSelectScreen>
     with SingleTickerProviderStateMixin {
   String? _selected;
+  String? _gender;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   bool _isBusy = false;
@@ -38,6 +39,10 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
 
   Future<void> _proceed() async {
     if (_selected == null || _isBusy) return;
+    if (_gender == null) {
+      AppHelpers.showSnackBar(context, 'Please select gender', isError: true);
+      return;
+    }
 
     setState(() => _isBusy = true);
 
@@ -54,7 +59,8 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
 
       if (_selected == 'captain') {
         // Save role to backend
-        await ApiService.patch('/auth/profile', {'role': 'captain'});
+        await ApiService.patch(
+            '/auth/profile', {'role': 'captain', 'gender': _gender});
 
         // Force token refresh
         await firebaseUser.getIdToken(true);
@@ -64,7 +70,10 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
         final userData = response['user'];
 
         if (userProvider.user != null) {
-          final updatedUser = userProvider.user?.copyWith(role: 'captain');
+          final updatedUser = userProvider.user?.copyWith(
+            role: 'captain',
+            gender: _gender,
+          );
           userProvider.setUser(updatedUser!);
         }
 
@@ -74,22 +83,25 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
               userData['vehicleMake'].toString().isNotEmpty;
 
           if (hasVehicle) {
-            Navigator.pushReplacementNamed(context, '/home');
+            Navigator.pushReplacementNamed(context, '/captain-home');
           } else {
             Navigator.pushReplacementNamed(context, '/captain-register');
           }
         }
-      }
-      else if (_selected == 'passenger') {
+      } else if (_selected == 'passenger') {
         // Save role to backend
-        await ApiService.patch('/auth/profile', {'role': 'passenger'});
+        await ApiService.patch(
+            '/auth/profile', {'role': 'passenger', 'gender': _gender});
 
         // Force token refresh
         await firebaseUser.getIdToken(true);
 
         // Update provider
         if (userProvider.user != null) {
-          final updatedUser = userProvider.user?.copyWith(role: 'passenger');
+          final updatedUser = userProvider.user?.copyWith(
+            role: 'passenger',
+            gender: _gender,
+          );
           userProvider.setUser(updatedUser!);
         }
 
@@ -120,17 +132,19 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
         children: [
           // Gradient header
           Positioned(
-            top: 0, left: 0, right: 0,
+            top: 0,
+            left: 0,
+            right: 0,
             child: Container(
               height: size.height * 0.45,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppColors.dark, AppColors.moss],
                   begin: Alignment.topLeft,
-                  end:   Alignment.bottomRight,
+                  end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.only(
-                  bottomLeft:  Radius.circular(48),
+                  bottomLeft: Radius.circular(48),
                   bottomRight: Radius.circular(48),
                 ),
               ),
@@ -139,62 +153,85 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnim,
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 32),
-                    const Text(
-                      'How will you\nuse CarPool?',
-                      style: TextStyle(
-                        color:       AppColors.white,
-                        fontSize:    32,
-                        fontWeight:  FontWeight.w900,
-                        letterSpacing: -1,
-                        height:      1.1,
-                      ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height -
+                        MediaQuery.of(context).padding.top,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 32),
+                        const Text(
+                          'How will you\nuse CarPool?',
+                          style: TextStyle(
+                            color: AppColors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Choose your role to get started',
+                          style: TextStyle(
+                            color: AppColors.white.withOpacity(0.8),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: size.height * 0.06),
+                        _RoleCard(
+                          title: 'Passenger',
+                          subtitle: 'Find rides, save money,\ntravel comfortably',
+                          icon: Icons.person_rounded,
+                          isSelected: _selected == 'passenger',
+                          onTap: () => setState(() => _selected = 'passenger'),
+                        ),
+                        const SizedBox(height: 16),
+                        _RoleCard(
+                          title: 'Captain',
+                          subtitle:
+                              'Post rides, earn money,\nfill your empty seats',
+                          icon: Icons.directions_car_filled_rounded,
+                          isSelected: _selected == 'captain',
+                          onTap: () => setState(() => _selected = 'captain'),
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _gender,
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'male', child: Text('Male')),
+                            DropdownMenuItem(
+                                value: 'female', child: Text('Female')),
+                          ],
+                          onChanged: (value) => setState(() => _gender = value),
+                        ),
+                        const Spacer(),
+                        AnimatedOpacity(
+                          opacity: _selected != null ? 1.0 : 0.4,
+                          duration: const Duration(milliseconds: 250),
+                          child: AppButton(
+                            label:
+                                'Continue as ${_selected == null ? '...' : _selected![0].toUpperCase() + _selected!.substring(1)}',
+                            isLoading: _isBusy,
+                            onTap: _proceed,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Choose your role to get started',
-                      style: TextStyle(
-                        color:    AppColors.white.withOpacity(0.8),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: size.height * 0.08),
-                    // Passenger Card
-                    _RoleCard(
-                      title:       'Passenger',
-                      subtitle:    'Find rides, save money,\ntravel comfortably',
-                      icon:        Icons.person_rounded,
-                      isSelected:  _selected == 'passenger',
-                      onTap: () => setState(() => _selected = 'passenger'),
-                    ),
-                    const SizedBox(height: 16),
-                    // Captain Card
-                    _RoleCard(
-                      title:       'Captain',
-                      subtitle:    'Post rides, earn money,\nfill your empty seats',
-                      icon:        Icons.directions_car_filled_rounded,
-                      isSelected:  _selected == 'captain',
-                      onTap: () => setState(() => _selected = 'captain'),
-                    ),
-                    const Spacer(),
-                    // CTA
-                    AnimatedOpacity(
-                      opacity:  _selected != null ? 1.0 : 0.4,
-                      duration: const Duration(milliseconds: 250),
-                      child: AppButton(
-                        label:     'Continue as ${_selected == null ? '...' : _selected![0].toUpperCase() + _selected!.substring(1)}',
-                        isLoading: _isBusy,
-                        onTap:     _proceed,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -226,10 +263,10 @@ class _RoleCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        curve:    Curves.easeInOut,
-        padding:  const EdgeInsets.all(22),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color:        isSelected ? AppColors.dark : AppColors.white,
+          color: isSelected ? AppColors.dark : AppColors.white,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.light,
@@ -237,20 +274,21 @@ class _RoleCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color:      isSelected
+              color: isSelected
                   ? Colors.black.withOpacity(0.1)
                   : Colors.black.withOpacity(0.02),
               blurRadius: 20,
-              offset:     const Offset(0, 8),
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 58, height: 58,
+              width: 58,
+              height: 58,
               decoration: BoxDecoration(
-                color:        isSelected
+                color: isSelected
                     ? AppColors.primary.withOpacity(0.2)
                     : AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
@@ -258,7 +296,7 @@ class _RoleCard extends StatelessWidget {
               child: Icon(
                 icon,
                 color: isSelected ? AppColors.primary : AppColors.dark,
-                size:  28,
+                size: 28,
               ),
             ),
             const SizedBox(width: 18),
@@ -269,8 +307,8 @@ class _RoleCard extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color:      isSelected ? AppColors.white : AppColors.textDark,
-                      fontSize:   18,
+                      color: isSelected ? AppColors.white : AppColors.textDark,
+                      fontSize: 18,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -278,11 +316,11 @@ class _RoleCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color:    isSelected
+                      color: isSelected
                           ? AppColors.white.withOpacity(0.7)
                           : AppColors.textMuted,
                       fontSize: 13,
-                      height:   1.4,
+                      height: 1.4,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -294,7 +332,7 @@ class _RoleCard extends StatelessWidget {
                   ? Icons.check_circle_rounded
                   : Icons.radio_button_unchecked_rounded,
               color: isSelected ? AppColors.primary : AppColors.light,
-              size:  24,
+              size: 24,
             ),
           ],
         ),

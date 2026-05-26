@@ -25,10 +25,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     super.initState();
     _realtime.listenPassengerBookings(
       onData: (bookings) {
-        if (mounted) setState(() {
-          _bookings = bookings;
-          _loading = false;
-        });
+        if (mounted)
+          setState(() {
+            _bookings = bookings;
+            _loading = false;
+          });
       },
       onError: (_) {
         if (mounted) setState(() => _loading = false);
@@ -49,15 +50,20 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         title: const Text('Cancel booking?'),
         content: const Text('This will cancel your ride request.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Yes, cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('No')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Yes, cancel')),
         ],
       ),
     );
     if (confirm != true) return;
 
     try {
-      await Provider.of<FirestoreService>(context, listen: false).cancelDeal(dealId);
+      await Provider.of<FirestoreService>(context, listen: false)
+          .cancelDeal(dealId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Booking cancelled')),
@@ -65,7 +71,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Cancel failed: $e')));
       }
     }
   }
@@ -227,17 +234,16 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     b['ride'] as Map<String, dynamic>? ?? {};
                                 final rideId = b['rideId'] ?? ride['id'] ?? '';
                                 final dealId = b['id'] ?? '';
-                                final captain = b['captain']
-                                        as Map<String, dynamic>? ??
-                                    {};
-                                final captainPhone = captain['phone']
-                                        ?.toString() ??
-                                    ride['captainPhone']?.toString() ??
-                                    '';
+                                final captain =
+                                    b['captain'] as Map<String, dynamic>? ?? {};
+                                final captainPhone =
+                                    b['captainPhone']?.toString() ??
+                                        captain['phone']?.toString() ??
+                                        ride['captainPhone']?.toString() ??
+                                        '';
                                 return _BookingCard(
                                   dealId: dealId,
-                                  captainName:
-                                      ride['captainName'] ?? 'Captain',
+                                  captainName: ride['captainName'] ?? 'Captain',
                                   startLocation: ride['startLocation'] ?? '',
                                   endLocation: ride['endLocation'] ?? '',
                                   fare: (b['agreedFare'] ?? 0).toDouble(),
@@ -323,6 +329,9 @@ class _BookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final canTrack = canTrackDeal(status);
     final canCancel = canCancelDeal(status);
+    final isRevealed =
+        status == 'confirmed' || status == 'started' || status == 'completed';
+    final displayPhone = isRevealed ? captainPhone : '03**-*****';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -362,11 +371,6 @@ class _BookingCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w800)),
               ),
-              if (captainPhone.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.phone_rounded, color: AppColors.moss),
-                  onPressed: () => dialPhone(context, captainPhone),
-                ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -395,6 +399,54 @@ class _BookingCard extends StatelessWidget {
                   color: AppColors.bark,
                   fontSize: 14,
                   fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.bg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.light),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isRevealed ? Icons.phone_rounded : Icons.lock_outline_rounded,
+                  color: isRevealed ? AppColors.moss : AppColors.sage,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayPhone,
+                        style: const TextStyle(
+                          color: AppColors.bark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (!isRevealed)
+                        const Text(
+                          'Revealed after captain accepts',
+                          style: TextStyle(
+                            color: AppColors.sage,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (isRevealed && captainPhone.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.call_rounded, color: AppColors.moss),
+                    onPressed: () => dialPhone(context, captainPhone),
+                  ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -408,7 +460,8 @@ class _BookingCard extends StatelessWidget {
                 TextButton(
                   onPressed: onCancel,
                   child: const Text('Cancel',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+                      style: TextStyle(
+                          color: Colors.red, fontWeight: FontWeight.w700)),
                 ),
               if (canTrack)
                 ElevatedButton(
@@ -420,15 +473,14 @@ class _BookingCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                       elevation: 0),
-                  child: Text(
-                      status == 'started' ? 'Track Live' : 'Track',
+                  child: Text(status == 'started' ? 'Track Live' : 'Track',
                       style: const TextStyle(
                           fontWeight: FontWeight.w800, fontSize: 12)),
                 ),
               if (canRate)
                 ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/rate-review', arguments: dealId),
+                  onPressed: () => Navigator.pushNamed(context, '/rate-review',
+                      arguments: dealId),
                   style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.bg,
                       foregroundColor: AppColors.moss,
@@ -437,7 +489,8 @@ class _BookingCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10)),
                       elevation: 0),
                   child: const Text('Rate Now',
-                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                      style:
+                          TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
                 ),
             ],
           ),

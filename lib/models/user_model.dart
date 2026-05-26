@@ -6,6 +6,7 @@ class UserModel {
   final String name;
   final String phone;
   final String role;
+  final String? gender;
   final bool isVerified;
   final String? photoUrl;
   final String? captainVerificationStatus;
@@ -20,6 +21,7 @@ class UserModel {
   final int? vehicleSeats;
   final String? city;
   final String? vehiclePhotoUrl;
+  final String? captainVehicleType;
   final String? emergencyContactName;
   final String? emergencyContactPhone;
   final double rating;
@@ -32,6 +34,7 @@ class UserModel {
     required this.name,
     required this.phone,
     required this.role,
+    this.gender,
     this.isVerified = false,
     this.photoUrl,
     this.captainVerificationStatus,
@@ -46,6 +49,7 @@ class UserModel {
     this.vehicleSeats,
     this.city,
     this.vehiclePhotoUrl,
+    this.captainVehicleType,
     this.emergencyContactName,
     this.emergencyContactPhone,
     this.rating = 0.0,
@@ -65,6 +69,7 @@ class UserModel {
       name: data['name'] ?? '',
       phone: data['phone'] ?? '',
       role: data['role'] ?? 'customer',
+      gender: data['gender'] as String?,
       isVerified: data['isVerified'] ?? false,
       photoUrl: data['photoUrl'] as String?,
       captainVerificationStatus: data['captainVerificationStatus'] as String?,
@@ -83,6 +88,7 @@ class UserModel {
           : null,
       city: data['city'] as String?,
       vehiclePhotoUrl: data['vehiclePhotoUrl'] as String?,
+      captainVehicleType: data['captainVehicleType'] as String?,
       emergencyContactName: data['emergencyContactName'] as String?,
       emergencyContactPhone: data['emergencyContactPhone'] as String?,
       rating: (data['rating'] ?? 0.0).toDouble(),
@@ -90,7 +96,8 @@ class UserModel {
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] is Timestamp
               ? (data['createdAt'] as Timestamp).toDate()
-              : DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now())
+              : DateTime.tryParse(data['createdAt'].toString()) ??
+                  DateTime.now())
           : DateTime.now(),
     );
   }
@@ -101,6 +108,7 @@ class UserModel {
       'name': name,
       'phone': phone,
       'role': role,
+      if (gender != null) 'gender': gender,
       'isVerified': isVerified,
       if (photoUrl != null) 'photoUrl': photoUrl,
       if (captainVerificationStatus != null)
@@ -111,13 +119,17 @@ class UserModel {
       if (vehicleMake != null) 'vehicleMake': vehicleMake,
       if (vehicleModel != null) 'vehicleModel': vehicleModel,
       if (vehicleColor != null) 'vehicleColor': vehicleColor,
-      if (vehicleRegistration != null) 'vehicleRegistration': vehicleRegistration,
+      if (vehicleRegistration != null)
+        'vehicleRegistration': vehicleRegistration,
       if (vehicleYear != null) 'vehicleYear': vehicleYear,
       if (vehicleSeats != null) 'vehicleSeats': vehicleSeats,
       if (city != null) 'city': city,
       if (vehiclePhotoUrl != null) 'vehiclePhotoUrl': vehiclePhotoUrl,
-      if (emergencyContactName != null) 'emergencyContactName': emergencyContactName,
-      if (emergencyContactPhone != null) 'emergencyContactPhone': emergencyContactPhone,
+      if (captainVehicleType != null) 'captainVehicleType': captainVehicleType,
+      if (emergencyContactName != null)
+        'emergencyContactName': emergencyContactName,
+      if (emergencyContactPhone != null)
+        'emergencyContactPhone': emergencyContactPhone,
       'rating': rating,
       'totalRides': totalRides,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -130,6 +142,7 @@ class UserModel {
     String? name,
     String? phone,
     String? role,
+    String? gender,
     bool? isVerified,
     String? photoUrl,
     String? captainVerificationStatus,
@@ -144,6 +157,7 @@ class UserModel {
     int? vehicleSeats,
     String? city,
     String? vehiclePhotoUrl,
+    String? captainVehicleType,
     String? emergencyContactName,
     String? emergencyContactPhone,
     double? rating,
@@ -156,6 +170,7 @@ class UserModel {
       name: name ?? this.name,
       phone: phone ?? this.phone,
       role: role ?? this.role,
+      gender: gender ?? this.gender,
       isVerified: isVerified ?? this.isVerified,
       photoUrl: photoUrl ?? this.photoUrl,
       captainVerificationStatus:
@@ -171,8 +186,10 @@ class UserModel {
       vehicleSeats: vehicleSeats ?? this.vehicleSeats,
       city: city ?? this.city,
       vehiclePhotoUrl: vehiclePhotoUrl ?? this.vehiclePhotoUrl,
+      captainVehicleType: captainVehicleType ?? this.captainVehicleType,
       emergencyContactName: emergencyContactName ?? this.emergencyContactName,
-      emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
+      emergencyContactPhone:
+          emergencyContactPhone ?? this.emergencyContactPhone,
       rating: rating ?? this.rating,
       totalRides: totalRides ?? this.totalRides,
       createdAt: createdAt ?? this.createdAt,

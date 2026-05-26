@@ -53,14 +53,22 @@ class _AppGateScreenState extends State<AppGateScreen> {
         }
 
         if (mounted) {
-  if (user.role == 'captain') {
-    Navigator.pushReplacementNamed(context, '/captain-home');
-  } else if (user.role == 'passenger') {
-    Navigator.pushReplacementNamed(context, '/home');
-  } else {
-    Navigator.pushReplacementNamed(context, '/role-select');
-  }
-}
+          if (user.role == 'captain') {
+            final status =
+                (user.captainVerificationStatus ?? '').trim().toLowerCase();
+            if (status == 'pending_verification') {
+              Navigator.pushReplacementNamed(context, '/verification-pending');
+            } else if (status == 'verified' || user.isVerified) {
+              Navigator.pushReplacementNamed(context, '/captain-home');
+            } else {
+              Navigator.pushReplacementNamed(context, '/captain-register');
+            }
+          } else if (user.role == 'passenger' || user.role == 'customer') {
+            Navigator.pushReplacementNamed(context, '/home');
+          } else {
+            Navigator.pushReplacementNamed(context, '/role-select');
+          }
+        }
       } catch (e) {
         debugPrint('AppGateScreen: API error fetching profile: $e');
         // Profile fetch failed, clear Firebase and go to login
@@ -94,6 +102,3 @@ class _AppGateScreenState extends State<AppGateScreen> {
     );
   }
 }
-
-
-

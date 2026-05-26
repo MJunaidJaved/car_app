@@ -8,7 +8,7 @@ class StorageService {
     required String path,
   }) async {
     final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
-    final uploadPreset = 'cnic_uploads'; // create this in Cloudinary dashboard
+    final uploadPreset ='cnic_uploads'; // create this in Cloudinary dashboard
 
     final cloudinary = CloudinaryPublic(cloudName, uploadPreset);
 

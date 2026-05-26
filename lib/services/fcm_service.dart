@@ -34,7 +34,6 @@ class FcmService {
       debugPrint('FCM foreground: $title — $body');
     });
 
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
     final initial = await messaging.getInitialMessage();
     if (initial != null) {
       _handleMessage(initial);
@@ -69,9 +68,19 @@ class FcmService {
 
   static void _handleMessage(RemoteMessage message) {
     final data = message.data;
+    final screen = (data['screen'] ?? '').toString();
     final type = data['type'] ?? '';
     final rideId = data['rideId'];
     final dealId = data['dealId'];
+
+    if (screen == 'find-ride') {
+      AppNavigator.state?.pushNamed('/find-ride');
+      return;
+    }
+    if (screen == 'my-rides') {
+      AppNavigator.state?.pushNamed('/my-rides');
+      return;
+    }
 
     switch (type) {
       case 'new_deal':
@@ -86,7 +95,10 @@ class FcmService {
         AppNavigator.state?.pushNamed('/my-bookings');
         break;
       case 'ride_started':
-        if (rideId != null && rideId.isNotEmpty && dealId != null && dealId.isNotEmpty) {
+        if (rideId != null &&
+            rideId.isNotEmpty &&
+            dealId != null &&
+            dealId.isNotEmpty) {
           AppNavigator.state?.pushNamed('/active-ride', arguments: {
             'rideId': rideId,
             'dealId': dealId,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'navigation/app_navigator.dart';
@@ -19,8 +20,10 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/role_select_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/auth/account_created_screen.dart';
+import 'screens/auth/verification_pending_screen.dart';
 
 import 'screens/home/home_screen.dart';
+import 'screens/home/captain_home_screen.dart';
 import 'screens/driver/post_ride_screen.dart';
 import 'screens/driver/my_rides_screen.dart';
 
@@ -43,7 +46,6 @@ import 'screens/tours/tour_detail_screen.dart';
 import 'screens/tours/tour_booked_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 
-
 import 'utils/app_theme.dart';
 
 void main() async {
@@ -51,6 +53,16 @@ void main() async {
   await dotenv.load(fileName: ".env");
   await Firebase.initializeApp();
   await FcmService.initialize();
+  FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    final screen = (message.data['screen'] ?? '').toString();
+    if (screen == 'find-ride') {
+      AppNavigator.state?.pushNamed('/find-ride');
+      return;
+    }
+    if (screen == 'my-rides') {
+      AppNavigator.state?.pushNamed('/my-rides');
+    }
+  });
   Provider.debugCheckInvalidValueType = null;
   runApp(const CarPoolApp());
 }
@@ -65,20 +77,16 @@ class CarPoolApp extends StatelessWidget {
         Provider<AuthService>(
           create: (_) => AuthService(),
         ),
-
         Provider<FirestoreService>(
           create: (_) => FirestoreService(),
         ),
-
         ChangeNotifierProvider<RideService>(
           create: (_) => RideService(),
         ),
-
         ChangeNotifierProvider<UserProvider>(
           create: (_) => UserProvider(),
         ),
       ],
-
       child: MaterialApp(
         navigatorKey: appNavigatorKey,
         title: 'CarPool App',
@@ -107,21 +115,25 @@ class CarPoolApp extends StatelessWidget {
         routes: {
           '/': (context) => const SplashScreen(),
 
-          '/gate': (context) => const SplashScreen(), // Redirect to splash which handles session
+          '/gate': (context) =>
+              const SplashScreen(), // Redirect to splash which handles session
 
           '/role-select': (context) => const RoleSelectScreen(),
 
-          '/captain-register': (context) =>
-              const CaptainRegisterScreen(),
+          '/captain-register': (context) => const CaptainRegisterScreen(),
 
-          '/account-created': (context) =>
-              const AccountCreatedScreen(),
+          '/verification-pending': (context) =>
+              const VerificationPendingScreen(),
+
+          '/account-created': (context) => const AccountCreatedScreen(),
 
           '/login': (context) => const LoginScreen(),
 
           '/signup': (context) => const SignupScreen(),
 
           '/home': (context) => const HomeScreen(),
+
+          '/captain-home': (context) => const CaptainHomeScreen(),
 
           '/post-ride': (context) => const PostRideScreen(),
 
@@ -157,8 +169,3 @@ class CarPoolApp extends StatelessWidget {
     );
   }
 }
-
-
-
-
-

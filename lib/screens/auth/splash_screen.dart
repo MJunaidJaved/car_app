@@ -30,21 +30,29 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    _logoCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _logoCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000));
     _logoScale = CurvedAnimation(parent: _logoCtrl, curve: Curves.easeOutQuart);
 
-    _contentCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _contentCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
     _contentFade = CurvedAnimation(parent: _contentCtrl, curve: Curves.easeIn);
-    _contentSlide = Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(CurvedAnimation(parent: _contentCtrl, curve: Curves.easeOut));
+    _contentSlide = Tween<Offset>(
+            begin: const Offset(0, 0.05), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _contentCtrl, curve: Curves.easeOut));
 
-    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 2000));
+    _pulseCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 2000));
     _pulseScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.02), weight: 50),
-      TweenSequenceItem(tween: Tween<double>(begin: 1.02, end: 1.0), weight: 50),
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 1.0, end: 1.02), weight: 50),
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 1.02, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
     _logoCtrl.forward();
-    Future.delayed(const Duration(milliseconds: 400), () => _contentCtrl.forward());
+    Future.delayed(
+        const Duration(milliseconds: 400), () => _contentCtrl.forward());
     _pulseCtrl.repeat();
 
     _checkExistingSession();
@@ -66,16 +74,25 @@ class _SplashScreenState extends State<SplashScreen>
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     userProvider.setUser(user);
 
-    final role = user.role.isNotEmpty ? user.role : await SessionStorage.getRole();
+    final role =
+        user.role.isNotEmpty ? user.role : await SessionStorage.getRole();
     if (!mounted) return;
 
     if (role == 'captain') {
-  Navigator.pushReplacementNamed(context, '/captain-home');
-} else if (role == 'passenger') {
-  Navigator.pushReplacementNamed(context, '/home');
-} else {
-  Navigator.pushReplacementNamed(context, '/role-select');
-}
+      final status =
+          (user.captainVerificationStatus ?? '').trim().toLowerCase();
+      if (status == 'pending_verification') {
+        Navigator.pushReplacementNamed(context, '/verification-pending');
+      } else if (status == 'verified' || user.isVerified) {
+        Navigator.pushReplacementNamed(context, '/captain-home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/captain-register');
+      }
+    } else if (role == 'passenger') {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      Navigator.pushReplacementNamed(context, '/role-select');
+    }
   }
 
   Future<void> _signInWithGoogle() async {
@@ -103,7 +120,8 @@ class _SplashScreenState extends State<SplashScreen>
             content: Text(e.toString()),
             backgroundColor: AppColors.bark,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -123,7 +141,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor:          Colors.transparent,
+      statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ));
 
@@ -142,7 +160,6 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-
           SafeArea(
             child: Column(
               children: [
@@ -155,12 +172,16 @@ class _SplashScreenState extends State<SplashScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 80, height: 80,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
                               color: AppColors.moss,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Icon(Icons.directions_car_filled_rounded, color: AppColors.cream, size: 44),
+                            child: const Icon(
+                                Icons.directions_car_filled_rounded,
+                                color: AppColors.cream,
+                                size: 44),
                           ),
                           const SizedBox(height: 28),
                           Text(
@@ -187,7 +208,6 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                 ),
-
                 Expanded(
                   flex: 40,
                   child: FadeTransition(
@@ -198,13 +218,18 @@ class _SplashScreenState extends State<SplashScreen>
                         padding: const EdgeInsets.symmetric(horizontal: 48),
                         child: Column(
                           children: [
-                            const _FeatureRow(icon: Icons.check_circle_outline_rounded, text: 'Instant booking'),
+                            const _FeatureRow(
+                                icon: Icons.check_circle_outline_rounded,
+                                text: 'Instant booking'),
                             const SizedBox(height: 14),
-                            const _FeatureRow(icon: Icons.check_circle_outline_rounded, text: 'Verified captains'),
+                            const _FeatureRow(
+                                icon: Icons.check_circle_outline_rounded,
+                                text: 'Verified captains'),
                             const SizedBox(height: 14),
-                            const _FeatureRow(icon: Icons.check_circle_outline_rounded, text: 'Flexible fares'),
+                            const _FeatureRow(
+                                icon: Icons.check_circle_outline_rounded,
+                                text: 'Flexible fares'),
                             const Spacer(),
-
                             ScaleTransition(
                               scale: _pulseScale,
                               child: GestureDetector(
@@ -216,11 +241,16 @@ class _SplashScreenState extends State<SplashScreen>
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: _isLoading
-                                      ? const Center(child: CircularProgressIndicator(color: AppColors.bark, strokeWidth: 2))
+                                      ? const Center(
+                                          child: CircularProgressIndicator(
+                                              color: AppColors.bark,
+                                              strokeWidth: 2))
                                       : Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 24),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               const _GoogleIcon(),
                                               const SizedBox(width: 12),
@@ -238,7 +268,6 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 24),
                             Text(
                               'Secure authentication powered by Google',
@@ -249,7 +278,9 @@ class _SplashScreenState extends State<SplashScreen>
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            SizedBox(height: MediaQuery.of(context).padding.bottom + 40),
+                            SizedBox(
+                                height:
+                                    MediaQuery.of(context).padding.bottom + 40),
                           ],
                         ),
                       ),
@@ -295,11 +326,15 @@ class _GoogleIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 20, height: 20,
+      width: 20,
+      height: 20,
       padding: const EdgeInsets.all(0),
       child: Image.network(
         'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_\"G\"_logo.svg/24px-Google_\"G\"_logo.svg.png',
-        errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata_rounded, color: Colors.blue, size: 20),
+        errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.g_mobiledata_rounded,
+            color: Colors.blue,
+            size: 20),
       ),
     );
   }

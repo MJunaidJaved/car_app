@@ -7,9 +7,7 @@ import '../../services/firestore_service.dart';
 import '../../providers/user_provider.dart';
 import '../../utils/helpers.dart';
 import '../../utils/app_colors.dart';
-import '../../widgets/app_widgets.dart';
 import '../../widgets/co_riders_section.dart';
-import '../../widgets/places_autocomplete_field.dart';
 
 class FareNegotiateScreen extends StatefulWidget {
   final RideModel ride;
@@ -19,13 +17,13 @@ class FareNegotiateScreen extends StatefulWidget {
 }
 
 class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
-  final _offerCtrl   = TextEditingController();
-  final _pickupCtrl  = TextEditingController();
-  final _dropCtrl    = TextEditingController();
+  final _offerCtrl = TextEditingController();
+  final _pickupCtrl = TextEditingController();
+  final _dropCtrl = TextEditingController();
   final _messageCtrl = TextEditingController();
-  final _scrollCtrl  = ScrollController();
+  final _scrollCtrl = ScrollController();
   final List<_ChatMessage> _messages = [];
-  bool _isConfirmed  = false;
+  bool _isConfirmed = false;
   bool _isCreatingDeal = false;
   double _finalAgreedFare = 0.0;
   bool _showMap = false;
@@ -51,9 +49,10 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
     }
     // Initial system message
     _messages.add(_ChatMessage(
-      text:       'Captain is offering Rs ${widget.ride.suggestedFare}. Make your offer.',
-      isSystem:   true,
-      time:       _now(),
+      text:
+          'Captain is offering Rs ${widget.ride.suggestedFare}. Make your offer.',
+      isSystem: true,
+      time: _now(),
     ));
   }
 
@@ -62,19 +61,28 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
     return '${t.hour}:${t.minute.toString().padLeft(2, '0')}';
   }
 
-  void _sendOffer() {
-    if (_offerCtrl.text.isEmpty) return;
+  Future<void> _sendOffer() async {
+    if (_offerCtrl.text.isEmpty || _isCreatingDeal) return;
+    if (_pickupCtrl.text.trim().isEmpty) {
+      AppHelpers.showSnackBar(
+        context,
+        'Counter price ke sath pickup point bhi likhein',
+        isError: true,
+      );
+      return;
+    }
     final offerDouble = double.tryParse(_offerCtrl.text.trim()) ?? 0.0;
     if (offerDouble <= 0) {
-      AppHelpers.showSnackBar(context, 'Enter a valid fare amount', isError: true);
+      AppHelpers.showSnackBar(context, 'Enter a valid fare amount',
+          isError: true);
       return;
     }
 
     setState(() {
       _finalAgreedFare = offerDouble;
-      _isConfirmed = true;
       _messages.add(_ChatMessage(
-        text: 'Your offer: Rs ${offerDouble.toStringAsFixed(0)}. Tap Book to send request to captain.',
+        text:
+            'Offer sent: Rs ${offerDouble.toStringAsFixed(0)} | Pickup: ${_pickupCtrl.text.trim()}',
         isSystem: true,
         isAccepted: true,
         time: _now(),
@@ -82,20 +90,31 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
       _offerCtrl.clear();
     });
     _scrollToEnd();
+    await _confirmAndBook();
   }
 
-  void _acceptCaptainFare() {
+  Future<void> _acceptCaptainFare() async {
+    if (_isCreatingDeal) return;
+    if (_pickupCtrl.text.trim().isEmpty) {
+      AppHelpers.showSnackBar(
+        context,
+        'Pickup point likhna zaroori hai',
+        isError: true,
+      );
+      return;
+    }
     setState(() {
       _finalAgreedFare = widget.ride.suggestedFare;
-      _isConfirmed = true;
       _messages.add(_ChatMessage(
-        text: 'Booking at captain fare Rs ${widget.ride.suggestedFare.toStringAsFixed(0)}.',
+        text:
+            'Booking sent: Rs ${widget.ride.suggestedFare.toStringAsFixed(0)} | Pickup: ${_pickupCtrl.text.trim()}',
         isSystem: true,
         isAccepted: true,
         time: _now(),
       ));
     });
     _scrollToEnd();
+    await _confirmAndBook();
   }
 
   void _scrollToEnd() {
@@ -113,13 +132,14 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
     setState(() => _isCreatingDeal = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+      final firestoreService =
+          Provider.of<FirestoreService>(context, listen: false);
       final user = userProvider.currentUser;
 
       if (user == null) throw Exception('User not logged in');
 
-      if (_pickupLat == 0 && _pickupLng == 0) {
-        throw Exception('Select your exact pickup point from suggestions');
+      if (_pickupCtrl.text.trim().isEmpty) {
+        throw Exception('Enter your exact pickup point');
       }
 
       final dealId = await firestoreService.createDeal(
@@ -137,10 +157,11 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
             ? _dropCtrl.text.trim()
             : widget.ride.endLocation,
       );
-      
+
       if (mounted) {
         AppHelpers.showSnackBar(context, 'Ride booked successfully!');
-        Navigator.pushReplacementNamed(context, '/deal-confirmed', arguments: dealId);
+        Navigator.pushReplacementNamed(context, '/deal-confirmed',
+            arguments: dealId);
       }
     } catch (e) {
       if (mounted) {
@@ -162,7 +183,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
   }
 
   Widget _buildRouteMap() {
-    final hasCoords = widget.ride.startLat != 0.0 && widget.ride.startLng != 0.0;
+    final hasCoords =
+        widget.ride.startLat != 0.0 && widget.ride.startLng != 0.0;
     final startLatLng = LatLng(
       hasCoords ? widget.ride.startLat : 31.5204,
       hasCoords ? widget.ride.startLng : 74.3587,
@@ -176,7 +198,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
       Marker(
         markerId: const MarkerId('start'),
         position: startLatLng,
-        infoWindow: InfoWindow(title: 'Pickup', snippet: widget.ride.startLocation),
+        infoWindow:
+            InfoWindow(title: 'Pickup', snippet: widget.ride.startLocation),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       ),
       Marker(
@@ -200,21 +223,32 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
         ),
         // Route info overlay
         Positioned(
-          bottom: 16, left: 16, right: 16,
+          bottom: 16,
+          left: 16,
+          right: 16,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.white,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Row(
               children: [
                 Column(
                   children: [
                     const Icon(Icons.circle, color: AppColors.moss, size: 10),
-                    Container(width: 1.5, height: 20, color: AppColors.sage.withOpacity(0.3)),
-                    const Icon(Icons.circle, color: AppColors.primary, size: 10),
+                    Container(
+                        width: 1.5,
+                        height: 20,
+                        color: AppColors.sage.withOpacity(0.3)),
+                    const Icon(Icons.circle,
+                        color: AppColors.primary, size: 10),
                   ],
                 ),
                 const SizedBox(width: 12),
@@ -222,15 +256,28 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.ride.startLocation, style: const TextStyle(color: AppColors.bark, fontSize: 13, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+                      Text(widget.ride.startLocation,
+                          style: const TextStyle(
+                              color: AppColors.bark,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700),
+                          overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 8),
-                      Text(widget.ride.endLocation, style: const TextStyle(color: AppColors.bark, fontSize: 13, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+                      Text(widget.ride.endLocation,
+                          style: const TextStyle(
+                              color: AppColors.bark,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700),
+                          overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
                 Text(
                   'Rs ${widget.ride.suggestedFare.toStringAsFixed(0)}',
-                  style: const TextStyle(color: AppColors.moss, fontSize: 16, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                      color: AppColors.moss,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900),
                 ),
               ],
             ),
@@ -253,7 +300,9 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
         children: [
           // Gradient Header
           Positioned(
-            top: 0, left: 0, right: 0,
+            top: 0,
+            left: 0,
+            right: 0,
             child: Container(
               height: 180,
               decoration: const BoxDecoration(
@@ -281,14 +330,16 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
-                          width: 40, height: 40,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: AppColors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.arrow_back_ios_new_rounded,
-                            color: AppColors.white, size: 18,
+                            color: AppColors.white,
+                            size: 18,
                           ),
                         ),
                       ),
@@ -299,7 +350,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                         child: Text(
                           (widget.ride.captainName ?? 'C')[0].toUpperCase(),
                           style: const TextStyle(
-                            color: AppColors.white, fontWeight: FontWeight.w700,
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
@@ -311,7 +363,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                             Text(
                               widget.ride.captainName ?? 'Captain',
                               style: const TextStyle(
-                                color: AppColors.white, fontSize: 16,
+                                color: AppColors.white,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -337,7 +390,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: AppColors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(20),
@@ -345,7 +399,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                         child: Text(
                           'Rs ${widget.ride.suggestedFare}',
                           style: const TextStyle(
-                            color: AppColors.white, fontSize: 13,
+                            color: AppColors.white,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -361,7 +416,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                           ),
                           child: Icon(
                             _showMap ? Icons.chat_rounded : Icons.map_rounded,
-                            color: AppColors.white, size: 18,
+                            color: AppColors.white,
+                            size: 18,
                           ),
                         ),
                       ),
@@ -372,9 +428,11 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                     child: TextButton(
-                      onPressed: _acceptCaptainFare,
-                      style: TextButton.styleFrom(foregroundColor: AppColors.white),
-                      child: Text('Book at captain fare (Rs ${widget.ride.suggestedFare.toStringAsFixed(0)})'),
+                      onPressed: _isCreatingDeal ? null : _acceptCaptainFare,
+                      style: TextButton.styleFrom(
+                          foregroundColor: AppColors.white),
+                      child: Text(
+                          'Book at captain fare (Rs ${widget.ride.suggestedFare.toStringAsFixed(0)})'),
                     ),
                   ),
 
@@ -391,9 +449,11 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                       : ListView.builder(
                           controller: _scrollCtrl,
                           physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                           itemCount: _messages.length,
-                          itemBuilder: (context, i) => _ChatBubble(message: _messages[i]),
+                          itemBuilder: (context, i) =>
+                              _ChatBubble(message: _messages[i]),
                         ),
                 ),
 
@@ -403,44 +463,69 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
                     decoration: BoxDecoration(
                       color: AppColors.white,
-                      border: Border(top: BorderSide(color: AppColors.sage.withOpacity(0.2), width: 1)),
-                      boxShadow: [BoxShadow(color: AppColors.dark.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
+                      border: Border(
+                          top: BorderSide(
+                              color: AppColors.sage.withOpacity(0.2),
+                              width: 1)),
+                      boxShadow: [
+                        BoxShadow(
+                            color: AppColors.dark.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, -2))
+                      ],
                     ),
                     child: Row(
                       children: [
                         Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color:        AppColors.bg,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.sage.withOpacity(0.3)),
-                            ),
-                            child: TextField(
-                              controller:   _offerCtrl,
-                              keyboardType: TextInputType.number,
-                              style:        const TextStyle(
-                                color: AppColors.bark, fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              decoration: const InputDecoration(
-                                hintText:       'Your offer in Rs...',
-                                hintStyle:      TextStyle(color: AppColors.sage, fontWeight: FontWeight.w500),
-                                prefixText:     'Rs  ',
-                                prefixStyle:    TextStyle(
-                                  color:      AppColors.bark,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize:   15,
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: _pickupCtrl,
+                                decoration: const InputDecoration(
+                                  labelText: 'Exact pickup point',
+                                  hintText: 'Counter price ke sath pickup likhein',
+                                  border: OutlineInputBorder(),
                                 ),
-                                border:         InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 14),
                               ),
-                            ),
+                              const SizedBox(height: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.bg,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                      color: AppColors.sage.withOpacity(0.3)),
+                                ),
+                                child: TextField(
+                                  controller: _offerCtrl,
+                                  keyboardType: TextInputType.number,
+                                  style: const TextStyle(
+                                    color: AppColors.bark,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Your offer in Rs...',
+                                    hintStyle: TextStyle(
+                                        color: AppColors.sage,
+                                        fontWeight: FontWeight.w500),
+                                    prefixText: 'Rs  ',
+                                    prefixStyle: TextStyle(
+                                      color: AppColors.bark,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 14),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: 10),
                         GestureDetector(
-                          onTap: _sendOffer,
+                          onTap: _isCreatingDeal ? null : _sendOffer,
                           child: Container(
                             width: 52,
                             height: 52,
@@ -448,7 +533,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                               color: AppColors.moss,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(Icons.send_rounded, color: AppColors.white, size: 22),
+                            child: const Icon(Icons.send_rounded,
+                                color: AppColors.white, size: 22),
                           ),
                         ),
                       ],
@@ -459,11 +545,32 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
                     decoration: BoxDecoration(
                       color: AppColors.white,
-                      border: Border(top: BorderSide(color: AppColors.sage.withOpacity(0.2), width: 1)),
+                      border: Border(
+                          top: BorderSide(
+                              color: AppColors.sage.withOpacity(0.2),
+                              width: 1)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.moss.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: AppColors.moss.withOpacity(0.2)),
+                          ),
+                          child: const Text(
+                            'Price is done/countered. Now share your exact pickup point.',
+                            style: TextStyle(
+                              color: AppColors.bark,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
                         const Text(
                           'Your pickup & drop',
                           style: TextStyle(
@@ -473,30 +580,26 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        PlacesAutocompleteField(
+                        TextField(
                           controller: _pickupCtrl,
-                          label: 'Exact pickup point',
-                          icon: Icons.place_outlined,
-                          validator: (v) =>
-                              (v == null || v.isEmpty) ? 'Required' : null,
-                          onPlaceSelected: (latLng) {
-                            setState(() {
-                              _pickupLat = latLng.latitude;
-                              _pickupLng = latLng.longitude;
-                            });
-                          },
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Exact pickup point',
+                            hintText: 'Type pickup area/address',
+                            prefixIcon: Icon(Icons.place_outlined),
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                         const SizedBox(height: 10),
-                        PlacesAutocompleteField(
+                        TextField(
                           controller: _dropCtrl,
-                          label: 'Drop point (if different)',
-                          icon: Icons.flag_outlined,
-                          onPlaceSelected: (latLng) {
-                            setState(() {
-                              _dropLat = latLng.latitude;
-                              _dropLng = latLng.longitude;
-                            });
-                          },
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Drop point (if different)',
+                            hintText: 'Type drop area/address',
+                            prefixIcon: Icon(Icons.flag_outlined),
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                         const SizedBox(height: 10),
                         TextField(
@@ -510,24 +613,26 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                      onPressed: _isCreatingDeal ? null : _confirmAndBook,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.moss,
-                        foregroundColor: AppColors.cream,
-                        minimumSize: const Size(double.infinity, 56),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: _isCreatingDeal
-                          ? const CircularProgressIndicator(color: AppColors.white)
-                          : const Text(
-                              'Confirm & Book Ride',
-                              style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w900,
-                              ),
+                          onPressed: _isCreatingDeal ? null : _confirmAndBook,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.moss,
+                            foregroundColor: AppColors.cream,
+                            minimumSize: const Size(double.infinity, 56),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
+                          ),
+                          child: _isCreatingDeal
+                              ? const CircularProgressIndicator(
+                                  color: AppColors.white)
+                              : const Text(
+                                  'Confirm & Book Ride',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
                         ),
                       ],
                     ),
@@ -550,8 +655,8 @@ class _ChatMessage {
 
   _ChatMessage({
     required this.text,
-    this.isMe       = false,
-    this.isSystem   = false,
+    this.isMe = false,
+    this.isSystem = false,
     this.isAccepted = false,
     required this.time,
   });
@@ -568,10 +673,9 @@ class _ChatBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 12),
         child: Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color:        message.isAccepted
+              color: message.isAccepted
                   ? AppColors.moss.withOpacity(0.15)
                   : AppColors.bark.withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
@@ -590,10 +694,10 @@ class _ChatBubble extends StatelessWidget {
                 Text(
                   message.text,
                   style: TextStyle(
-                    color:      AppColors.bark,
-                    fontSize:   13,
-                    fontWeight: message.isAccepted
-                        ? FontWeight.w800 : FontWeight.w600,
+                    color: AppColors.bark,
+                    fontSize: 13,
+                    fontWeight:
+                        message.isAccepted ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
               ],
@@ -604,39 +708,40 @@ class _ChatBubble extends StatelessWidget {
     }
 
     return Align(
-      alignment: message.isMe
-          ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.72,
         ),
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color:        message.isMe ? AppColors.moss : AppColors.white,
+          color: message.isMe ? AppColors.moss : AppColors.white,
           borderRadius: BorderRadius.only(
-            topLeft:     const Radius.circular(20),
-            topRight:    const Radius.circular(20),
-            bottomLeft:  Radius.circular(message.isMe ? 20 : 4),
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(message.isMe ? 20 : 4),
             bottomRight: Radius.circular(message.isMe ? 4 : 20),
           ),
-          border: message.isMe ? null : Border.all(color: AppColors.sage.withOpacity(0.3)),
+          border: message.isMe
+              ? null
+              : Border.all(color: AppColors.sage.withOpacity(0.3)),
           boxShadow: [
             BoxShadow(
-              color:      Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset:     const Offset(0, 4),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment:
+              message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             Text(
               message.text,
               style: TextStyle(
-                color:    message.isMe ? AppColors.white : AppColors.bark,
+                color: message.isMe ? AppColors.white : AppColors.bark,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
@@ -645,8 +750,9 @@ class _ChatBubble extends StatelessWidget {
             Text(
               message.time,
               style: TextStyle(
-                color:    message.isMe
-                    ? AppColors.white.withOpacity(0.6) : AppColors.sage,
+                color: message.isMe
+                    ? AppColors.white.withOpacity(0.6)
+                    : AppColors.sage,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),

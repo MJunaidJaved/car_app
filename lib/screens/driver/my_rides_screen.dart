@@ -360,7 +360,22 @@ class _CaptainRideCard extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pushNamed(context, '/requests', arguments: rideId),
                       style: ElevatedButton.styleFrom(backgroundColor: AppColors.moss, foregroundColor: AppColors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                      child: const Text('View Requests', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                      child: const Text('Requests', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pushNamed(context, '/requests', arguments: rideId),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.bark,
+                        side: BorderSide(color: AppColors.sage.withOpacity(0.35)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Details', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                     ),
                   ),
                 ),

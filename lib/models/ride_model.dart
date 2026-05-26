@@ -4,6 +4,7 @@ class RideModel {
   final String id;
   final String captainId;
   final String captainName;
+  final String? captainPhone;
   final String startLocation;
   final String endLocation;
   final double startLat;
@@ -15,6 +16,16 @@ class RideModel {
   final int totalSeats;
   final double suggestedFare;
   final String rideType; // 'office', 'random', 'delivery', 'tour'
+  final String vehicleType; // 'car', 'bike', 'truck', 'tour'
+  final String rideMode; // 'solo' or 'share'
+  final bool isShazoreRide;
+  final bool isLadiesRide;
+  final String? captainGender;
+  final String? tourType;
+  final int? maxPassengers;
+  final String? cargoType;
+  final double? weightCapacity;
+  final String? truckSize;
   final String status; // 'active', 'filled', 'completed', 'cancelled'
   final bool full;
   final bool acceptsDelivery;
@@ -26,6 +37,7 @@ class RideModel {
     required this.id,
     required this.captainId,
     required this.captainName,
+    this.captainPhone,
     required this.startLocation,
     required this.endLocation,
     required this.startLat,
@@ -37,6 +49,16 @@ class RideModel {
     required this.totalSeats,
     required this.suggestedFare,
     required this.rideType,
+    this.vehicleType = 'car',
+    this.rideMode = 'share',
+    this.isShazoreRide = false,
+    this.isLadiesRide = false,
+    this.captainGender,
+    this.tourType,
+    this.maxPassengers,
+    this.cargoType,
+    this.weightCapacity,
+    this.truckSize,
     this.status = 'active',
     this.full = false,
     this.acceptsDelivery = false,
@@ -55,6 +77,7 @@ class RideModel {
       id: id,
       captainId: data['captainId'] ?? '',
       captainName: data['captainName'] ?? '',
+      captainPhone: data['captainPhone'] as String?,
       startLocation: data['startLocation'] ?? '',
       endLocation: data['endLocation'] ?? '',
       startLat: (data['startLat'] ?? 0.0).toDouble(),
@@ -66,6 +89,20 @@ class RideModel {
       totalSeats: data['totalSeats'] ?? 0,
       suggestedFare: (data['suggestedFare'] ?? 0.0).toDouble(),
       rideType: data['rideType'] ?? 'random',
+      vehicleType: (data['vehicleType'] ?? 'car').toString(),
+      rideMode: (data['rideMode'] ?? 'share').toString(),
+      isShazoreRide: data['isShazoreRide'] == true,
+      isLadiesRide: data['isLadiesRide'] == true,
+      captainGender: data['captainGender'] as String?,
+      tourType: data['tourType'] as String?,
+      maxPassengers: data['maxPassengers'] != null
+          ? int.tryParse(data['maxPassengers'].toString())
+          : null,
+      cargoType: data['cargoType'] as String?,
+      weightCapacity: data['weightCapacity'] != null
+          ? double.tryParse(data['weightCapacity'].toString())
+          : null,
+      truckSize: data['truckSize'] as String?,
       status: data['status'] ?? 'active',
       full: data['full'] == true || (data['availableSeats'] ?? 0) <= 0,
       acceptsDelivery: data['acceptsDelivery'] ?? false,
@@ -85,22 +122,37 @@ class RideModel {
     return {
       'captainId': captainId,
       'captainName': captainName,
+      if (captainPhone != null) 'captainPhone': captainPhone,
       'startLocation': startLocation,
       'endLocation': endLocation,
       'startLat': startLat,
       'startLng': startLng,
       'endLat': endLat,
       'endLng': endLng,
-      'departureTime': forFirestore ? Timestamp.fromDate(departureTime) : departureTime.toIso8601String(),
+      'departureTime': forFirestore
+          ? Timestamp.fromDate(departureTime)
+          : departureTime.toIso8601String(),
       'availableSeats': availableSeats,
       'totalSeats': totalSeats,
       'suggestedFare': suggestedFare,
       'rideType': rideType,
+      'vehicleType': vehicleType,
+      'rideMode': rideMode,
+      'isShazoreRide': isShazoreRide,
+      'isLadiesRide': isLadiesRide,
+      if (captainGender != null) 'captainGender': captainGender,
+      if (tourType != null) 'tourType': tourType,
+      if (maxPassengers != null) 'maxPassengers': maxPassengers,
+      if (cargoType != null) 'cargoType': cargoType,
+      if (weightCapacity != null) 'weightCapacity': weightCapacity,
+      if (truckSize != null) 'truckSize': truckSize,
       'status': status,
       'acceptsDelivery': acceptsDelivery,
       'vehicleInfo': vehicleInfo,
       'captainRating': captainRating,
-      'createdAt': forFirestore ? Timestamp.fromDate(createdAt) : createdAt.toIso8601String(),
+      'createdAt': forFirestore
+          ? Timestamp.fromDate(createdAt)
+          : createdAt.toIso8601String(),
     };
   }
 
@@ -108,6 +160,7 @@ class RideModel {
     String? id,
     String? captainId,
     String? captainName,
+    String? captainPhone,
     String? startLocation,
     String? endLocation,
     double? startLat,
@@ -119,6 +172,16 @@ class RideModel {
     int? totalSeats,
     double? suggestedFare,
     String? rideType,
+    String? vehicleType,
+    String? rideMode,
+    bool? isShazoreRide,
+    bool? isLadiesRide,
+    String? captainGender,
+    String? tourType,
+    int? maxPassengers,
+    String? cargoType,
+    double? weightCapacity,
+    String? truckSize,
     String? status,
     bool? full,
     bool? acceptsDelivery,
@@ -130,6 +193,7 @@ class RideModel {
       id: id ?? this.id,
       captainId: captainId ?? this.captainId,
       captainName: captainName ?? this.captainName,
+      captainPhone: captainPhone ?? this.captainPhone,
       startLocation: startLocation ?? this.startLocation,
       endLocation: endLocation ?? this.endLocation,
       startLat: startLat ?? this.startLat,
@@ -141,6 +205,16 @@ class RideModel {
       totalSeats: totalSeats ?? this.totalSeats,
       suggestedFare: suggestedFare ?? this.suggestedFare,
       rideType: rideType ?? this.rideType,
+      vehicleType: vehicleType ?? this.vehicleType,
+      rideMode: rideMode ?? this.rideMode,
+      isShazoreRide: isShazoreRide ?? this.isShazoreRide,
+      isLadiesRide: isLadiesRide ?? this.isLadiesRide,
+      captainGender: captainGender ?? this.captainGender,
+      tourType: tourType ?? this.tourType,
+      maxPassengers: maxPassengers ?? this.maxPassengers,
+      cargoType: cargoType ?? this.cargoType,
+      weightCapacity: weightCapacity ?? this.weightCapacity,
+      truckSize: truckSize ?? this.truckSize,
       status: status ?? this.status,
       full: full ?? this.full,
       acceptsDelivery: acceptsDelivery ?? this.acceptsDelivery,
@@ -160,7 +234,10 @@ class RideModel {
         info['model']?.toString(),
         info['color']?.toString(),
         info['registration']?.toString(),
-      ].whereType<String>().where((p) => p.trim().isNotEmpty).map((p) => p.trim());
+      ]
+          .whereType<String>()
+          .where((p) => p.trim().isNotEmpty)
+          .map((p) => p.trim());
       return parts.join(' • ');
     }
     return info.toString();
@@ -184,6 +261,3 @@ class RideModel {
   bool get isRecurring => false;
   double get offeredFare => suggestedFare;
 }
-
-
-
