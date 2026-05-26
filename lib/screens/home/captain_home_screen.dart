@@ -26,6 +26,14 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
   LatLng _currentLocation = const LatLng(31.5204, 74.3587);
   bool _mapReady = false;
 
+  bool _isDashboardRideActive(Map<String, dynamic> ride) {
+    final status = (ride['status'] ?? '').toString().toLowerCase();
+    if (status == 'active' || status == 'in_progress') return true;
+    final dt = DateTime.tryParse((ride['departureTime'] ?? '').toString());
+    if (dt == null) return true;
+    return dt.isAfter(DateTime.now().subtract(const Duration(minutes: 5)));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +45,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
     try {
       final ridesRes = await ApiService.get('/rides/my-rides');
       final rides = List<Map<String, dynamic>>.from(ridesRes['rides'] ?? []);
+      final dashboardRides =
+          rides.where((ride) => _isDashboardRideActive(ride)).toList();
       rides.sort((a, b) {
         final aAt = DateTime.tryParse((a['createdAt'] ?? '').toString()) ??
             DateTime.fromMillisecondsSinceEpoch(0);
@@ -45,7 +55,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
         return bAt.compareTo(aAt);
       });
       Map<String, dynamic>? active;
-      for (final r in rides) {
+      for (final r in dashboardRides) {
         if (r['status'] == 'active') {
           active = r;
           break;
@@ -54,7 +64,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       final walletRes = await ApiService.get('/wallet');
       final txRes = await ApiService.get('/wallet/transactions');
       final pendingMap = <String, int>{};
-      for (final ride in rides.take(10)) {
+      for (final ride in dashboardRides.take(10)) {
         final rideId = (ride['id'] ?? '').toString();
         if (rideId.isEmpty) continue;
         try {
@@ -70,7 +80,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       if (mounted) {
         setState(() {
           _activeRide = active;
-          _latestRides = rides.take(10).toList();
+          _latestRides = dashboardRides.take(10).toList();
           _pendingRequestsByRide = pendingMap;
           _walletBalance = (walletRes['wallet']?['balance'] ?? 0).toDouble();
           _recentTransactions =

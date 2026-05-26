@@ -27,6 +27,21 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   double? _userLat;
   double? _userLng;
 
+  bool _isDashboardBookingActive(Map<String, dynamic> booking) {
+    final status = (booking['status'] ?? '').toString().toLowerCase();
+    if (!['pending', 'confirmed', 'started'].contains(status)) return false;
+    final ride = booking['ride'] as Map<String, dynamic>? ?? {};
+    final rideStatus = (ride['status'] ?? '').toString().toLowerCase();
+    if (rideStatus.isNotEmpty && rideStatus != 'active' && rideStatus != 'in_progress') {
+      return false;
+    }
+    final departure = DateTime.tryParse(
+      (ride['departureTime'] ?? booking['departureTime'] ?? '').toString(),
+    );
+    if (departure == null) return true;
+    return departure.isAfter(DateTime.now().subtract(const Duration(minutes: 5)));
+  }
+
   List<Map<String, dynamic>> _categoriesFor(bool isFemale) => [
         {'label': 'Daily', 'icon': Icons.home_work_outlined, 'type': 'all'},
         {'label': 'Car', 'icon': Icons.directions_car_outlined, 'type': 'car'},
@@ -92,7 +107,9 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   Future<void> _loadDoneDeals() async {
     try {
       final res = await ApiService.get('/deals/my-bookings');
-      final bookings = List<Map<String, dynamic>>.from(res['bookings'] ?? []);
+      final bookings = List<Map<String, dynamic>>.from(res['bookings'] ?? [])
+          .where((b) => _isDashboardBookingActive(b))
+          .toList();
       bookings.sort((a, b) {
         final aAt = DateTime.tryParse((a['createdAt'] ?? '').toString()) ??
             DateTime.fromMillisecondsSinceEpoch(0);
