@@ -20,6 +20,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
   Map<String, dynamic>? _activeRide;
   List<Map<String, dynamic>> _latestRides = [];
   Map<String, int> _pendingRequestsByRide = {};
+  List<Map<String, dynamic>> _nearbyCustomerRequests = [];
   double _walletBalance = 0;
   List<Map<String, dynamic>> _recentTransactions = [];
   GoogleMapController? _mapController;
@@ -63,6 +64,10 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       }
       final walletRes = await ApiService.get('/wallet');
       final txRes = await ApiService.get('/wallet/transactions');
+      final customerReqRes = await ApiService.get('/customer-requests', queryParams: {
+        if (_mapReady) 'lat': _currentLocation.latitude.toString(),
+        if (_mapReady) 'lng': _currentLocation.longitude.toString(),
+      });
       final pendingMap = <String, int>{};
       for (final ride in dashboardRides.take(10)) {
         final rideId = (ride['id'] ?? '').toString();
@@ -82,6 +87,10 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           _activeRide = active;
           _latestRides = dashboardRides.take(10).toList();
           _pendingRequestsByRide = pendingMap;
+          _nearbyCustomerRequests =
+              List<Map<String, dynamic>>.from(customerReqRes['requests'] ?? [])
+                  .take(5)
+                  .toList();
           _walletBalance = (walletRes['wallet']?['balance'] ?? 0).toDouble();
           _recentTransactions =
               List<Map<String, dynamic>>.from(txRes['transactions'] ?? [])
@@ -121,6 +130,11 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
     if (mounted) await _loadDashboard();
   }
 
+  Future<void> _openCustomerRequests() async {
+    await Navigator.pushNamed(context, '/customer-requests');
+    if (mounted) await _loadDashboard();
+  }
+
   Future<void> _initLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -133,6 +147,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           _currentLocation = LatLng(position.latitude, position.longitude);
           _mapReady = true;
         });
+        await _loadDashboard();
         _mapController?.animateCamera(
           CameraUpdate.newLatLng(_currentLocation),
         );
@@ -558,10 +573,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                           _QuickActionCard(
                             label: 'Customer Requests',
                             icon: Icons.hail_rounded,
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              '/customer-requests',
-                            ),
+                            onTap: _openCustomerRequests,
                           ),
                         ],
                       ),
@@ -569,6 +581,121 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                   ),
 
                   const SizedBox(height: 30),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Customer Posts Near You',
+                          style: TextStyle(
+                              color: AppColors.bark,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800),
+                        ),
+                        GestureDetector(
+                          onTap: _openCustomerRequests,
+                          child: const Text('See all',
+                              style: TextStyle(
+                                  color: AppColors.moss,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_nearbyCustomerRequests.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Text('No nearby customer posts right now.',
+                          style: TextStyle(color: AppColors.sage)),
+                    )
+                  else
+                    ..._nearbyCustomerRequests.map((request) {
+                      final desiredFare = request['desiredFare'];
+                      final distance = double.tryParse(
+                          (request['distanceKm'] ?? '').toString());
+                      final distanceLabel = distance == null
+                          ? 'Distance unavailable'
+                          : distance <= 10
+                              ? '${distance.toStringAsFixed(1)} km away - nearby'
+                              : '${distance.toStringAsFixed(1)} km away';
+                      final status = (request['status'] ?? 'open')
+                          .toString()
+                          .toUpperCase();
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 6),
+                        child: GestureDetector(
+                          onTap: _openCustomerRequests,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: AppColors.sage.withOpacity(0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${request['startLocation'] ?? 'From'} -> ${request['endLocation'] ?? 'To'}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.bark,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '$distanceLabel | ${desiredFare == null ? 'Offer your fare' : 'Budget Rs $desiredFare'}',
+                                        style: const TextStyle(
+                                          color: AppColors.moss,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.bg,
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        status,
+                                        style: const TextStyle(
+                                          color: AppColors.bark,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Tap to open details and send fare offer.',
+                                  style: TextStyle(
+                                    color: AppColors.sage,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+
+                  const SizedBox(height: 24),
 
                   // Recent Requests Section
                   Padding(

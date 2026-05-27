@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
@@ -9,6 +10,18 @@ class CustomerRequestScreen extends StatefulWidget {
 
   @override
   State<CustomerRequestScreen> createState() => _CustomerRequestScreenState();
+}
+
+class _ResolvedLocation {
+  final double lat;
+  final double lng;
+  final String? city;
+
+  const _ResolvedLocation({
+    required this.lat,
+    required this.lng,
+    this.city,
+  });
 }
 
 class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
@@ -44,6 +57,44 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     }
   }
 
+  Future<_ResolvedLocation?> _resolveAddress(
+    String address, {
+    Position? fallbackPosition,
+  }) async {
+    final clean = address.trim();
+    if (clean.isEmpty) return null;
+    try {
+      final locations = await locationFromAddress('$clean, Pakistan')
+          .timeout(const Duration(seconds: 5));
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        String? city;
+        try {
+          final places = await placemarkFromCoordinates(
+            loc.latitude,
+            loc.longitude,
+          ).timeout(const Duration(seconds: 4));
+          if (places.isNotEmpty) {
+            city = (places.first.locality?.trim().isNotEmpty == true)
+                ? places.first.locality!.trim()
+                : places.first.administrativeArea?.trim();
+          }
+        } catch (_) {}
+        return _ResolvedLocation(
+          lat: loc.latitude,
+          lng: loc.longitude,
+          city: city,
+        );
+      }
+    } catch (_) {}
+
+    if (fallbackPosition == null) return null;
+    return _ResolvedLocation(
+      lat: fallbackPosition.latitude,
+      lng: fallbackPosition.longitude,
+    );
+  }
+
   Future<void> _loadMine() async {
     try {
       final res = await ApiService.get('/customer-requests/my');
@@ -63,19 +114,29 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         _toCtrl.text.trim().isEmpty ||
         _posting) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('From aur To location likhein')),
+        const SnackBar(content: Text('Please enter both From and To locations.')),
       );
       return;
     }
     setState(() => _posting = true);
     try {
       final pos = await _position();
+      final fromLocation = await _resolveAddress(
+        _fromCtrl.text,
+        fallbackPosition: pos,
+      );
+      final toLocation = await _resolveAddress(_toCtrl.text);
       await ApiService.post('/customer-requests', {
         'startLocation': _fromCtrl.text.trim(),
         'endLocation': _toCtrl.text.trim(),
         'requestedAt': _requestedAt.toIso8601String(),
-        if (pos != null) 'startLat': pos.latitude,
-        if (pos != null) 'startLng': pos.longitude,
+        if (fromLocation != null) 'startLat': fromLocation.lat,
+        if (fromLocation != null) 'startLng': fromLocation.lng,
+        if (toLocation != null) 'endLat': toLocation.lat,
+        if (toLocation != null) 'endLng': toLocation.lng,
+        if (pos != null) 'customerLat': pos.latitude,
+        if (pos != null) 'customerLng': pos.longitude,
+        if ((fromLocation?.city ?? '').isNotEmpty) 'city': fromLocation!.city,
       });
       _fromCtrl.clear();
       _toCtrl.clear();
@@ -275,6 +336,11 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
 
   Widget _requestCard(Map<String, dynamic> request) {
     final offers = List<Map<String, dynamic>>.from(request['offers'] ?? []);
+    offers.sort((a, b) {
+      final aFare = double.tryParse((a['counterFare'] ?? a['fare'] ?? 0).toString()) ?? 0;
+      final bFare = double.tryParse((b['counterFare'] ?? b['fare'] ?? 0).toString()) ?? 0;
+      return aFare.compareTo(bFare);
+    });
     final acceptedPhone = (request['acceptedCaptainPhone'] ?? '').toString();
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

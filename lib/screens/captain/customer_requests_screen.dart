@@ -12,7 +12,6 @@ class CaptainCustomerRequestsScreen extends StatefulWidget {
 }
 
 class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsScreen> {
-  final _fareCtrl = TextEditingController();
   bool _loading = true;
   List<Map<String, dynamic>> _requests = [];
 
@@ -20,12 +19,6 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
   void initState() {
     super.initState();
     _loadRequests();
-  }
-
-  @override
-  void dispose() {
-    _fareCtrl.dispose();
-    super.dispose();
   }
 
   Future<Position?> _position() async {
@@ -59,14 +52,43 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
   }
 
   Future<void> _offer(String requestId) async {
-    final fare = double.tryParse(_fareCtrl.text.trim());
+    final ctrl = TextEditingController();
+    final fare = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Send fare offer'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Your fare offer',
+            prefixText: 'Rs ',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = double.tryParse(ctrl.text.trim());
+              if (value == null || value <= 0) return;
+              Navigator.pop(ctx, value);
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
     if (fare == null || fare <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Valid fare likhein')));
       return;
     }
     try {
       await ApiService.post('/customer-requests/$requestId/offers', {'fare': fare});
-      _fareCtrl.clear();
       await _loadRequests();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offer sent to customer')));
@@ -109,6 +131,12 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
     final customerPhone = (request['customerPhoneRevealed'] == true)
         ? (request['customerPhone'] ?? '').toString()
         : '';
+    final distance = double.tryParse((request['distanceKm'] ?? '').toString());
+    final distanceLabel = distance == null
+        ? 'Distance unavailable'
+        : distance <= 10
+            ? '${distance.toStringAsFixed(1)} km away - nearby'
+            : '${distance.toStringAsFixed(1)} km away';
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -117,6 +145,8 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('${request['startLocation']} -> ${request['endLocation']}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          const SizedBox(height: 4),
+          Text(distanceLabel, style: const TextStyle(color: AppColors.moss, fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text('Time: ${request['requestedAt'] ?? '-'}', style: const TextStyle(color: AppColors.textMuted)),
           if ((request['desiredFare'] ?? '').toString().isNotEmpty)
@@ -132,12 +162,6 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
           ],
           if (status != 'accepted') ...[
             const SizedBox(height: 10),
-            TextField(
-              controller: _fareCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Your fare offer'),
-            ),
-            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

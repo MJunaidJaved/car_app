@@ -23,6 +23,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   List<RideModel> _nearbyRides = [];
   Map<String, String> _doneDealCaptainPhoneByRide = {};
   List<Map<String, dynamic>> _recentBookings = [];
+  List<Map<String, dynamic>> _postedRequests = [];
   bool _loadingRides = true;
   double? _userLat;
   double? _userLng;
@@ -82,12 +83,15 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   Future<void> _loadRides({String? type, String? rideMode}) async {
     setState(() => _loadingRides = true);
     try {
-      final rides =
-          await Provider.of<RideService>(context, listen: false).findRides(
+      final ridesFuture =
+          Provider.of<RideService>(context, listen: false).findRides(
         type: type,
         rideMode: rideMode ?? _rideModeFilter,
       );
-      await _loadDoneDeals();
+      final dealsFuture = _loadDoneDeals();
+      final postedFuture = _loadPostedRequests();
+      final rides = await ridesFuture;
+      await Future.wait([dealsFuture, postedFuture]);
       rides.sort((a, b) {
         final byDistance = _distanceScore(a).compareTo(_distanceScore(b));
         if (byDistance != 0) return byDistance;
@@ -140,6 +144,35 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
     } catch (_) {}
   }
 
+  Future<void> _loadPostedRequests() async {
+    try {
+      final res = await ApiService.get('/customer-requests/my');
+      final requests = List<Map<String, dynamic>>.from(res['requests'] ?? [])
+          .where((r) => !['completed', 'cancelled', 'deleted']
+              .contains((r['status'] ?? '').toString().toLowerCase()))
+          .toList();
+      requests.sort((a, b) {
+        final aAt = DateTime.tryParse((a['createdAt'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final bAt = DateTime.tryParse((b['createdAt'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        return bAt.compareTo(aAt);
+      });
+      if (mounted) setState(() => _postedRequests = requests.take(5).toList());
+    } catch (_) {}
+  }
+
+  double _bestOfferFare(Map<String, dynamic> request) {
+    final offers = List<Map<String, dynamic>>.from(request['offers'] ?? []);
+    if (offers.isEmpty) return 0;
+    offers.sort((a, b) {
+      final aFare = double.tryParse((a['counterFare'] ?? a['fare'] ?? 0).toString()) ?? 0;
+      final bFare = double.tryParse((b['counterFare'] ?? b['fare'] ?? 0).toString()) ?? 0;
+      return aFare.compareTo(bFare);
+    });
+    return double.tryParse((offers.first['counterFare'] ?? offers.first['fare'] ?? 0).toString()) ?? 0;
+  }
+
   Future<void> _ensureCustomerPhone() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final user = userProvider.user;
@@ -175,7 +208,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
               if (!validPhone(value)) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Valid phone number likhein (03XXXXXXXXX)'),
+                    content: Text('Please enter a valid phone number (03XXXXXXXXX).'),
                   ),
                 );
                 return;
@@ -361,10 +394,13 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton.icon(
-                                      onPressed: () => Navigator.pushNamed(
-                                        context,
-                                        '/customer-request',
-                                      ),
+                                      onPressed: () async {
+                                        await Navigator.pushNamed(
+                                          context,
+                                          '/customer-request',
+                                        );
+                                        await _loadPostedRequests();
+                                      },
                                       icon: const Icon(Icons.edit_location_alt_outlined),
                                       label: const Text('Post where you want to go'),
                                       style: ElevatedButton.styleFrom(
@@ -410,6 +446,137 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'My Posted Requests',
+                                  style: TextStyle(
+                                    color: AppColors.dark,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () async {
+                                    await Navigator.pushNamed(
+                                        context, '/customer-request');
+                                    await _loadPostedRequests();
+                                  },
+                                  child: const Text(
+                                    'Details',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_postedRequests.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Text(
+                                  'You have not posted any ride request yet.',
+                                  style: TextStyle(color: AppColors.textMuted),
+                                ),
+                              ),
+                            )
+                          else
+                            ..._postedRequests.map((request) {
+                              final offers = List<Map<String, dynamic>>.from(
+                                  request['offers'] ?? []);
+                              final bestFare = _bestOfferFare(request);
+                              final status = (request['status'] ?? 'open')
+                                  .toString()
+                                  .toUpperCase();
+                              return Padding(
+                                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    await Navigator.pushNamed(
+                                        context, '/customer-request');
+                                    await _loadPostedRequests();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: AppColors.sage.withOpacity(0.25),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${request['startLocation'] ?? 'From'} -> ${request['endLocation'] ?? 'To'}',
+                                          style: const TextStyle(
+                                            color: AppColors.dark,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                offers.isEmpty
+                                                    ? 'No captain offers yet'
+                                                    : '${offers.length} offers, best Rs ${bestFare.toStringAsFixed(0)}',
+                                                style: const TextStyle(
+                                                  color: AppColors.moss,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.bg,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                              child: Text(
+                                                status,
+                                                style: const TextStyle(
+                                                  color: AppColors.textMuted,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        const Text(
+                                          'Tap to see captain-wise rates, accept, or counter.',
+                                          style: TextStyle(
+                                            color: AppColors.textMuted,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          const SizedBox(height: 14),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Row(
