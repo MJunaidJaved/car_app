@@ -127,6 +127,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         }
                                       } else if (type == 'deal_confirmed' ||
                                           type == 'deal_cancelled' ||
+                                          type == 'deal_counter' ||
                                           type == 'ride_started') {
                                         Navigator.pushNamed(context, '/my-bookings');
                                       } else if (type == 'ride_completed') {

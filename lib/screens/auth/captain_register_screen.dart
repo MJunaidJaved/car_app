@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -24,6 +23,7 @@ class CaptainRegisterScreen extends StatefulWidget {
 class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneCtrl = TextEditingController();
+  final _cityCtrl = TextEditingController();
   final _cnicCtrl = TextEditingController();
   final _makeCtrl = TextEditingController();
   final _modelCtrl = TextEditingController();
@@ -35,18 +35,34 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
   final _emergencyPhoneCtrl = TextEditingController();
 
   static const _cities = [
+    'Abbottabad',
+    'Bahawalpur',
+    'Dera Ghazi Khan',
     'Lahore',
     'Karachi',
     'Islamabad',
     'Rawalpindi',
     'Faisalabad',
+    'Gujranwala',
+    'Gujrat',
+    'Hyderabad',
+    'Jhelum',
+    'Kasur',
+    'Larkana',
     'Multan',
+    'Murree',
+    'Okara',
     'Peshawar',
     'Quetta',
+    'Rahim Yar Khan',
+    'Sahiwal',
+    'Sargodha',
+    'Sialkot',
+    'Sukkur',
+    'Wah Cantt',
   ];
 
   final ImagePicker _picker = ImagePicker();
-  String? _city;
   String? _gender;
   String? _captainVehicleType;
   bool _isLoading = false;
@@ -129,9 +145,10 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
       return;
     }
 
-    if (_city == null) {
+    final city = _cityCtrl.text.trim();
+    if (city.isEmpty) {
       debugPrint('DEBUG: Validation failed - City is null!');
-      AppHelpers.showSnackBar(context, 'Select your city', isError: true);
+      AppHelpers.showSnackBar(context, 'Enter your city', isError: true);
       return;
     }
       if (_gender == null) {
@@ -194,7 +211,7 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
         cnicBackUrl: cnicBackUrl,
         vehiclePhotoUrl: vehiclePhotoUrl,
         cnic: _cnicCtrl.text.trim(),
-        city: _city,
+        city: city,
         vehicleMake: _makeCtrl.text.trim(),
         vehicleModel: _modelCtrl.text.trim(),
         captainVehicleType: _captainVehicleType,
@@ -224,6 +241,7 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
   @override
   void dispose() {
     _phoneCtrl.dispose();
+    _cityCtrl.dispose();
     _cnicCtrl.dispose();
     _makeCtrl.dispose();
     _modelCtrl.dispose();
@@ -287,14 +305,60 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
               },
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _city,
-              decoration: _inputDecoration('City'),
-              items: _cities
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (v) => setState(() => _city = v),
-              validator: (v) => v == null ? 'Select city' : null,
+            Autocomplete<String>(
+              optionsBuilder: (textEditingValue) {
+                final query = textEditingValue.text.trim().toLowerCase();
+                if (query.isEmpty) return _cities;
+                return _cities.where((city) => city.toLowerCase().contains(query));
+              },
+              onSelected: (value) => _cityCtrl.text = value,
+              fieldViewBuilder:
+                  (context, textController, focusNode, onFieldSubmitted) {
+                if (textController.text != _cityCtrl.text) {
+                  textController.text = _cityCtrl.text;
+                  textController.selection = TextSelection.collapsed(
+                    offset: textController.text.length,
+                  );
+                }
+                textController.addListener(() {
+                  if (_cityCtrl.text != textController.text) {
+                    _cityCtrl.text = textController.text;
+                  }
+                });
+                return TextFormField(
+                  controller: textController,
+                  focusNode: focusNode,
+                  decoration: _inputDecoration('City (search or type manually)'),
+                  textInputAction: TextInputAction.next,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter city' : null,
+                );
+              },
+              optionsViewBuilder: (context, onSelected, options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 6,
+                    borderRadius: BorderRadius.circular(14),
+                    child: ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(maxHeight: 240, maxWidth: 360),
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: options.length,
+                        itemBuilder: (context, index) {
+                          final option = options.elementAt(index);
+                          return ListTile(
+                            dense: true,
+                            title: Text(option),
+                            onTap: () => onSelected(option),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
@@ -403,7 +467,7 @@ class _CaptainRegisterScreenState extends State<CaptainRegisterScreen> {
                     decoration: _inputDecoration('Seats'),
                     validator: (v) {
                       final n = int.tryParse(v ?? '');
-                      if (n == null || n < 1 || n > 8) return '1–8 seats';
+                      if (n == null || n < 1 || n > 60) return '1-60 seats';
                       return null;
                     },
                   ),

@@ -179,19 +179,56 @@ class _RequestsScreenState extends State<RequestsScreen>
     }
   }
 
-  Future<void> _decline(String dealId) async {
+  Future<void> _counter(String dealId, double currentFare) async {
+    final controller =
+        TextEditingController(text: currentFare > 0 ? currentFare.toStringAsFixed(0) : '');
+    final amount = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Counter Price'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Your price (Rs)',
+            prefixText: 'Rs ',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = double.tryParse(controller.text.trim());
+              if (value == null || value <= 0) return;
+              Navigator.pop(ctx, value);
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (amount == null) return;
+
     try {
       await Provider.of<FirestoreService>(context, listen: false)
-          .cancelDeal(dealId);
+          .counterDeal(dealId, amount);
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Request declined')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Counter price sent')),
+        );
         await _loadDeals();
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
@@ -492,7 +529,7 @@ class _RequestsScreenState extends State<RequestsScreen>
                 color: AppColors.moss.withOpacity(0.3), size: 64),
             const SizedBox(height: 12),
             Text(
-              isPending ? 'No pending requests.' : 'No responded requests yet.',
+              isPending ? 'No pending requests.' : 'No done/history requests yet.',
               style: const TextStyle(
                   color: AppColors.sage,
                   fontSize: 16,
@@ -615,8 +652,8 @@ class _RequestsScreenState extends State<RequestsScreen>
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => _decline(dealId),
-                        child: const Text('Decline'),
+                        onPressed: () => _counter(dealId, fare),
+                        child: const Text('Counter Price'),
                       ),
                     ),
                     const SizedBox(width: 12),

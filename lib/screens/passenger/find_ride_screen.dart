@@ -477,6 +477,9 @@ class _RideResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final vehicle = ride.displayVehicle;
     final isFull = ride.isFull;
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    final isFemaleUser = (user?.gender ?? '').toLowerCase() == 'female';
+    final isLadiesLocked = ride.isLadiesRide && !isFemaleUser;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -550,6 +553,10 @@ class _RideResultCard extends StatelessWidget {
             ],
           ),
           VehicleInfoChip(vehicleText: vehicle),
+          if (ride.isLadiesRide) ...[
+            const SizedBox(height: 10),
+            _RideChip(icon: Icons.woman_2_outlined, label: 'Ladies Ride'),
+          ],
           const SizedBox(height: 12),
           Divider(height: 1, color: AppColors.sage.withOpacity(0.2)),
           const SizedBox(height: 20),
@@ -636,7 +643,9 @@ class _RideResultCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: isFull ? null : onBookNow,
+              onPressed: (isFull || isLadiesLocked)
+                  ? null
+                  : onBookNow,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.cream,
@@ -646,9 +655,9 @@ class _RideResultCard extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.price_change_outlined),
-              label: const Text(
-                'Book Now',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              label: Text(
+                isLadiesLocked ? 'Female passengers only' : 'Book Now',
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
           ),

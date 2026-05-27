@@ -358,6 +358,22 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 16),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => Navigator.pushNamed(
+                                        context,
+                                        '/customer-request',
+                                      ),
+                                      icon: const Icon(Icons.edit_location_alt_outlined),
+                                      label: const Text('Post where you want to go'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.moss,
+                                        foregroundColor: AppColors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
                                   GestureDetector(
                                     onTap: () => Navigator.pushNamed(
                                         context, '/find-ride'),
@@ -752,6 +768,10 @@ class _LiveRideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    final isFemaleUser = (user?.gender ?? '').toLowerCase() == 'female';
+    final isLadiesLocked = ride.isLadiesRide && !isFemaleUser;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       padding: const EdgeInsets.all(16),
@@ -812,6 +832,25 @@ class _LiveRideCard extends StatelessWidget {
                                 color: AppColors.textMuted, fontSize: 12)),
                       ],
                     ),
+                    if (ride.isLadiesRide) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Ladies Ride',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -886,9 +925,11 @@ class _LiveRideCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: onBookNow,
+                onPressed: isLadiesLocked ? null : onBookNow,
                 icon: const Icon(Icons.price_change_outlined),
-                label: const Text('Book Now'),
+                label: Text(
+                  isLadiesLocked ? 'Female passengers only' : 'Book Now',
+                ),
               ),
             ),
         ],

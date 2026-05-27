@@ -1,5 +1,4 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/app_navigator.dart';
@@ -81,6 +80,10 @@ class FcmService {
       AppNavigator.state?.pushNamed('/my-rides');
       return;
     }
+    if (screen == 'customer-requests') {
+      AppNavigator.state?.pushNamed('/customer-requests');
+      return;
+    }
 
     switch (type) {
       case 'new_deal':
@@ -92,6 +95,7 @@ class FcmService {
         break;
       case 'deal_confirmed':
       case 'deal_cancelled':
+      case 'deal_counter':
         AppNavigator.state?.pushNamed('/my-bookings');
         break;
       case 'ride_started':
@@ -118,6 +122,14 @@ class FcmService {
         if (dealId != null && dealId.isNotEmpty) {
           AppNavigator.state?.pushNamed('/my-bookings');
         }
+        break;
+      case 'customer_request':
+      case 'customer_counter':
+      case 'customer_request_accepted':
+        AppNavigator.state?.pushNamed('/customer-requests');
+        break;
+      case 'customer_offer':
+        AppNavigator.state?.pushNamed('/customer-request');
         break;
       default:
         AppNavigator.state?.pushNamed('/notifications');

@@ -29,6 +29,7 @@ import 'screens/driver/my_rides_screen.dart';
 
 import 'screens/passenger/find_ride_screen.dart';
 import 'screens/passenger/my_bookings_screen.dart';
+import 'screens/passenger/customer_request_screen.dart';
 import 'screens/ride/fare_negotiate_screen.dart';
 
 import 'screens/ride/active_ride_screen.dart';
@@ -39,6 +40,7 @@ import 'screens/captain/earnings_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/referral_screen.dart';
 import 'screens/captain/requests_screen.dart';
+import 'screens/captain/customer_requests_screen.dart';
 import 'screens/ride/deal_confirmed_screen.dart';
 import 'screens/ride/rate_review_screen.dart';
 import 'screens/tours/tours_screen.dart';
@@ -55,12 +57,21 @@ void main() async {
   await FcmService.initialize();
   FirebaseMessaging.onMessageOpenedApp.listen((message) {
     final screen = (message.data['screen'] ?? '').toString();
+    final type = (message.data['type'] ?? '').toString();
+    if (type == 'customer_offer') {
+      AppNavigator.state?.pushNamed('/customer-request');
+      return;
+    }
     if (screen == 'find-ride') {
       AppNavigator.state?.pushNamed('/find-ride');
       return;
     }
     if (screen == 'my-rides') {
       AppNavigator.state?.pushNamed('/my-rides');
+      return;
+    }
+    if (screen == 'customer-requests') {
+      AppNavigator.state?.pushNamed('/customer-requests');
     }
   });
   Provider.debugCheckInvalidValueType = null;
@@ -142,6 +153,11 @@ class CarPoolApp extends StatelessWidget {
           '/find-ride': (context) => const FindRideScreen(),
 
           '/my-bookings': (context) => const MyBookingsScreen(),
+
+          '/customer-request': (context) => const CustomerRequestScreen(),
+
+          '/customer-requests': (context) =>
+              const CaptainCustomerRequestsScreen(),
 
           '/wallet': (context) => const WalletScreen(),
 

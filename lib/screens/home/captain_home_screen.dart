@@ -115,6 +115,12 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
     Navigator.pushNamed(context, '/post-ride', arguments: args);
   }
 
+  Future<void> _openRideRequests(String rideId) async {
+    if (rideId.isEmpty) return;
+    await Navigator.pushNamed(context, '/requests', arguments: rideId);
+    if (mounted) await _loadDashboard();
+  }
+
   Future<void> _initLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -494,8 +500,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             icon: Icons.inbox_rounded,
                             onTap: () {
                               if (_activeRide != null) {
-                                Navigator.pushNamed(context, '/requests',
-                                    arguments: _activeRide!['id']);
+                                _openRideRequests(
+                                    (_activeRide!['id'] ?? '').toString());
                               } else {
                                 Navigator.pushNamed(context, '/my-rides');
                               }
@@ -548,6 +554,15 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             onTap: () =>
                                 Navigator.pushNamed(context, '/my-rides'),
                           ),
+                          const SizedBox(width: 16),
+                          _QuickActionCard(
+                            label: 'Customer Requests',
+                            icon: Icons.hail_rounded,
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              '/customer-requests',
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -571,8 +586,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                         GestureDetector(
                           onTap: () {
                             if (_activeRide != null) {
-                              Navigator.pushNamed(context, '/requests',
-                                  arguments: _activeRide!['id']);
+                              _openRideRequests(
+                                  (_activeRide!['id'] ?? '').toString());
                             } else {
                               Navigator.pushNamed(context, '/my-rides');
                             }
@@ -601,11 +616,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                         child: GestureDetector(
                           onTap: () {
                             if (rideId.isEmpty) return;
-                            Navigator.pushNamed(
-                              context,
-                              '/requests',
-                              arguments: rideId,
-                            );
+                            _openRideRequests(rideId);
                           },
                           child: Container(
                             padding: const EdgeInsets.all(16),
@@ -682,11 +693,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     OutlinedButton(
                                       onPressed: () {
                                         if (rideId.isEmpty) return;
-                                        Navigator.pushNamed(
-                                          context,
-                                          '/requests',
-                                          arguments: rideId,
-                                        );
+                                        _openRideRequests(rideId);
                                       },
                                       child: const Text('Details'),
                                     ),

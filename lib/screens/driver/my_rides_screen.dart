@@ -132,7 +132,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
                       labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                       tabs: const [
                         Tab(text: 'Active'),
-                        Tab(text: 'Past'),
+                        Tab(text: 'Done'),
                       ],
                     ),
                   ),
@@ -223,7 +223,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
                               children: [
                                 Icon(Icons.history_rounded, color: AppColors.moss.withOpacity(0.3), size: 64),
                                 const SizedBox(height: 12),
-                                const Text('No past rides found.', style: TextStyle(color: AppColors.sage, fontSize: 16, fontWeight: FontWeight.w600)),
+                                const Text('No done rides found.', style: TextStyle(color: AppColors.sage, fontSize: 16, fontWeight: FontWeight.w600)),
                               ],
                             ),
                           );

@@ -424,18 +424,6 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                     ],
                   ),
                 ),
-                if (!_isConfirmed)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                    child: TextButton(
-                      onPressed: _isCreatingDeal ? null : _acceptCaptainFare,
-                      style: TextButton.styleFrom(
-                          foregroundColor: AppColors.white),
-                      child: Text(
-                          'Book at captain fare (Rs ${widget.ride.suggestedFare.toStringAsFixed(0)})'),
-                    ),
-                  ),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: CoRidersSection(rideId: widget.ride.id),
@@ -478,12 +466,13 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                       children: [
                         Expanded(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               TextField(
                                 controller: _pickupCtrl,
                                 decoration: const InputDecoration(
                                   labelText: 'Exact pickup point',
-                                  hintText: 'Counter price ke sath pickup likhein',
+                                  hintText: 'Pickup point likhein',
                                   border: OutlineInputBorder(),
                                 ),
                               ),
@@ -520,21 +509,36 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                                   ),
                                 ),
                               ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: _isCreatingDeal
+                                          ? null
+                                          : _acceptCaptainFare,
+                                      icon: const Icon(Icons.check_circle_outline),
+                                      label: Text(
+                                        'Done Rs ${widget.ride.suggestedFare.toStringAsFixed(0)}',
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.moss,
+                                        foregroundColor: AppColors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed:
+                                          _isCreatingDeal ? null : _sendOffer,
+                                      icon: const Icon(Icons.price_change_outlined),
+                                      label: const Text('Send Counter'),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: _isCreatingDeal ? null : _sendOffer,
-                          child: Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: AppColors.moss,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Icon(Icons.send_rounded,
-                                color: AppColors.white, size: 22),
                           ),
                         ),
                       ],

@@ -19,6 +19,8 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
     with SingleTickerProviderStateMixin {
   String? _selected;
   String? _gender;
+  String? _existingRole;
+  String? _existingGender;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   bool _isBusy = false;
@@ -30,6 +32,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
         vsync: this, duration: const Duration(milliseconds: 800));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _animCtrl.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prefillProfile());
   }
 
   @override
@@ -38,9 +41,51 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
     super.dispose();
   }
 
+  void _prefillProfile() {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    final role = (user?.role ?? '').trim().toLowerCase();
+    final gender = (user?.gender ?? '').trim().toLowerCase();
+    if (!mounted) return;
+    setState(() {
+      if (role == 'captain' || role == 'passenger' || role == 'customer') {
+        _existingRole = role == 'customer' ? 'passenger' : role;
+      }
+      if (gender == 'male' || gender == 'female') {
+        _existingGender = gender;
+        _gender = gender;
+      }
+    });
+  }
+
+  bool get _needsGender => _existingGender == null;
+
+  void _navigateForRole(Map<String, dynamic> userData, String role) {
+    if (role == 'captain') {
+      final status = (userData['captainVerificationStatus'] ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
+      final isVerified = userData['isVerified'] == true;
+      final hasVehicle = userData['vehicleMake'] != null &&
+          userData['vehicleMake'].toString().trim().isNotEmpty;
+
+      if (status == 'pending_verification') {
+        Navigator.pushReplacementNamed(context, '/verification-pending');
+      } else if (status == 'verified' || isVerified) {
+        Navigator.pushReplacementNamed(context, '/captain-home');
+      } else if (hasVehicle) {
+        Navigator.pushReplacementNamed(context, '/captain-home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/captain-register');
+      }
+    } else {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
+  }
+
   Future<void> _proceed() async {
     if (_selected == null || _isBusy) return;
-    if (_gender == null) {
+    if (_needsGender && _gender == null) {
       AppHelpers.showSnackBar(context, 'Please select gender', isError: true);
       return;
     }
@@ -58,59 +103,30 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
         return;
       }
 
-      if (_selected == 'captain') {
-        // Save role to backend
-        await ApiService.patch(
-            '/auth/profile', {'role': 'captain', 'gender': _gender});
-        await SessionStorage.setRole('captain');
+      final selectedRole = _selected!;
+      final genderToSave = _gender ?? _existingGender;
 
-        // Force token refresh
-        await firebaseUser.getIdToken(true);
+      await ApiService.patch('/auth/profile', {
+        'role': selectedRole,
+        if (genderToSave != null) 'gender': genderToSave,
+      });
+      await SessionStorage.setRole(selectedRole);
 
-        // Update provider
-        final response = await ApiService.get('/auth/profile');
-        final userData = response['user'];
+      // Force token refresh and fetch the saved backend profile before routing.
+      await firebaseUser.getIdToken(true);
+      final response = await ApiService.get('/auth/profile');
+      final userData = response['user'] as Map<String, dynamic>;
 
-        if (userProvider.user != null) {
-          final updatedUser = userProvider.user?.copyWith(
-            role: 'captain',
-            gender: _gender,
-          );
-          userProvider.setUser(updatedUser!);
-        }
+      if (userProvider.user != null) {
+        final updatedUser = userProvider.user?.copyWith(
+          role: selectedRole,
+          gender: genderToSave,
+        );
+        userProvider.setUser(updatedUser!);
+      }
 
-        if (mounted) {
-          // Check if profile is complete
-          final hasVehicle = userData['vehicleMake'] != null &&
-              userData['vehicleMake'].toString().isNotEmpty;
-
-          if (hasVehicle) {
-            Navigator.pushReplacementNamed(context, '/captain-home');
-          } else {
-            Navigator.pushReplacementNamed(context, '/captain-register');
-          }
-        }
-      } else if (_selected == 'passenger') {
-        // Save role to backend
-        await ApiService.patch(
-            '/auth/profile', {'role': 'passenger', 'gender': _gender});
-        await SessionStorage.setRole('passenger');
-
-        // Force token refresh
-        await firebaseUser.getIdToken(true);
-
-        // Update provider
-        if (userProvider.user != null) {
-          final updatedUser = userProvider.user?.copyWith(
-            role: 'passenger',
-            gender: _gender,
-          );
-          userProvider.setUser(updatedUser!);
-        }
-
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+      if (mounted) {
+        _navigateForRole(userData, selectedRole);
       }
     } catch (e) {
       if (mounted) {
@@ -180,7 +196,9 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Choose your role to get started',
+                          _existingRole == null
+                              ? 'Choose your role to get started'
+                              : 'Choose role for this login',
                           style: TextStyle(
                             color: AppColors.white.withOpacity(0.8),
                             fontSize: 16,
@@ -204,22 +222,25 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
                           isSelected: _selected == 'captain',
                           onTap: () => setState(() => _selected = 'captain'),
                         ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _gender,
-                          decoration: const InputDecoration(
-                            labelText: 'Gender',
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(),
+                        if (_needsGender) ...[
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: _gender,
+                            decoration: const InputDecoration(
+                              labelText: 'Gender',
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'male', child: Text('Male')),
+                              DropdownMenuItem(
+                                  value: 'female', child: Text('Female')),
+                            ],
+                            onChanged: (value) =>
+                                setState(() => _gender = value),
                           ),
-                          items: const [
-                            DropdownMenuItem(value: 'male', child: Text('Male')),
-                            DropdownMenuItem(
-                                value: 'female', child: Text('Female')),
-                          ],
-                          onChanged: (value) => setState(() => _gender = value),
-                        ),
+                        ],
                         const Spacer(),
                         AnimatedOpacity(
                           opacity: _selected != null ? 1.0 : 0.4,

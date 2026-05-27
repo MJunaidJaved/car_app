@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/helpers.dart';
 import '../../widgets/app_widgets.dart';
@@ -97,59 +94,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
-  Future<void> _pickLocationOnMap({required bool isStart}) async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
-    }
-
-    Position position = await Geolocator.getCurrentPosition();
-    LatLng initial = LatLng(position.latitude, position.longitude);
-
-    if (!mounted) return;
-
-    final confirmed = await showModalBottomSheet<LatLng>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _MapPickerSheet(initialPosition: initial),
-    );
-
-    if (confirmed == null) return;
-
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        confirmed.latitude,
-        confirmed.longitude,
-      );
-      final place = placemarks.first;
-      final address =
-          '${place.street ?? ''}, ${place.subLocality ?? ''}, ${place.locality ?? ''}';
-      setState(() {
-        if (isStart) {
-          _startLat = confirmed.latitude;
-          _startLng = confirmed.longitude;
-          _fromCtrl.text = address;
-        } else {
-          _endLat = confirmed.latitude;
-          _endLng = confirmed.longitude;
-          _toCtrl.text = address;
-        }
-      });
-    } catch (_) {
-      setState(() {
-        if (isStart) {
-          _startLat = confirmed.latitude;
-          _startLng = confirmed.longitude;
-        } else {
-          _endLat = confirmed.latitude;
-          _endLng = confirmed.longitude;
-        }
-      });
-    }
-  }
-
   Future<void> _post() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -208,7 +152,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
         startLocation:   _fromCtrl.text.trim(),
         endLocation:     _toCtrl.text.trim(),
         suggestedFare:   double.tryParse(_fareCtrl.text) ?? 0.0,
-        totalSeats:      _rideMode == 'solo' ? 1 : (int.tryParse(_seatsCtrl.text) ?? 1),
+        totalSeats:      int.tryParse(_seatsCtrl.text) ?? 1,
         rideType:        _rideType,
         vehicleType:     _vehicleTypeForCaptain(user),
         rideMode:        _rideMode,
@@ -411,9 +355,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   onSelected: (_) {
                                     setState(() {
                                       _rideMode = mode;
-                                      if (_rideMode == 'solo') {
-                                        _seatsCtrl.text = '1';
-                                      }
                                     });
                                   },
                                 );
@@ -472,19 +413,17 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                 TextFormField(
                                   controller: _seatsCtrl,
                                   keyboardType: TextInputType.number,
-                                  enabled: _rideMode != 'solo',
                                   validator: (v) {
-                                    if (_rideMode == 'solo') return null;
                                     if (v == null || v.isEmpty) return 'Enter seats';
                                     final n = int.tryParse(v);
-                                    if (n == null || n < 1 || n > 6) return '1 to 6 seats';
+                                    if (n == null || n < 1 || n > 60) return '1 to 60 seats';
                                     return null;
                                   },
                                   decoration: InputDecoration(
                                     labelText: 'Available seats',
                                     prefixIcon: const Icon(Icons.event_seat_rounded),
                                     helperText: _rideMode == 'solo'
-                                        ? 'Solo ride keeps seats fixed to 1'
+                                        ? 'Solo booking, but seats can match your vehicle'
                                         : null,
                                     border: const OutlineInputBorder(),
                                   ),
@@ -630,92 +569,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
 }
 
 // ── Map Picker Sheet ──────────────────────────────────────────────────────────
-
-class _MapPickerSheet extends StatefulWidget {
-  final LatLng initialPosition;
-  const _MapPickerSheet({required this.initialPosition});
-
-  @override
-  State<_MapPickerSheet> createState() => _MapPickerSheetState();
-}
-
-class _MapPickerSheetState extends State<_MapPickerSheet> {
-  late LatLng _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.initialPosition;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.only(
-          topLeft:  Radius.circular(32),
-          topRight: Radius.circular(32),
-        ),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40, height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.sage.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Tap to select location',
-            style: TextStyle(color: AppColors.bark, fontSize: 16, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: widget.initialPosition,
-                  zoom: 14,
-                ),
-                onTap: (latLng) => setState(() => _selected = latLng),
-                markers: {
-                  Marker(
-                    markerId: const MarkerId('selected'),
-                    position: _selected,
-                  ),
-                },
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context, _selected),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.moss,
-                foregroundColor: AppColors.white,
-                minimumSize: const Size(double.infinity, 54),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
-              ),
-              child: const Text('Confirm Location', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Section Card ──────────────────────────────────────────────────────────────
 
 class _SectionCard extends StatelessWidget {
   final String title;

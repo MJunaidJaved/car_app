@@ -38,6 +38,15 @@ class FirestoreService {
     await ApiService.patch('/deals/$dealId/cancel', {});
   }
 
+  Future<void> counterDeal(String dealId, double counterFare,
+      {String? message}) async {
+    await ApiService.patch('/deals/$dealId/counter', {
+      'counterFare': counterFare,
+      if (message != null && message.trim().isNotEmpty)
+        'message': message.trim(),
+    });
+  }
+
   Future<void> startDeal(String dealId) async {
     await ApiService.patch('/deals/$dealId/start', {});
   }
