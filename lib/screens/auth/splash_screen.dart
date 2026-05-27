@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
@@ -62,9 +63,12 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2500));
     if (!mounted) return;
 
-    final loggedIn = await SessionStorage.isLoggedIn();
-    if (!mounted) return;
-    if (!loggedIn) return;
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      final loggedIn = await SessionStorage.isLoggedIn();
+      if (!mounted) return;
+      if (!loggedIn) return;
+    }
 
     final auth = Provider.of<AuthService>(context, listen: false);
     final user = await auth.restoreSession();
@@ -88,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen>
       } else {
         Navigator.pushReplacementNamed(context, '/captain-register');
       }
-    } else if (role == 'passenger') {
+    } else if (role == 'passenger' || role == 'customer') {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       Navigator.pushReplacementNamed(context, '/role-select');
@@ -279,8 +283,9 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                             ),
                             SizedBox(
-                                height:
-                                    MediaQuery.of(context).padding.bottom + 40),
+                              height:
+                                  MediaQuery.of(context).padding.bottom + 16,
+                            ),
                           ],
                         ),
                       ),

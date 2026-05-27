@@ -646,7 +646,9 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                     ),
                                   ),
                                 )),
-                          const SizedBox(height: 100),
+                          SizedBox(
+                            height: MediaQuery.of(context).padding.bottom + 84,
+                          ),
                         ],
                       ),
                     ),

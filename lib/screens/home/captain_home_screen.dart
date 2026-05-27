@@ -745,7 +745,9 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                       );
                     }),
 
-                  const SizedBox(height: 120),
+                  SizedBox(
+                    height: MediaQuery.of(context).padding.bottom + 86,
+                  ),
                 ],
               ),
             ),

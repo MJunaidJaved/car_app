@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
+import '../../services/session_storage.dart';
 import '../../providers/user_provider.dart';
 import '../../widgets/app_widgets.dart';
 import '../../utils/app_colors.dart';
@@ -61,6 +62,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
         // Save role to backend
         await ApiService.patch(
             '/auth/profile', {'role': 'captain', 'gender': _gender});
+        await SessionStorage.setRole('captain');
 
         // Force token refresh
         await firebaseUser.getIdToken(true);
@@ -92,6 +94,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
         // Save role to backend
         await ApiService.patch(
             '/auth/profile', {'role': 'passenger', 'gender': _gender});
+        await SessionStorage.setRole('passenger');
 
         // Force token refresh
         await firebaseUser.getIdToken(true);

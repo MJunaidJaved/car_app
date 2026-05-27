@@ -62,14 +62,8 @@ class _LoginScreenState extends State<LoginScreen>
       );
       userProvider.setUser(userData);
       if (mounted) {
-  if (userData.role == 'captain') {
-    Navigator.pushReplacementNamed(context, '/captain-home');
-  } else if (userData.role == 'passenger') {
-    Navigator.pushReplacementNamed(context, '/home');
-  } else {
-    Navigator.pushReplacementNamed(context, '/role-select');
-  }
-}
+        Navigator.pushReplacementNamed(context, '/role-select');
+      }
     } catch (e) {
       if (mounted) AppHelpers.showSnackBar(context, e.toString(), isError: true);
     } finally {
@@ -87,14 +81,8 @@ class _LoginScreenState extends State<LoginScreen>
       if (userData != null) {
         userProvider.setUser(userData);
         if (mounted) {
-  if (userData.role == 'captain') {
-    Navigator.pushReplacementNamed(context, '/captain-home');
-  } else if (userData.role == 'passenger') {
-    Navigator.pushReplacementNamed(context, '/home');
-  } else {
-    Navigator.pushReplacementNamed(context, '/role-select');
-  }
-}
+          Navigator.pushReplacementNamed(context, '/role-select');
+        }
       }
     } catch (e) {
       if (mounted) AppHelpers.showSnackBar(context, e.toString(), isError: true);

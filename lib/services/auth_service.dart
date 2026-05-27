@@ -39,8 +39,8 @@ class AuthService {
       email: user.email,
       name: user.name,
     );
-    if (user.role.isNotEmpty) {
-      await SessionStorage.setRole(user.role);
+    if (user.phone.trim().isNotEmpty) {
+      await SessionStorage.setPhone(user.phone);
     }
   }
 
@@ -260,8 +260,18 @@ class AuthService {
       await _pushFcmToken();
       return user;
     } catch (e) {
-      debugPrint('Google user not in DB, syncing: $e');
-      return syncRole(role: 'passenger', name: name, phone: '');
+      debugPrint('Google user not in DB yet, sending to role selection: $e');
+      final user = UserModel(
+        id: uid,
+        email: authResult.user?.email ?? googleUser.email,
+        name: name,
+        phone: '',
+        role: '',
+        photoUrl: authResult.user?.photoURL,
+        createdAt: DateTime.now(),
+      );
+      await _persistUser(user);
+      return user;
     }
   }
 
