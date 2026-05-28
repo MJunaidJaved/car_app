@@ -41,7 +41,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
 
   String _vehicleTypeForCaptain(UserModel? user) {
     final saved = (user?.captainVehicleType ?? '').trim().toLowerCase();
-    if (_rideType == 'tour') return 'tour';
     if (['car', 'bike', 'bus', 'truck', 'shazore'].contains(saved)) {
       return saved;
     }

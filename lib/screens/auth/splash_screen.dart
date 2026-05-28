@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkExistingSession() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
+    await Future.delayed(const Duration(milliseconds: 250));
     if (!mounted) return;
 
     final firebaseUser = FirebaseAuth.instance.currentUser;
@@ -335,7 +335,7 @@ class _GoogleIcon extends StatelessWidget {
       height: 20,
       padding: const EdgeInsets.all(0),
       child: Image.network(
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_\"G\"_logo.svg/24px-Google_\"G\"_logo.svg.png',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_"G"_logo.svg/24px-Google_"G"_logo.svg.png',
         errorBuilder: (context, error, stackTrace) => const Icon(
             Icons.g_mobiledata_rounded,
             color: Colors.blue,

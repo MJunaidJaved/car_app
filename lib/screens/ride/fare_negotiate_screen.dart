@@ -66,7 +66,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
     if (_pickupCtrl.text.trim().isEmpty) {
       AppHelpers.showSnackBar(
         context,
-        'Counter price ke sath pickup point bhi likhein',
+        'Enter pickup point with your counter price',
         isError: true,
       );
       return;
@@ -98,7 +98,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
     if (_pickupCtrl.text.trim().isEmpty) {
       AppHelpers.showSnackBar(
         context,
-        'Pickup point likhna zaroori hai',
+        'Enter your pickup point',
         isError: true,
       );
       return;
@@ -348,7 +348,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                         radius: 18,
                         backgroundColor: AppColors.white.withOpacity(0.2),
                         child: Text(
-                          (widget.ride.captainName ?? 'C')[0].toUpperCase(),
+                          widget.ride.captainName[0].toUpperCase(),
                           style: const TextStyle(
                             color: AppColors.white,
                             fontWeight: FontWeight.w700,
@@ -361,7 +361,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.ride.captainName ?? 'Captain',
+                              widget.ride.captainName,
                               style: const TextStyle(
                                 color: AppColors.white,
                                 fontSize: 16,
@@ -472,7 +472,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                                 controller: _pickupCtrl,
                                 decoration: const InputDecoration(
                                   labelText: 'Exact pickup point',
-                                  hintText: 'Pickup point likhein',
+                                  hintText: 'Enter your pickup point',
                                   border: OutlineInputBorder(),
                                 ),
                               ),

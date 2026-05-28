@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -19,11 +20,16 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
   late AnimationController _dotsCtrl;
 
   String? _dealId;
+  Timer? _refreshTimer;
   String _captainName = 'Captain';
   String _phoneDisplay = '••• •••• ••••';
   String _phoneRaw = '';
   double _fare = 0;
   String _rideId = '';
+  String _status = 'pending';
+  String _lastCounterBy = '';
+  bool _isSendingCounter = false;
+  final _counterCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -36,6 +42,7 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _dealId = ModalRoute.of(context)?.settings.arguments as String?;
       await _loadDeal();
+      _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadDeal());
     });
   }
 
@@ -50,6 +57,8 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
         _phoneRaw = phone;
         _fare = (deal['agreedFare'] ?? 0).toDouble();
         _rideId = deal['rideId']?.toString() ?? deal['ride']?['id']?.toString() ?? '';
+        _status = (deal['status'] ?? 'pending').toString();
+        _lastCounterBy = (deal['lastCounterBy'] ?? '').toString();
       });
       if (phone.isNotEmpty) _animatePhoneReveal(phone);
     } catch (_) {}
@@ -64,6 +73,55 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
       });
     }
     if (mounted) setState(() => _phoneDisplay = phone);
+  }
+
+  Future<void> _acceptCaptainCounter() async {
+    if (_dealId == null || _isSendingCounter) return;
+    setState(() => _isSendingCounter = true);
+    try {
+      await Provider.of<FirestoreService>(context, listen: false)
+          .counterDeal(_dealId!, _fare, message: 'Passenger accepted the fare');
+      await _loadDeal();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fare accepted. Waiting for captain confirmation.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Accept failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSendingCounter = false);
+    }
+  }
+
+  Future<void> _sendCounterAgain() async {
+    final amount = double.tryParse(_counterCtrl.text.trim()) ?? 0;
+    if (_dealId == null || amount <= 0 || _isSendingCounter) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid counter fare')),
+      );
+      return;
+    }
+    setState(() => _isSendingCounter = true);
+    try {
+      await Provider.of<FirestoreService>(context, listen: false)
+          .counterDeal(_dealId!, amount);
+      _counterCtrl.clear();
+      await _loadDeal();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Counter fare sent')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Counter failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSendingCounter = false);
+    }
   }
 
   Future<void> _cancelBooking() async {
@@ -108,6 +166,8 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
+    _counterCtrl.dispose();
     _checkCtrl.dispose();
     _dotsCtrl.dispose();
     super.dispose();
@@ -182,6 +242,62 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
                       const Text('Contact (after captain confirms)', style: TextStyle(color: AppColors.sage, fontSize: 13, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       Text(_phoneDisplay, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.bark, letterSpacing: 1.2)),
+                      if (_status == 'pending' && _lastCounterBy == 'captain') ...[
+                        const SizedBox(height: 18),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Captain countered Rs ${_fare.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  color: AppColors.bark,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: _counterCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Counter again',
+                                  prefixText: 'Rs ',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: _isSendingCounter ? null : _sendCounterAgain,
+                                      child: const Text('Counter'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: _isSendingCounter ? null : _acceptCaptainCounter,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.moss,
+                                        foregroundColor: AppColors.cream,
+                                      ),
+                                      child: const Text('Accept Fare'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
@@ -270,3 +386,4 @@ class _FloatingDot extends StatelessWidget {
     );
   }
 }
+
