@@ -135,7 +135,7 @@ final _locationService = LocationTrackingService();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Update failed: $e')));
+            .showSnackBar(SnackBar(content: Text('Update failed: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -294,12 +294,12 @@ final _locationService = LocationTrackingService();
     try {
       await Provider.of<FirestoreService>(context, listen: false).cancelDeal(_dealId!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled'), duration: Duration(seconds: 2)));
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -311,12 +311,12 @@ final _locationService = LocationTrackingService();
       _locationService.startCaptainTracking(_rideId!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ride started — passengers notified')),
+          const SnackBar(content: Text('Ride started — passengers notified'), duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Start failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Start failed: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -755,7 +755,7 @@ final _locationService = LocationTrackingService();
                                 } catch (e) {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Error: $e')));
+                                        SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
                                   }
                                   return;
                                 }
@@ -925,3 +925,5 @@ class _InfoChip extends StatelessWidget {
     );
   }
 }
+
+

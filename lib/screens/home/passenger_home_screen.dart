@@ -40,7 +40,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
       (ride['departureTime'] ?? booking['departureTime'] ?? '').toString(),
     );
     if (departure == null) return true;
-    return departure.isAfter(DateTime.now().subtract(const Duration(minutes: 5)));
+    return departure.isAfter(DateTime.now());
   }
 
   List<Map<String, dynamic>> _categoriesFor(bool isFemale) => [
@@ -57,7 +57,6 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   void initState() {
     super.initState();
     _loadUserLocation();
-    _loadRides();
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureCustomerPhone());
   }
 
@@ -71,6 +70,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
       _userLat = pos.latitude;
       _userLng = pos.longitude;
     } catch (_) {}
+    await _loadRides();
   }
 
   double _distanceScore(RideModel ride) {
@@ -87,6 +87,9 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
           Provider.of<RideService>(context, listen: false).findRides(
         type: type,
         rideMode: rideMode ?? _rideModeFilter,
+        userLat: _userLat,
+        userLng: _userLng,
+        radiusKm: 15,
       );
       final dealsFuture = _loadDoneDeals();
       final postedFuture = _loadPostedRequests();
@@ -981,6 +984,19 @@ class _LiveRideCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    if ((ride.exactLocation ?? '').trim().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Exact pickup: ',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Row(
                       children: [
@@ -1231,3 +1247,4 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+

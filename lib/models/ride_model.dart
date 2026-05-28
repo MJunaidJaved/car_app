@@ -7,6 +7,7 @@ class RideModel {
   final String? captainPhone;
   final String startLocation;
   final String endLocation;
+  final String? exactLocation;
   final double startLat;
   final double startLng;
   final double endLat;
@@ -40,6 +41,7 @@ class RideModel {
     this.captainPhone,
     required this.startLocation,
     required this.endLocation,
+    this.exactLocation,
     required this.startLat,
     required this.startLng,
     required this.endLat,
@@ -80,6 +82,7 @@ class RideModel {
       captainPhone: data['captainPhone'] as String?,
       startLocation: data['startLocation'] ?? '',
       endLocation: data['endLocation'] ?? '',
+      exactLocation: data['exactLocation'] as String?,
       startLat: (data['startLat'] ?? 0.0).toDouble(),
       startLng: (data['startLng'] ?? 0.0).toDouble(),
       endLat: (data['endLat'] ?? 0.0).toDouble(),
@@ -113,8 +116,12 @@ class RideModel {
   }
 
   static DateTime _parseDate(dynamic value) {
-    if (value is Timestamp) return value.toDate();
-    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    if (value is Timestamp) return value.toDate().toLocal();
+    if (value is String) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed == null) return DateTime.now();
+      return parsed.isUtc ? parsed.toLocal() : parsed;
+    }
     return DateTime.now();
   }
 
@@ -125,6 +132,8 @@ class RideModel {
       if (captainPhone != null) 'captainPhone': captainPhone,
       'startLocation': startLocation,
       'endLocation': endLocation,
+      if (exactLocation != null && exactLocation!.trim().isNotEmpty)
+        'exactLocation': exactLocation,
       'startLat': startLat,
       'startLng': startLng,
       'endLat': endLat,
@@ -163,6 +172,7 @@ class RideModel {
     String? captainPhone,
     String? startLocation,
     String? endLocation,
+    String? exactLocation,
     double? startLat,
     double? startLng,
     double? endLat,
@@ -196,6 +206,7 @@ class RideModel {
       captainPhone: captainPhone ?? this.captainPhone,
       startLocation: startLocation ?? this.startLocation,
       endLocation: endLocation ?? this.endLocation,
+      exactLocation: exactLocation ?? this.exactLocation,
       startLat: startLat ?? this.startLat,
       startLng: startLng ?? this.startLng,
       endLat: endLat ?? this.endLat,

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/helpers.dart';
@@ -8,6 +11,7 @@ import '../../utils/captain_profile_utils.dart';
 import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/ride_service.dart';
+import '../../widgets/places_autocomplete_field.dart';
 
 class PostRideScreen extends StatefulWidget {
   const PostRideScreen({super.key});
@@ -22,8 +26,9 @@ class _PostRideScreenState extends State<PostRideScreen> {
   final _fareCtrl  = TextEditingController();
   final _seatsCtrl = TextEditingController(text: '1');
   final _descCtrl  = TextEditingController();
+  final _exactLocationCtrl = TextEditingController();
 
-  String    _rideType    = 'office';
+  String    _rideType    = 'random';
   String    _rideMode    = 'share';
   bool      _isLoading   = false;
   DateTime  _date        = DateTime.now();
@@ -71,7 +76,72 @@ class _PostRideScreenState extends State<PostRideScreen> {
     _fareCtrl.dispose();
     _seatsCtrl.dispose();
     _descCtrl.dispose();
+    _exactLocationCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _resolveTypedRoute() async {
+    Future<LatLng?> lookup(String value) async {
+      final text = value.trim();
+      if (text.isEmpty) return null;
+      try {
+        final results = await locationFromAddress('$text, Pakistan')
+            .timeout(const Duration(seconds: 6));
+        if (results.isEmpty) return null;
+        return LatLng(results.first.latitude, results.first.longitude);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    if (_startLat == 0.0 || _startLng == 0.0) {
+      final from = await lookup(_fromCtrl.text);
+      if (from != null) {
+        _startLat = from.latitude;
+        _startLng = from.longitude;
+      }
+    }
+    if (_endLat == 0.0 || _endLng == 0.0) {
+      final to = await lookup(_toCtrl.text);
+      if (to != null) {
+        _endLat = to.latitude;
+        _endLng = to.longitude;
+      }
+    }
+  }
+
+  Future<void> _useCurrentPickupLocation() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      final pos = await Geolocator.getCurrentPosition();
+      _startLat = pos.latitude;
+      _startLng = pos.longitude;
+      try {
+        final marks = await placemarkFromCoordinates(pos.latitude, pos.longitude)
+            .timeout(const Duration(seconds: 4));
+        if (marks.isNotEmpty) {
+          final p = marks.first;
+          final label = [
+            p.street,
+            p.subLocality,
+            p.locality,
+            p.administrativeArea,
+          ].where((v) => (v ?? '').trim().isNotEmpty).join(', ');
+          if (label.isNotEmpty) _fromCtrl.text = label;
+        }
+      } catch (_) {}
+      if (mounted) {
+        AppHelpers.showSnackBar(context, 'Pickup location added from GPS');
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelpers.showSnackBar(context, 'Could not get current location: $e', isError: true);
+      }
+    }
   }
 
   Future<void> _pickDate() async {
@@ -146,6 +216,16 @@ class _PostRideScreenState extends State<PostRideScreen> {
         _date.year, _date.month, _date.day,
         _time.hour, _time.minute,
       );
+      await _resolveTypedRoute();
+
+      if (_startLat == 0.0 || _startLng == 0.0 || _endLat == 0.0 || _endLng == 0.0) {
+        AppHelpers.showSnackBar(
+          context,
+          'Select From and To from suggestions, or enter searchable city/area names.',
+          isError: true,
+        );
+        return;
+      }
 
       await rideService.postRide(
         startLocation:   _fromCtrl.text.trim(),
@@ -155,12 +235,13 @@ class _PostRideScreenState extends State<PostRideScreen> {
         rideType:        _rideType,
         vehicleType:     _vehicleTypeForCaptain(user),
         rideMode:        _rideMode,
-        departureTime:   departureTime.toIso8601String(),
+        departureTime:   departureTime.toUtc().toIso8601String(),
         acceptsDelivery: _rideType == 'delivery',
         startLat:        _startLat,
         startLng:        _startLng,
         endLat:          _endLat,
         endLng:          _endLng,
+        exactLocation:   _exactLocationCtrl.text.trim(),
       );
 
       if (mounted) {
@@ -260,25 +341,48 @@ class _PostRideScreenState extends State<PostRideScreen> {
                             title: 'Route',
                             child: Column(
                               children: [
-                                TextFormField(
+                                PlacesAutocompleteField(
                                   controller: _fromCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'From',
-                                    border: OutlineInputBorder(),
-                                  ),
+                                  label: 'From',
+                                  icon: Icons.my_location_rounded,
+                                  onPlaceSelected: (latLng) {
+                                    _startLat = latLng.latitude;
+                                    _startLng = latLng.longitude;
+                                  },
                                   validator: (v) =>
                                       (v == null || v.isEmpty) ? 'Enter pickup' : null,
                                 ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _toCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'To',
-                                    border: OutlineInputBorder(),
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton.icon(
+                                    onPressed: _useCurrentPickupLocation,
+                                    icon: const Icon(Icons.gps_fixed_rounded, size: 18),
+                                    label: const Text('Use current pickup'),
                                   ),
+                                ),
+                                const SizedBox(height: 12),
+                                PlacesAutocompleteField(
+                                  controller: _toCtrl,
+                                  label: 'To',
+                                  icon: Icons.location_on_outlined,
+                                  onPlaceSelected: (latLng) {
+                                    _endLat = latLng.latitude;
+                                    _endLng = latLng.longitude;
+                                  },
                                   validator: (v) => (v == null || v.isEmpty)
                                       ? 'Enter destination'
                                       : null,
+                                ),
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  controller: _exactLocationCtrl,
+                                  maxLines: 2,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Exact pickup note',
+                                    hintText: 'e.g. Main gate, Street 4, near mosque',
+                                    border: OutlineInputBorder(),
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 Align(
@@ -288,6 +392,12 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                       final temp = _fromCtrl.text;
                                       _fromCtrl.text = _toCtrl.text;
                                       _toCtrl.text = temp;
+                                      final tempLat = _startLat;
+                                      final tempLng = _startLng;
+                                      _startLat = _endLat;
+                                      _startLng = _endLng;
+                                      _endLat = tempLat;
+                                      _endLng = tempLng;
                                       setState(() {});
                                     },
                                     child: Container(

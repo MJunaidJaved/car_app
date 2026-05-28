@@ -114,7 +114,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         _toCtrl.text.trim().isEmpty ||
         _posting) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter both From and To locations.')),
+        const SnackBar(content: Text('Please enter both From and To locations.'), duration: Duration(seconds: 2)),
       );
       return;
     }
@@ -129,7 +129,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
       await ApiService.post('/customer-requests', {
         'startLocation': _fromCtrl.text.trim(),
         'endLocation': _toCtrl.text.trim(),
-        'requestedAt': _requestedAt.toIso8601String(),
+        'requestedAt': _requestedAt.toUtc().toIso8601String(),
         if (fromLocation != null) 'startLat': fromLocation.lat,
         if (fromLocation != null) 'startLng': fromLocation.lng,
         if (toLocation != null) 'endLat': toLocation.lat,
@@ -143,13 +143,13 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
       await _loadMine();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request posted. Captains notified.')),
+          const SnackBar(content: Text('Request posted. Captains notified.'), duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Post failed: $e')),
+          SnackBar(content: Text('Post failed: $e'), duration: const Duration(seconds: 2)),
         );
       }
     } finally {
@@ -203,7 +203,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                 controller: counterCtrl,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Counter price',
+                  labelText: 'Adjust fare',
                   prefixText: 'Rs ',
                   border: OutlineInputBorder(),
                 ),
@@ -260,7 +260,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Action failed: $e')),
+          SnackBar(content: Text('Action failed: $e'), duration: const Duration(seconds: 2)),
         );
       }
     }
@@ -342,6 +342,10 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
       return aFare.compareTo(bFare);
     });
     final acceptedPhone = (request['acceptedCaptainPhone'] ?? '').toString();
+    final requestedAt = DateTime.tryParse((request['requestedAt'] ?? '').toString());
+    final requestedLabel = requestedAt == null
+        ? '-'
+        : '${requestedAt.toLocal().day}/${requestedAt.toLocal().month}/${requestedAt.toLocal().year} ${TimeOfDay.fromDateTime(requestedAt.toLocal()).format(context)}';
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -350,7 +354,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('${request['startLocation']} -> ${request['endLocation']}', style: const TextStyle(fontWeight: FontWeight.w800)),
-          Text('Time: ${request['requestedAt'] ?? '-'}', style: const TextStyle(color: AppColors.textMuted)),
+          Text('Time: $requestedLabel', style: const TextStyle(color: AppColors.textMuted)),
           Text('Status: ${(request['status'] ?? '').toString().toUpperCase()}'),
           if (acceptedPhone.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -389,7 +393,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                   Text('Available seats: $seats', style: const TextStyle(color: AppColors.textMuted)),
                 if ((offer['counterFare'] ?? '').toString().isNotEmpty) Text('Counter: Rs ${offer['counterFare']}'),
                 Row(children: [
-                  Expanded(child: OutlinedButton(onPressed: () => _respond(requestId, offerId, 'counter', pickupInitial: pickupInitial), child: const Text('Counter'))),
+                  Expanded(child: OutlinedButton(onPressed: () => _respond(requestId, offerId, 'counter', pickupInitial: pickupInitial), child: const Text('Adjust Fare'))),
                   const SizedBox(width: 8),
                   Expanded(child: ElevatedButton(onPressed: () => _respond(requestId, offerId, 'accept', pickupInitial: pickupInitial), child: const Text('Done'))),
                 ]),
@@ -401,3 +405,5 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     );
   }
 }
+
+

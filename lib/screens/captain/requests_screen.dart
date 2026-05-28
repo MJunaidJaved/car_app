@@ -97,7 +97,7 @@ class _RequestsScreenState extends State<RequestsScreen>
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to load: $e')));
+            .showSnackBar(SnackBar(content: Text('Failed to load: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -109,9 +109,10 @@ class _RequestsScreenState extends State<RequestsScreen>
       await Provider.of<UserProvider>(context, listen: false).reloadWallet();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request accepted')),
+          const SnackBar(content: Text('Request accepted'), duration: Duration(seconds: 2)),
         );
         await _loadDeals();
+        _tabCtrl.animateTo(1);
       }
     } catch (e) {
       final insufficient = _parseInsufficientBalance(e.toString());
@@ -140,7 +141,7 @@ class _RequestsScreenState extends State<RequestsScreen>
       }
       if (mounted)
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
     }
   }
 
@@ -167,14 +168,14 @@ class _RequestsScreenState extends State<RequestsScreen>
       _locationService.startCaptainTracking(_rideId!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ride started — sharing your location')),
+          const SnackBar(content: Text('Ride started — sharing your location'), duration: Duration(seconds: 2)),
         );
         await _loadDeals();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -185,7 +186,7 @@ class _RequestsScreenState extends State<RequestsScreen>
     final amount = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Counter Price'),
+        title: const Text('Adjust Fare'),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
@@ -220,14 +221,14 @@ class _RequestsScreenState extends State<RequestsScreen>
           .counterDeal(dealId, amount);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Counter price sent')),
+          const SnackBar(content: Text('Adjusted fare sent'), duration: Duration(seconds: 2)),
         );
         await _loadDeals();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -653,7 +654,7 @@ class _RequestsScreenState extends State<RequestsScreen>
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => _counter(dealId, fare),
-                        child: const Text('Counter Price'),
+                        child: const Text('Adjust Fare'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -682,3 +683,5 @@ class _InsufficientBalanceData {
   final double current;
   _InsufficientBalanceData({required this.required, required this.current});
 }
+
+

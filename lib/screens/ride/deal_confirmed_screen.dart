@@ -84,12 +84,12 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
       await _loadDeal();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fare accepted. Waiting for captain confirmation.')),
+          const SnackBar(content: Text('Fare accepted. Waiting for captain confirmation.'), duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Accept failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Accept failed: $e'), duration: const Duration(seconds: 2)));
       }
     } finally {
       if (mounted) setState(() => _isSendingCounter = false);
@@ -100,7 +100,7 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
     final amount = double.tryParse(_counterCtrl.text.trim()) ?? 0;
     if (_dealId == null || amount <= 0 || _isSendingCounter) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid counter fare')),
+        const SnackBar(content: Text('Enter a valid counter fare'), duration: Duration(seconds: 2)),
       );
       return;
     }
@@ -112,12 +112,12 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
       await _loadDeal();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Counter fare sent')),
+          const SnackBar(content: Text('Adjusted fare sent'), duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Counter failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Counter failed: $e'), duration: const Duration(seconds: 2)));
       }
     } finally {
       if (mounted) setState(() => _isSendingCounter = false);
@@ -141,12 +141,12 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
     try {
       await Provider.of<FirestoreService>(context, listen: false).cancelDeal(_dealId!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled'), duration: Duration(seconds: 2)));
         Navigator.pushReplacementNamed(context, '/my-bookings');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -154,7 +154,7 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
   Future<void> _callCaptain() async {
     if (_phoneRaw.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Captain phone not available yet')),
+        const SnackBar(content: Text('Captain phone not available yet'), duration: Duration(seconds: 2)),
       );
       return;
     }
@@ -267,7 +267,7 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
                                 controller: _counterCtrl,
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
-                                  labelText: 'Counter again',
+                                  labelText: 'Adjust fare again',
                                   prefixText: 'Rs ',
                                   border: OutlineInputBorder(),
                                 ),
@@ -278,7 +278,7 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
                                   Expanded(
                                     child: OutlinedButton(
                                       onPressed: _isSendingCounter ? null : _sendCounterAgain,
-                                      child: const Text('Counter'),
+                                      child: const Text('Adjust Fare'),
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -386,4 +386,6 @@ class _FloatingDot extends StatelessWidget {
     );
   }
 }
+
+
 

@@ -42,13 +42,13 @@ class _WalletScreenState extends State<WalletScreen> {
       await _loadWallet();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Rs $amount added successfully!')),
+          SnackBar(content: Text('Rs $amount added successfully!'), duration: const Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Top-up failed. Try again.')),
+          const SnackBar(content: Text('Top-up failed. Try again.'), duration: Duration(seconds: 2)),
         );
       }
     }
@@ -655,3 +655,5 @@ class _TopUpSheet extends StatelessWidget {
     );
   }
 }
+
+

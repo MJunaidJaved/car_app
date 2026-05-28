@@ -111,7 +111,7 @@ class ReferralScreen extends StatelessWidget {
                                 onPressed: () {
                                   Clipboard.setData(ClipboardData(text: code));
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Code copied')),
+                                    const SnackBar(content: Text('Code copied'), duration: Duration(seconds: 2)),
                                   );
                                 },
                                 icon: const Icon(Icons.copy_rounded, color: AppColors.primary),
@@ -131,3 +131,5 @@ class ReferralScreen extends StatelessWidget {
     );
   }
 }
+
+

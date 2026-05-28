@@ -66,13 +66,13 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           .cancelDeal(dealId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Booking cancelled')),
+          const SnackBar(content: Text('Booking cancelled'), duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Cancel failed: $e')));
+            .showSnackBar(SnackBar(content: Text('Cancel failed: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -499,3 +499,5 @@ class _BookingCard extends StatelessWidget {
     );
   }
 }
+
+

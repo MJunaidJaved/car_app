@@ -54,7 +54,7 @@ class _DealChatPanelState extends State<DealChatPanel> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Message failed: $e')),
+          SnackBar(content: Text('Message failed: $e'), duration: const Duration(seconds: 2)),
         );
       }
     }
@@ -136,3 +136,4 @@ class _DealChatPanelState extends State<DealChatPanel> {
     );
   }
 }
+

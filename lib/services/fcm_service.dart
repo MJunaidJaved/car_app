@@ -56,7 +56,7 @@ class FcmService {
     ScaffoldMessenger.of(ctx).showSnackBar(
       SnackBar(
         content: Text(body.isNotEmpty ? '$title\n$body' : title),
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 2),
         action: SnackBarAction(
           label: 'View',
           onPressed: () {},
@@ -136,3 +136,4 @@ class FcmService {
     }
   }
 }
+

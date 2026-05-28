@@ -22,6 +22,7 @@ class RideService with ChangeNotifier {
     String? cargoType,
     double? weightCapacity,
     String? truckSize,
+    String? exactLocation,
   }) async {
     try {
       await ApiService.post('/rides', {
@@ -43,6 +44,8 @@ class RideService with ChangeNotifier {
         if (cargoType != null) 'cargoType': cargoType,
         if (weightCapacity != null) 'weightCapacity': weightCapacity,
         if (truckSize != null) 'truckSize': truckSize,
+        if (exactLocation != null && exactLocation.trim().isNotEmpty)
+          'exactLocation': exactLocation.trim(),
       });
     } catch (e) {
       rethrow;
@@ -55,6 +58,9 @@ class RideService with ChangeNotifier {
     String? endLocation,
     String? type,
     String? rideMode,
+    double? userLat,
+    double? userLng,
+    double radiusKm = 15,
   }) async {
     final queryParams = <String, String>{
       if (startLocation != null && startLocation.isNotEmpty)
@@ -63,6 +69,9 @@ class RideService with ChangeNotifier {
         'endLocation': endLocation,
       if (type != null && type.isNotEmpty && type != 'all') 'rideType': type,
       if (rideMode != null && rideMode.isNotEmpty) 'rideMode': rideMode,
+      if (userLat != null) 'lat': userLat.toString(),
+      if (userLng != null) 'lng': userLng.toString(),
+      if (userLat != null && userLng != null) 'radiusKm': radiusKm.toString(),
     };
 
     Map<String, dynamic> response;

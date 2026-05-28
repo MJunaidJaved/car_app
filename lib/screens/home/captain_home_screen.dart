@@ -29,10 +29,10 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
 
   bool _isDashboardRideActive(Map<String, dynamic> ride) {
     final status = (ride['status'] ?? '').toString().toLowerCase();
-    if (status == 'active' || status == 'in_progress') return true;
+    if (status.isNotEmpty && status != 'active' && status != 'in_progress') return false;
     final dt = DateTime.tryParse((ride['departureTime'] ?? '').toString());
     if (dt == null) return true;
-    return dt.isAfter(DateTime.now().subtract(const Duration(minutes: 5)));
+    return dt.isAfter(DateTime.now());
   }
 
   @override
@@ -48,7 +48,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       final rides = List<Map<String, dynamic>>.from(ridesRes['rides'] ?? []);
       final dashboardRides =
           rides.where((ride) => _isDashboardRideActive(ride)).toList();
-      rides.sort((a, b) {
+      dashboardRides.sort((a, b) {
         final aAt = DateTime.tryParse((a['createdAt'] ?? '').toString()) ??
             DateTime.fromMillisecondsSinceEpoch(0);
         final bAt = DateTime.tryParse((b['createdAt'] ?? '').toString()) ??
@@ -894,6 +894,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
             right: 0,
             child: _CaptainBottomNav(
               onPostRide: () => _tryOpenPostRide(context),
+              notificationCount: _pendingRequestsByRide.values.fold<int>(0, (sum, count) => sum + count),
             ),
           ),
         ],
@@ -1072,8 +1073,9 @@ class _ActivityCard extends StatelessWidget {
 
 class _CaptainBottomNav extends StatelessWidget {
   final VoidCallback onPostRide;
+  final int notificationCount;
 
-  const _CaptainBottomNav({required this.onPostRide});
+  const _CaptainBottomNav({required this.onPostRide, required this.notificationCount});
 
   @override
   Widget build(BuildContext context) {
@@ -1140,6 +1142,7 @@ class _CaptainBottomNav extends StatelessWidget {
               icon: Icons.inbox_rounded,
               label: 'Requests',
               active: activeIndex == 3,
+              badgeCount: notificationCount,
               onTap: () => onNavTap(3)),
           _NavItem(
               icon: Icons.person_outline_rounded,
@@ -1156,12 +1159,14 @@ class _NavItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
+  final int badgeCount;
   final VoidCallback onTap;
 
   const _NavItem(
       {required this.icon,
       required this.label,
       required this.active,
+      this.badgeCount = 0,
       required this.onTap});
 
   @override
@@ -1172,7 +1177,32 @@ class _NavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: active ? AppColors.moss : AppColors.sage, size: 24),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, color: active ? AppColors.moss : AppColors.sage, size: 24),
+              if (badgeCount > 0)
+                Positioned(
+                  right: -8,
+                  top: -8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      badgeCount > 9 ? '9+' : '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 4),
           Text(
             label,

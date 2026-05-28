@@ -21,7 +21,7 @@ String _normalizePhoneForPk(String phone) {
 Future<void> dialPhone(BuildContext context, String? phone) async {
   if (phone == null || phone.trim().isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Phone number not available')),
+      const SnackBar(content: Text('Phone number not available'), duration: Duration(seconds: 2)),
     );
     return;
   }
@@ -31,7 +31,7 @@ Future<void> dialPhone(BuildContext context, String? phone) async {
     await launchUrl(uri);
   } else if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Cannot dial $normalized')),
+      SnackBar(content: Text('Cannot dial $normalized'), duration: const Duration(seconds: 2)),
     );
   }
 }
@@ -39,7 +39,7 @@ Future<void> dialPhone(BuildContext context, String? phone) async {
 Future<void> openWhatsApp(BuildContext context, String? phone) async {
   if (phone == null || phone.trim().isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Phone number not available')),
+      const SnackBar(content: Text('Phone number not available'), duration: Duration(seconds: 2)),
     );
     return;
   }
@@ -63,7 +63,9 @@ Future<void> openWhatsApp(BuildContext context, String? phone) async {
 
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Cannot open WhatsApp for +$whatsappNumber')),
+      SnackBar(content: Text('Cannot open WhatsApp for +$whatsappNumber'), duration: const Duration(seconds: 2)),
     );
   }
 }
+
+

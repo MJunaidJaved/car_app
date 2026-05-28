@@ -41,7 +41,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
       await ApiService.patch('/rides/$rideId/status', {'status': 'cancelled'});
       await _loadRides();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
     }
   }
 
@@ -385,7 +385,7 @@ class _CaptainRideCard extends StatelessWidget {
                   decoration: BoxDecoration(color: AppColors.moss.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
                   child: IconButton(
                     icon: const Icon(Icons.share_rounded, color: AppColors.moss, size: 20),
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Route link copied!'))),
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Route link copied!'), duration: Duration(seconds: 2))),
                   ),
                 ),
                 if (onDelete != null) ...[
@@ -428,3 +428,5 @@ class _InfoPill extends StatelessWidget {
     );
   }
 }
+
+

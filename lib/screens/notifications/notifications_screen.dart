@@ -37,12 +37,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All notifications marked as read')),
+          const SnackBar(content: Text('All notifications marked as read'), duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -217,3 +217,5 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 }
+
+

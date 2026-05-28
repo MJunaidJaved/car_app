@@ -91,11 +91,11 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
       await ApiService.post('/customer-requests/$requestId/offers', {'fare': fare});
       await _loadRequests();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offer sent to customer')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offer sent to customer'), duration: Duration(seconds: 2)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Offer failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Offer failed: $e'), duration: const Duration(seconds: 2)));
       }
     }
   }
@@ -137,6 +137,10 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
         : distance <= 10
             ? '${distance.toStringAsFixed(1)} km away - nearby'
             : '${distance.toStringAsFixed(1)} km away';
+    final requestedAt = DateTime.tryParse((request['requestedAt'] ?? '').toString());
+    final requestedLabel = requestedAt == null
+        ? '-'
+        : '${requestedAt.toLocal().day}/${requestedAt.toLocal().month}/${requestedAt.toLocal().year} ${TimeOfDay.fromDateTime(requestedAt.toLocal()).format(context)}';
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -148,7 +152,7 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
           const SizedBox(height: 4),
           Text(distanceLabel, style: const TextStyle(color: AppColors.moss, fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          Text('Time: ${request['requestedAt'] ?? '-'}', style: const TextStyle(color: AppColors.textMuted)),
+          Text('Time: $requestedLabel', style: const TextStyle(color: AppColors.textMuted)),
           if ((request['desiredFare'] ?? '').toString().isNotEmpty)
             Text('Customer budget Rs ${request['desiredFare']}'),
           Text('Status: ${status.toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -177,3 +181,5 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
     );
   }
 }
+
+

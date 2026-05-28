@@ -180,7 +180,7 @@ class _RateReviewScreenState extends State<RateReviewScreen> {
                 child: ElevatedButton(
                   onPressed: _submitting ? null : () async {
   if (_rating == 0) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a rating')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a rating'), duration: Duration(seconds: 2)));
     return;
   }
   setState(() => _submitting = true);
@@ -197,12 +197,12 @@ class _RateReviewScreenState extends State<RateReviewScreen> {
       );
     }
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thank you for your feedback!')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thank you for your feedback!'), duration: Duration(seconds: 2)));
       Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     }
   } catch (e) {
     setState(() => _submitting = false);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit: $e')));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit: $e'), duration: const Duration(seconds: 2)));
   }
 },
                   style: ElevatedButton.styleFrom(
@@ -224,6 +224,8 @@ class _RateReviewScreenState extends State<RateReviewScreen> {
     );
   }
 }
+
+
 
 
 

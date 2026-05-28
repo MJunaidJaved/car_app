@@ -533,7 +533,7 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                                       onPressed:
                                           _isCreatingDeal ? null : _sendOffer,
                                       icon: const Icon(Icons.price_change_outlined),
-                                      label: const Text('Send Counter'),
+                                      label: const Text('Adjust Fare'),
                                     ),
                                   ),
                                 ],

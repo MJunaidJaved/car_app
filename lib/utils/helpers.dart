@@ -79,6 +79,7 @@ class AppHelpers {
   static void showSnackBar(BuildContext context, String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        duration: const Duration(seconds: 2),
         content: Text(
           message,
           style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
@@ -169,4 +170,3 @@ class AppHelpers {
     }
   }
 }
-

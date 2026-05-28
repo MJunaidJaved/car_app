@@ -84,6 +84,9 @@ class _FindRideScreenState extends State<FindRideScreen> {
         endLocation: _toCtrl.text.trim(),
         type: _selectedType,
         rideMode: _rideModeFilter,
+        userLat: _defaultLocation.latitude,
+        userLng: _defaultLocation.longitude,
+        radiusKm: 15,
       );
       final userLat = _defaultLocation.latitude;
       final userLng = _defaultLocation.longitude;
@@ -580,6 +583,14 @@ class _RideResultCard extends StatelessWidget {
                             color: AppColors.bark,
                             fontSize: 14,
                             fontWeight: FontWeight.w700)),
+                    if ((ride.exactLocation ?? '').trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text('Exact pickup: ${ride.exactLocation}',
+                          style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600)),
+                    ],
                     const SizedBox(height: 14),
                     Text(ride.endLocation,
                         style: const TextStyle(
