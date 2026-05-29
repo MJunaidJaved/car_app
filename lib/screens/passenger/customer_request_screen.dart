@@ -39,6 +39,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
   LatLng _mapCenter = const LatLng(31.5204, 74.3587);
   LatLng? _fromLatLng;
   LatLng? _toLatLng;
+  bool _mapTapSetsDrop = false;
   Timer? _refreshTimer;
 
   @override
@@ -121,6 +122,42 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
       setState(() {});
       _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
     }
+  }
+
+  Future<String> _labelForLatLng(LatLng latLng) async {
+    try {
+      final marks = await placemarkFromCoordinates(
+        latLng.latitude,
+        latLng.longitude,
+      ).timeout(const Duration(seconds: 4));
+      if (marks.isEmpty) return '';
+      final p = marks.first;
+      return [
+        p.name,
+        p.street,
+        p.subLocality,
+        p.locality,
+        p.administrativeArea,
+      ].where((v) => (v ?? '').trim().isNotEmpty).join(', ');
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<void> _selectMapPoint(LatLng latLng) async {
+    if (_mapTapSetsDrop) {
+      _toLatLng = latLng;
+      final label = await _labelForLatLng(latLng);
+      if (label.isNotEmpty) _toCtrl.text = label;
+    } else {
+      _fromLatLng = latLng;
+      _mapCenter = latLng;
+      final label = await _labelForLatLng(latLng);
+      if (label.isNotEmpty) _fromCtrl.text = label;
+    }
+    if (!mounted) return;
+    setState(() {});
+    _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
   }
 
   Future<_ResolvedLocation?> _resolveAddress(
@@ -412,9 +449,31 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                     icon: Icons.location_on_outlined,
                     onPlaceSelected: (latLng) {
                       setState(() => _toLatLng = latLng);
+                      _mapController?.animateCamera(
+                        CameraUpdate.newLatLng(latLng),
+                      );
                     },
                   ),
                   const SizedBox(height: 12),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(
+                        value: false,
+                        icon: Icon(Icons.trip_origin_rounded),
+                        label: Text('Map sets From'),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        icon: Icon(Icons.place_rounded),
+                        label: Text('Map sets To'),
+                      ),
+                    ],
+                    selected: {_mapTapSetsDrop},
+                    onSelectionChanged: (values) {
+                      setState(() => _mapTapSetsDrop = values.first);
+                    },
+                  ),
+                  const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: SizedBox(
@@ -430,15 +489,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                         myLocationEnabled: true,
                         myLocationButtonEnabled: false,
                         zoomControlsEnabled: false,
-                        onTap: (latLng) {
-                          setState(() {
-                            _fromLatLng = latLng;
-                            _mapCenter = latLng;
-                          });
-                          _mapController?.animateCamera(
-                            CameraUpdate.newLatLng(latLng),
-                          );
-                        },
+                        onTap: _selectMapPoint,
                       ),
                     ),
                   ),
@@ -488,7 +539,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
             ),
             const SizedBox(height: 20),
             const Text(
-              'Captain Offers',
+              'My Posted Requests',
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             const SizedBox(height: 10),
