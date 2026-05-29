@@ -32,7 +32,7 @@ class _NotificationBellState extends State<NotificationBell> {
     super.initState();
     _loadUnreadCount();
     _timer = Timer.periodic(
-      const Duration(seconds: 20),
+      const Duration(seconds: 2),
       (_) => _loadUnreadCount(silent: true),
     );
   }

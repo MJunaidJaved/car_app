@@ -22,7 +22,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.initState();
     _load();
     _refreshTimer = Timer.periodic(
-      const Duration(seconds: 20),
+      const Duration(seconds: 2),
       (_) => _load(showLoading: false),
     );
   }

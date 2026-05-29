@@ -26,7 +26,7 @@ class _MyRidesScreenState extends State<MyRidesScreen>
     _tabCtrl = TabController(length: 2, vsync: this);
     _loadRides();
     _refreshTimer = Timer.periodic(
-      const Duration(seconds: 20),
+      const Duration(seconds: 2),
       (_) => _loadRides(showLoading: false),
     );
   }

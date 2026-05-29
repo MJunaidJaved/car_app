@@ -29,7 +29,7 @@ class _WalletScreenState extends State<WalletScreen> {
     super.initState();
     _loadWallet();
     _refreshTimer = Timer.periodic(
-      const Duration(seconds: 20),
+      const Duration(seconds: 2),
       (_) => _loadWallet(showLoading: false),
     );
   }

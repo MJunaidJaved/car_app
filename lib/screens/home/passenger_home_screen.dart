@@ -78,7 +78,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
     super.initState();
     _loadUserLocation();
     _refreshTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: 2),
       (_) => _loadRides(showLoading: false),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureCustomerPhone());
@@ -1459,7 +1459,7 @@ class _PassengerBottomNavState extends State<_PassengerBottomNav> {
     super.initState();
     _loadBadges();
     _badgeTimer = Timer.periodic(
-      const Duration(seconds: 20),
+      const Duration(seconds: 2),
       (_) => _loadBadges(),
     );
   }

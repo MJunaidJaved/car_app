@@ -46,7 +46,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     super.initState();
     _loadMine();
     _refreshTimer = Timer.periodic(
-      const Duration(seconds: 20),
+      const Duration(seconds: 2),
       (_) => _loadMine(showLoading: false),
     );
   }

@@ -47,7 +47,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
     _loadDashboard();
     _initLocation();
     _refreshTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: 2),
       (_) => _loadDashboard(),
     );
   }

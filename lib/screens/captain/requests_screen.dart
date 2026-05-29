@@ -46,7 +46,7 @@ class _RequestsScreenState extends State<RequestsScreen>
       _loadDeals();
       _subscribeDeals();
       _pollTimer = Timer.periodic(
-        const Duration(seconds: 30),
+        const Duration(seconds: 2),
         (_) => _loadDeals(),
       );
     });

@@ -26,7 +26,7 @@ class _CaptainCustomerRequestsScreenState
     super.initState();
     _loadRequests();
     _refreshTimer = Timer.periodic(
-      const Duration(seconds: 20),
+      const Duration(seconds: 2),
       (_) => _loadRequests(showLoading: false),
     );
   }

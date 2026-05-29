@@ -48,7 +48,7 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen>
       _dealId = ModalRoute.of(context)?.settings.arguments as String?;
       await _loadDeal();
       _refreshTimer =
-          Timer.periodic(const Duration(seconds: 10), (_) => _loadDeal());
+          Timer.periodic(const Duration(seconds: 2), (_) => _loadDeal());
     });
   }
 
