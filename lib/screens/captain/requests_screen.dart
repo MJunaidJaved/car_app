@@ -476,10 +476,10 @@ class _RequestsScreenState extends State<RequestsScreen>
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                       ),
-                      tabs: const [
-                        Tab(text: 'Pending'),
-                        Tab(text: 'Confirmed'),
-                        Tab(text: 'History'),
+                      tabs: [
+                        Tab(child: _tabLabel('Pending', _pending.length)),
+                        Tab(child: _tabLabel('Confirmed', _confirmed.length)),
+                        Tab(child: _tabLabel('History', _responded.length)),
                       ],
                     ),
                   ),
@@ -547,6 +547,35 @@ class _RequestsScreenState extends State<RequestsScreen>
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget _tabLabel(String label, int count) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label),
+        if (count > 0) ...[
+          const SizedBox(width: 6),
+          Container(
+            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              count > 9 ? '9+' : '$count',
+              style: const TextStyle(
+                color: AppColors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

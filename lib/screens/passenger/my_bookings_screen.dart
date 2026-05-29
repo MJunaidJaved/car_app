@@ -178,6 +178,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     itemBuilder: (context, i) {
                       final f = _filters[i];
                       final isSelected = _selectedFilter == f;
+                      final count = _bookingCount(f);
                       return GestureDetector(
                         onTap: () => setState(() => _selectedFilter = f),
                         child: AnimatedContainer(
@@ -194,14 +195,44 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     ? AppColors.white
                                     : AppColors.white.withOpacity(0.3)),
                           ),
-                          child: Text(
-                            f[0].toUpperCase() + f.substring(1),
-                            style: TextStyle(
-                                color: isSelected
-                                    ? AppColors.dark
-                                    : AppColors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                f[0].toUpperCase() + f.substring(1),
+                                style: TextStyle(
+                                    color: isSelected
+                                        ? AppColors.dark
+                                        : AppColors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                              if (count > 0) ...[
+                                const SizedBox(width: 7),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.white.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    count > 9 ? '9+' : '$count',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? AppColors.white
+                                          : AppColors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       );
@@ -299,6 +330,19 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         ],
       ),
     );
+  }
+
+  int _bookingCount(String filter) {
+    return _bookings.where((b) {
+      final status = (b['status'] ?? '').toString();
+      if (filter == 'all') return true;
+      if (filter == 'upcoming') {
+        return status == 'pending' ||
+            status == 'confirmed' ||
+            status == 'started';
+      }
+      return status == filter;
+    }).length;
   }
 }
 

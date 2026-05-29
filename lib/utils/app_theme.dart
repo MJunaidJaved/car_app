@@ -16,7 +16,7 @@ class AppTheme {
           onSurface: AppColors.bark,
           error: AppColors.error,
         ),
-        fontFamily: GoogleFonts.inter().fontFamily,
+        fontFamily: GoogleFonts.manrope().fontFamily,
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.bark,
           foregroundColor: AppColors.cream,
@@ -34,14 +34,14 @@ class AppTheme {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
-            side: BorderSide(color: AppColors.sage.withOpacity(0.3), width: 1),
+            side: const BorderSide(color: AppColors.line, width: 1),
           ),
-          shadowColor: AppColors.bark.withOpacity(0.06),
+          shadowColor: AppColors.dark.withOpacity(0.08),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.cream,
+            foregroundColor: AppColors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             shape: RoundedRectangleBorder(
@@ -60,7 +60,7 @@ class AppTheme {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            side: const BorderSide(color: AppColors.olive, width: 1.5),
+            side: const BorderSide(color: AppColors.line, width: 1.5),
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -72,11 +72,11 @@ class AppTheme {
           fillColor: AppColors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.sage),
+            borderSide: const BorderSide(color: AppColors.line),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.sage),
+            borderSide: const BorderSide(color: AppColors.line),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -95,7 +95,7 @@ class AppTheme {
           prefixIconColor: AppColors.sage,
         ),
         chipTheme: ChipThemeData(
-          backgroundColor: AppColors.white,
+          backgroundColor: AppColors.sky,
           labelStyle: const TextStyle(
             color: AppColors.bark,
             fontWeight: FontWeight.w700,

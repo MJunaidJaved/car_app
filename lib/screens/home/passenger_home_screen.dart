@@ -213,15 +213,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   Future<void> _loadPostedRequests() async {
     try {
       final res = await ApiService.get('/customer-requests/my');
-      final requests = List<Map<String, dynamic>>.from(res['requests'] ?? [])
-          .where(
-            (r) => ![
-              'completed',
-              'cancelled',
-              'deleted',
-            ].contains((r['status'] ?? '').toString().toLowerCase()),
-          )
-          .toList();
+      final requests = List<Map<String, dynamic>>.from(res['requests'] ?? []);
       requests.sort((a, b) {
         final aAt = DateTime.tryParse((a['createdAt'] ?? '').toString()) ??
             DateTime.fromMillisecondsSinceEpoch(0);
@@ -608,10 +600,21 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
                                       color: AppColors.white,
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(18),
                                       border: Border.all(
-                                        color: AppColors.sage.withOpacity(0.25),
+                                        color: offers.isEmpty
+                                            ? AppColors.line
+                                            : AppColors.primary
+                                                .withOpacity(0.28),
                                       ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color:
+                                              AppColors.dark.withOpacity(0.035),
+                                          blurRadius: 18,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
                                     ),
                                     child: Column(
                                       crossAxisAlignment:
@@ -688,13 +691,24 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 6),
-                                        const Text(
-                                          'Tap to see captain-wise rates, accept, or counter.',
-                                          style: TextStyle(
-                                            color: AppColors.textMuted,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
+                                        const SizedBox(height: 10),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: OutlinedButton.icon(
+                                            onPressed: () async {
+                                              await Navigator.pushNamed(
+                                                context,
+                                                '/customer-request',
+                                              );
+                                              await _loadPostedRequests();
+                                            },
+                                            icon: const Icon(
+                                              Icons.receipt_long_rounded,
+                                              size: 18,
+                                            ),
+                                            label: const Text(
+                                              'Details',
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -1360,7 +1374,8 @@ class _LiveRideCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          if ((doneDealPhone ?? '').trim().isNotEmpty) ...[
+          if ((doneDealPhone ?? '').trim().isNotEmpty &&
+              ['confirmed', 'started'].contains(ride.status)) ...[
             Row(
               children: [
                 Expanded(
