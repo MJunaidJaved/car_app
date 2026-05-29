@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/ride_model.dart';
 import '../../services/ride_service.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/notification_bell.dart';
 
 class ToursScreen extends StatefulWidget {
   const ToursScreen({super.key});
@@ -15,17 +18,35 @@ class ToursScreen extends StatefulWidget {
 class _ToursScreenState extends State<ToursScreen> {
   List<RideModel> _tours = [];
   bool _loading = true;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadTours();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _loadTours(showLoading: false),
+    );
   }
 
-  Future<void> _loadTours() async {
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadTours({bool showLoading = true}) async {
+    if (showLoading && mounted) setState(() => _loading = true);
     try {
-      final rides = await Provider.of<RideService>(context, listen: false).findRides(type: 'tour');
-      if (mounted) setState(() { _tours = rides; _loading = false; });
+      final rides = await Provider.of<RideService>(context, listen: false)
+          .findRides(type: 'tour');
+      if (mounted) {
+        setState(() {
+          _tours = rides;
+          _loading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -66,7 +87,8 @@ class _ToursScreenState extends State<ToursScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: Row(
                     children: [
                       GestureDetector(
@@ -77,16 +99,40 @@ class _ToursScreenState extends State<ToursScreen> {
                             color: AppColors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.white, size: 20),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Tours', style: TextStyle(color: AppColors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-                          Text('Live tour rides from captains', style: TextStyle(color: AppColors.cream, fontSize: 13)),
-                        ],
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tours',
+                              style: TextStyle(
+                                color: AppColors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              'Live tour rides from captains',
+                              style: TextStyle(
+                                color: AppColors.cream,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      NotificationBell(
+                        icon: Icons.notifications_outlined,
+                        iconColor: AppColors.white,
+                        backgroundColor: AppColors.white.withOpacity(0.15),
                       ),
                     ],
                   ),
@@ -100,25 +146,38 @@ class _ToursScreenState extends State<ToursScreen> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.tour_outlined, size: 64, color: AppColors.moss.withOpacity(0.3)),
+                                  Icon(
+                                    Icons.tour_outlined,
+                                    size: 64,
+                                    color: AppColors.moss.withOpacity(0.3),
+                                  ),
                                   const SizedBox(height: 12),
                                   const Text(
                                     'No tour rides posted yet.',
-                                    style: TextStyle(color: AppColors.sage, fontSize: 16, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      color: AppColors.sage,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
                             )
                           : RefreshIndicator(
-                              onRefresh: _loadTours,
+                              onRefresh: () => _loadTours(showLoading: false),
                               child: ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 0, 20, 24),
                                 itemCount: _tours.length,
                                 itemBuilder: (context, i) {
                                   final ride = _tours[i];
                                   return _TourCard(
                                     ride: ride,
-                                    onTap: () => Navigator.pushNamed(context, '/tour-detail', arguments: ride),
+                                    onTap: () => Navigator.pushNamed(
+                                      context,
+                                      '/tour-detail',
+                                      arguments: ride,
+                                    ),
                                   );
                                 },
                               ),
@@ -149,29 +208,64 @@ class _TourCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.sage.withOpacity(0.2)),
+          border: Border.all(color: AppColors.line),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.dark.withOpacity(0.035),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${ride.startLocation} → ${ride.endLocation}',
-              style: const TextStyle(color: AppColors.bark, fontSize: 16, fontWeight: FontWeight.w800),
+              '${ride.startLocation} -> ${ride.endLocation}',
+              style: const TextStyle(
+                color: AppColors.bark,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              '${ride.captainName} · ${ride.availableSeats} seats left',
+              '${ride.captainName} - ${ride.availableSeats} seats left',
               style: const TextStyle(color: AppColors.sage, fontSize: 13),
             ),
+            if ((ride.exactLocation ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Exact pickup: ${ride.exactLocation}',
+                style:
+                    const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+            ],
+            if ((ride.exactDropLocation ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Exact drop: ${ride.exactDropLocation}',
+                style:
+                    const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Rs ${ride.suggestedFare.toStringAsFixed(0)}',
-                  style: const TextStyle(color: AppColors.moss, fontSize: 18, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: AppColors.moss,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-                const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.moss, size: 16),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: AppColors.moss,
+                  size: 16,
+                ),
               ],
             ),
           ],

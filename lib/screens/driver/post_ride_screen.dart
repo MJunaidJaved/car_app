@@ -55,6 +55,11 @@ class _PostRideScreenState extends State<PostRideScreen> {
     return 'car';
   }
 
+  int _vehicleSeatLimit(UserModel? user) {
+    final seats = user?.vehicleSeats ?? 0;
+    return seats > 0 ? seats : 60;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -288,11 +293,22 @@ class _PostRideScreenState extends State<PostRideScreen> {
         return;
       }
 
+      final seatCount = int.tryParse(_seatsCtrl.text) ?? 1;
+      final maxVehicleSeats = _vehicleSeatLimit(user);
+      if (_rideType == 'tour' && seatCount > maxVehicleSeats) {
+        AppHelpers.showSnackBar(
+          context,
+          'Tour seats cannot exceed your registered vehicle seats ($maxVehicleSeats).',
+          isError: true,
+        );
+        return;
+      }
+
       await rideService.postRide(
         startLocation: _fromCtrl.text.trim(),
         endLocation: _toCtrl.text.trim(),
         suggestedFare: double.tryParse(_fareCtrl.text) ?? 0.0,
-        totalSeats: int.tryParse(_seatsCtrl.text) ?? 1,
+        totalSeats: seatCount,
         rideType: _rideType,
         vehicleType: _vehicleTypeForCaptain(user),
         rideMode: _rideMode,
@@ -304,6 +320,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
         endLng: _endLng,
         exactLocation: _exactLocationCtrl.text.trim(),
         exactDropLocation: _exactDropLocationCtrl.text.trim(),
+        tourType: _rideType == 'tour' ? _rideMode : null,
+        maxPassengers: _rideType == 'tour' ? seatCount : null,
       );
 
       if (mounted) {
@@ -691,8 +709,16 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                     if (v == null || v.isEmpty)
                                       return 'Enter seats';
                                     final n = int.tryParse(v);
-                                    if (n == null || n < 1 || n > 60)
-                                      return '1 to 60 seats';
+                                    final user = Provider.of<UserProvider>(
+                                      context,
+                                      listen: false,
+                                    ).user;
+                                    final limit = _rideType == 'tour'
+                                        ? _vehicleSeatLimit(user)
+                                        : 60;
+                                    if (n == null || n < 1 || n > limit) {
+                                      return '1 to $limit seats';
+                                    }
                                     return null;
                                   },
                                   decoration: InputDecoration(
@@ -701,7 +727,9 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                         const Icon(Icons.event_seat_rounded),
                                     helperText: _rideMode == 'solo'
                                         ? 'Solo booking, but seats can match your vehicle'
-                                        : null,
+                                        : _rideType == 'tour'
+                                            ? 'Tour seats cannot exceed your registered vehicle'
+                                            : null,
                                     border: const OutlineInputBorder(),
                                   ),
                                 ),
