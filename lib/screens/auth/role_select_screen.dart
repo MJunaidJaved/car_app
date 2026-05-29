@@ -20,7 +20,6 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
   String? _selected;
   String? _gender;
   String? _existingRole;
-  String? _existingGender;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   bool _isBusy = false;
@@ -51,13 +50,10 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
         _existingRole = role == 'customer' ? 'passenger' : role;
       }
       if (gender == 'male' || gender == 'female') {
-        _existingGender = gender;
         _gender = gender;
       }
     });
   }
-
-  bool get _needsGender => _existingGender == null;
 
   void _navigateForRole(Map<String, dynamic> userData, String role) {
     if (role == 'captain') {
@@ -85,7 +81,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
 
   Future<void> _proceed() async {
     if (_selected == null || _isBusy) return;
-    if (_needsGender && _gender == null) {
+    if (_gender == null) {
       AppHelpers.showSnackBar(context, 'Please select gender', isError: true);
       return;
     }
@@ -104,11 +100,11 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
       }
 
       final selectedRole = _selected!;
-      final genderToSave = _gender ?? _existingGender;
+      final genderToSave = _gender!;
 
       final syncResponse = await ApiService.post('/auth/sync', {
         'role': selectedRole,
-        if (genderToSave != null) 'gender': genderToSave,
+        'gender': genderToSave,
       });
       await SessionStorage.setRole(selectedRole);
 
@@ -207,7 +203,8 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
                         SizedBox(height: size.height * 0.06),
                         _RoleCard(
                           title: 'Passenger',
-                          subtitle: 'Find rides, save money,\ntravel comfortably',
+                          subtitle:
+                              'Find rides, save money,\ntravel comfortably',
                           icon: Icons.person_rounded,
                           isSelected: _selected == 'passenger',
                           onTap: () => setState(() => _selected = 'passenger'),
@@ -221,28 +218,68 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
                           isSelected: _selected == 'captain',
                           onTap: () => setState(() => _selected = 'captain'),
                         ),
-                        if (_needsGender) ...[
-                          const SizedBox(height: 16),
-                          DropdownButtonFormField<String>(
-                            value: _gender,
-                            decoration: const InputDecoration(
-                              labelText: 'Gender',
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: AppColors.light,
+                              width: 1.5,
                             ),
-                            items: const [
-                              DropdownMenuItem(value: 'male', child: Text('Male')),
-                              DropdownMenuItem(
-                                  value: 'female', child: Text('Female')),
-                            ],
-                            onChanged: (value) =>
-                                setState(() => _gender = value),
                           ),
-                        ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Select gender',
+                                style: TextStyle(
+                                  color: AppColors.textDark,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Used for ladies rides and safe ride matching',
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _GenderCard(
+                                      label: 'Male',
+                                      icon: Icons.man_rounded,
+                                      isSelected: _gender == 'male',
+                                      onTap: () =>
+                                          setState(() => _gender = 'male'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _GenderCard(
+                                      label: 'Female',
+                                      icon: Icons.woman_rounded,
+                                      isSelected: _gender == 'female',
+                                      onTap: () =>
+                                          setState(() => _gender = 'female'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                         const Spacer(),
                         AnimatedOpacity(
-                          opacity: _selected != null ? 1.0 : 0.4,
+                          opacity:
+                              _selected != null && _gender != null ? 1.0 : 0.4,
                           duration: const Duration(milliseconds: 250),
                           child: AppButton(
                             label:
@@ -356,6 +393,63 @@ class _RoleCard extends StatelessWidget {
                   : Icons.radio_button_unchecked_rounded,
               color: isSelected ? AppColors.primary : AppColors.light,
               size: 24,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GenderCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _GenderCard({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.dark : AppColors.bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.light,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : AppColors.textMuted,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isSelected ? AppColors.white : AppColors.textDark,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ],
         ),
