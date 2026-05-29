@@ -383,7 +383,26 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const Text(
+                    'Select route on map',
+                    style: TextStyle(
+                      color: AppColors.bark,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Choose From and To using autocomplete, current location, or tap the map. Both map points are required.',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   PlacesAutocompleteField(
                     controller: _fromCtrl,
                     label: 'From',
@@ -401,14 +420,42 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                       );
                     },
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: _useCurrentPickup,
-                      icon: const Icon(Icons.gps_fixed_rounded, size: 18),
-                      label: const Text('Use current pickup'),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              setState(() => _mapTapSetsDrop = false),
+                          icon: const Icon(Icons.trip_origin_rounded, size: 18),
+                          label: const Text('Tap map for From'),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: !_mapTapSetsDrop
+                                ? AppColors.sky
+                                : AppColors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: _useCurrentPickup,
+                          icon: const Icon(Icons.gps_fixed_rounded, size: 18),
+                          label: const Text('Current pickup'),
+                        ),
+                      ),
+                    ],
                   ),
+                  if (_fromLatLng != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'From map: ${_fromLatLng!.latitude.toStringAsFixed(5)}, ${_fromLatLng!.longitude.toStringAsFixed(5)}',
+                      style: const TextStyle(
+                        color: AppColors.moss,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   PlacesAutocompleteField(
                     controller: _toCtrl,
@@ -424,45 +471,103 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: 12),
-                  SegmentedButton<bool>(
-                    segments: const [
-                      ButtonSegment(
-                        value: false,
-                        icon: Icon(Icons.trip_origin_rounded),
-                        label: Text('Map sets From'),
-                      ),
-                      ButtonSegment(
-                        value: true,
-                        icon: Icon(Icons.place_rounded),
-                        label: Text('Map sets To'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              setState(() => _mapTapSetsDrop = true),
+                          icon: const Icon(Icons.flag_rounded, size: 18),
+                          label: const Text('Tap map for To'),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: _mapTapSetsDrop
+                                ? AppColors.sky
+                                : AppColors.white,
+                          ),
+                        ),
                       ),
                     ],
-                    selected: {_mapTapSetsDrop},
-                    onSelectionChanged: (values) {
-                      setState(() => _mapTapSetsDrop = values.first);
-                    },
                   ),
+                  if (_toLatLng != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'To map: ${_toLatLng!.latitude.toStringAsFixed(5)}, ${_toLatLng!.longitude.toStringAsFixed(5)}',
+                      style: const TextStyle(
+                        color: AppColors.moss,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: SizedBox(
-                      height: 170,
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: _mapCenter,
-                          zoom: 13,
-                        ),
-                        onMapCreated: (controller) =>
-                            _mapController = controller,
-                        markers: _requestMarkers(),
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: false,
-                        zoomControlsEnabled: false,
-                        onTap: _selectMapPoint,
+                      height: 240,
+                      child: Stack(
+                        children: [
+                          GoogleMap(
+                            initialCameraPosition: CameraPosition(
+                              target: _mapCenter,
+                              zoom: 13,
+                            ),
+                            onMapCreated: (controller) =>
+                                _mapController = controller,
+                            markers: _requestMarkers(),
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: false,
+                            zoomControlsEnabled: false,
+                            onTap: _selectMapPoint,
+                          ),
+                          Positioned(
+                            left: 12,
+                            top: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                _mapTapSetsDrop
+                                    ? 'Tap map to set To'
+                                    : 'Tap map to set From',
+                                style: const TextStyle(
+                                  color: AppColors.bark,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
+                  if (_fromLatLng == null || _toLatLng == null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.warning.withOpacity(0.35),
+                        ),
+                      ),
+                      child: const Text(
+                        'Map From and To are required before posting.',
+                        style: TextStyle(
+                          color: AppColors.bark,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   TextField(
                     controller: _pickupCtrl,
