@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../utils/app_colors.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
-import '../../utils/helpers.dart';
 import '../../widgets/notification_bell.dart';
 
 class MyRidesScreen extends StatefulWidget {
@@ -42,18 +41,6 @@ class _MyRidesScreenState extends State<MyRidesScreen>
       });
     } catch (e) {
       setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _deleteRide(String rideId) async {
-    try {
-      await ApiService.patch('/rides/$rideId/status', {'status': 'cancelled'});
-      await _loadRides(showLoading: false);
-      if (mounted) AppHelpers.showSnackBar(context, 'Ride removed');
-    } catch (e) {
-      if (mounted) {
-        AppHelpers.showSnackBar(context, 'Error: $e', isError: true);
-      }
     }
   }
 
@@ -262,7 +249,6 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                                     (r['exactLocation'] ?? '').toString(),
                                 exactDropLocation:
                                     (r['exactDropLocation'] ?? '').toString(),
-                                onDelete: () => _deleteRide(r['id'] ?? ''),
                               );
                             },
                           );
@@ -318,7 +304,6 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                                     (r['exactLocation'] ?? '').toString(),
                                 exactDropLocation:
                                     (r['exactDropLocation'] ?? '').toString(),
-                                onDelete: null,
                               );
                             },
                           );
@@ -356,7 +341,6 @@ class _CaptainRideCard extends StatelessWidget {
   final String status;
   final String exactLocation;
   final String exactDropLocation;
-  final VoidCallback? onDelete;
 
   const _CaptainRideCard({
     required this.rideId,
@@ -370,12 +354,10 @@ class _CaptainRideCard extends StatelessWidget {
     required this.status,
     this.exactLocation = '',
     this.exactDropLocation = '',
-    this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isActive = status == 'active';
     final dt = DateTime.tryParse(departureTime) ?? DateTime.now();
 
     return Container(
@@ -498,82 +480,27 @@ class _CaptainRideCard extends StatelessWidget {
                       fontWeight: FontWeight.w900)),
             ],
           ),
-          if (isActive) ...[
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pushNamed(context, '/requests',
-                          arguments: rideId),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.moss,
-                          foregroundColor: AppColors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14))),
-                      child: const Text('Requests',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 14)),
-                    ),
-                  ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () =>
+                  Navigator.pushNamed(context, '/requests', arguments: rideId),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.moss,
+                foregroundColor: AppColors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pushNamed(context, '/requests',
-                          arguments: rideId),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.bark,
-                        side:
-                            BorderSide(color: AppColors.sage.withOpacity(0.35)),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: const Text('Details',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 14)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                      color: AppColors.moss.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(14)),
-                  child: IconButton(
-                    icon: const Icon(Icons.share_rounded,
-                        color: AppColors.moss, size: 20),
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Route link copied!'),
-                            duration: Duration(seconds: 2))),
-                  ),
-                ),
-                if (onDelete != null) ...[
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(14)),
-                    child: IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded,
-                          color: Colors.red, size: 20),
-                      onPressed: onDelete,
-                    ),
-                  ),
-                ],
-              ],
+              ),
+              child: const Text(
+                'View Details',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
             ),
-          ],
+          ),
         ],
       ),
     );

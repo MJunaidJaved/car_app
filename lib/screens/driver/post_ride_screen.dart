@@ -41,6 +41,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
   double _endLat = 0.0;
   double _endLng = 0.0;
   GoogleMapController? _mapController;
+  bool _mapTapSetsDrop = false;
 
   final _types = ['office', 'random', 'delivery', 'tour'];
 
@@ -109,6 +110,43 @@ class _PostRideScreenState extends State<PostRideScreen> {
       return LatLng(_startLat, _startLng);
     if (_endLat != 0.0 && _endLng != 0.0) return LatLng(_endLat, _endLng);
     return const LatLng(31.5204, 74.3587);
+  }
+
+  Future<String> _labelForLatLng(LatLng latLng) async {
+    try {
+      final marks = await placemarkFromCoordinates(
+        latLng.latitude,
+        latLng.longitude,
+      ).timeout(const Duration(seconds: 4));
+      if (marks.isEmpty) return '';
+      final p = marks.first;
+      return [
+        p.name,
+        p.street,
+        p.subLocality,
+        p.locality,
+        p.administrativeArea,
+      ].where((v) => (v ?? '').trim().isNotEmpty).join(', ');
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<void> _selectMapPoint(LatLng latLng) async {
+    if (_mapTapSetsDrop) {
+      _endLat = latLng.latitude;
+      _endLng = latLng.longitude;
+      final label = await _labelForLatLng(latLng);
+      if (label.isNotEmpty) _toCtrl.text = label;
+    } else {
+      _startLat = latLng.latitude;
+      _startLng = latLng.longitude;
+      final label = await _labelForLatLng(latLng);
+      if (label.isNotEmpty) _fromCtrl.text = label;
+    }
+    if (!mounted) return;
+    setState(() {});
+    _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
   }
 
   Future<void> _resolveTypedRoute() async {
@@ -428,12 +466,36 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                     _endLat = latLng.latitude;
                                     _endLng = latLng.longitude;
                                     setState(() {});
+                                    _mapController?.animateCamera(
+                                      CameraUpdate.newLatLng(latLng),
+                                    );
                                   },
                                   validator: (v) => (v == null || v.isEmpty)
                                       ? 'Enter destination'
                                       : null,
                                 ),
                                 const SizedBox(height: 12),
+                                SegmentedButton<bool>(
+                                  segments: const [
+                                    ButtonSegment(
+                                      value: false,
+                                      icon: Icon(Icons.trip_origin_rounded),
+                                      label: Text('Map sets From'),
+                                    ),
+                                    ButtonSegment(
+                                      value: true,
+                                      icon: Icon(Icons.place_rounded),
+                                      label: Text('Map sets To'),
+                                    ),
+                                  ],
+                                  selected: {_mapTapSetsDrop},
+                                  onSelectionChanged: (values) {
+                                    setState(
+                                      () => _mapTapSetsDrop = values.first,
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 8),
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(16),
                                   child: SizedBox(
@@ -449,14 +511,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                       myLocationEnabled: true,
                                       myLocationButtonEnabled: false,
                                       zoomControlsEnabled: false,
-                                      onTap: (latLng) {
-                                        _startLat = latLng.latitude;
-                                        _startLng = latLng.longitude;
-                                        setState(() {});
-                                        _mapController?.animateCamera(
-                                          CameraUpdate.newLatLng(latLng),
-                                        );
-                                      },
+                                      onTap: _selectMapPoint,
                                     ),
                                   ),
                                 ),
