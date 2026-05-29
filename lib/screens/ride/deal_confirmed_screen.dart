@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/helpers.dart';
 import '../../widgets/deal_chat_panel.dart';
 
 class DealConfirmedScreen extends StatefulWidget {
@@ -14,7 +15,8 @@ class DealConfirmedScreen extends StatefulWidget {
   State<DealConfirmedScreen> createState() => _DealConfirmedScreenState();
 }
 
-class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerProviderStateMixin {
+class _DealConfirmedScreenState extends State<DealConfirmedScreen>
+    with TickerProviderStateMixin {
   late AnimationController _checkCtrl;
   late Animation<double> _checkScale;
   late AnimationController _dotsCtrl;
@@ -34,29 +36,37 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
   @override
   void initState() {
     super.initState();
-    _checkCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _checkCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
     _checkScale = CurvedAnimation(parent: _checkCtrl, curve: Curves.elasticOut);
     _checkCtrl.forward();
-    _dotsCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 3000))..repeat();
+    _dotsCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 3000))
+      ..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _dealId = ModalRoute.of(context)?.settings.arguments as String?;
       await _loadDeal();
-      _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadDeal());
+      _refreshTimer =
+          Timer.periodic(const Duration(seconds: 10), (_) => _loadDeal());
     });
   }
 
   Future<void> _loadDeal() async {
     if (_dealId == null) return;
     try {
-      final deal = await Provider.of<FirestoreService>(context, listen: false).getDeal(_dealId!);
+      final deal = await Provider.of<FirestoreService>(context, listen: false)
+          .getDeal(_dealId!);
       if (!mounted) return;
       final phone = (deal['captain']?['phone'] ?? '').toString();
       setState(() {
-        _captainName = deal['captain']?['name'] ?? deal['ride']?['captainName'] ?? 'Captain';
+        _captainName = deal['captain']?['name'] ??
+            deal['ride']?['captainName'] ??
+            'Captain';
         _phoneRaw = phone;
         _fare = (deal['agreedFare'] ?? 0).toDouble();
-        _rideId = deal['rideId']?.toString() ?? deal['ride']?['id']?.toString() ?? '';
+        _rideId =
+            deal['rideId']?.toString() ?? deal['ride']?['id']?.toString() ?? '';
         _status = (deal['status'] ?? 'pending').toString();
         _lastCounterBy = (deal['lastCounterBy'] ?? '').toString();
       });
@@ -83,13 +93,14 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
           .counterDeal(_dealId!, _fare, message: 'Passenger accepted the fare');
       await _loadDeal();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fare accepted. Waiting for captain confirmation.'), duration: Duration(seconds: 2)),
+        AppHelpers.showSnackBar(
+          context,
+          'Fare accepted. Waiting for captain confirmation.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Accept failed: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Accept failed: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isSendingCounter = false);
@@ -99,8 +110,10 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
   Future<void> _sendCounterAgain() async {
     final amount = double.tryParse(_counterCtrl.text.trim()) ?? 0;
     if (_dealId == null || amount <= 0 || _isSendingCounter) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid counter fare'), duration: Duration(seconds: 2)),
+      AppHelpers.showSnackBar(
+        context,
+        'Enter a valid counter fare',
+        isError: true,
       );
       return;
     }
@@ -111,13 +124,11 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
       _counterCtrl.clear();
       await _loadDeal();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Adjusted fare sent'), duration: Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Adjusted fare sent');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Counter failed: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Counter failed: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isSendingCounter = false);
@@ -132,29 +143,36 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
         title: const Text('Cancel booking?'),
         content: const Text('Your ride request will be cancelled.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Yes, cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('No')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Yes, cancel')),
         ],
       ),
     );
     if (confirm != true || !mounted) return;
     try {
-      await Provider.of<FirestoreService>(context, listen: false).cancelDeal(_dealId!);
+      await Provider.of<FirestoreService>(context, listen: false)
+          .cancelDeal(_dealId!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled'), duration: Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Booking cancelled');
         Navigator.pushReplacementNamed(context, '/my-bookings');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Cancel failed: $e', isError: true);
       }
     }
   }
 
   Future<void> _callCaptain() async {
     if (_phoneRaw.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Captain phone not available yet'), duration: Duration(seconds: 2)),
+      AppHelpers.showSnackBar(
+        context,
+        'Captain phone not available yet',
+        isError: true,
       );
       return;
     }
@@ -180,13 +198,15 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
       statusBarIconBrightness: Brightness.light,
     ));
 
-    final initials = _captainName.isNotEmpty ? _captainName[0].toUpperCase() : 'C';
+    final initials =
+        _captainName.isNotEmpty ? _captainName[0].toUpperCase() : 'C';
 
     return Scaffold(
       backgroundColor: AppColors.bark,
       body: Stack(
         children: [
-          ...List.generate(6, (i) => _FloatingDot(controller: _dotsCtrl, index: i)),
+          ...List.generate(
+              6, (i) => _FloatingDot(controller: _dotsCtrl, index: i)),
           SafeArea(
             child: Column(
               children: [
@@ -196,53 +216,89 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
                   child: Container(
                     width: 100,
                     height: 100,
-                    decoration: const BoxDecoration(color: AppColors.moss, shape: BoxShape.circle),
-                    child: const Icon(Icons.check_rounded, color: AppColors.cream, size: 54),
+                    decoration: const BoxDecoration(
+                        color: AppColors.moss, shape: BoxShape.circle),
+                    child: const Icon(Icons.check_rounded,
+                        color: AppColors.cream, size: 54),
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('Booking sent!', style: TextStyle(color: AppColors.cream, fontSize: 32, fontWeight: FontWeight.w800)),
+                const Text('Booking sent!',
+                    style: TextStyle(
+                        color: AppColors.cream,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
-                Text('Requested fare', style: TextStyle(color: AppColors.cream.withOpacity(0.6), fontSize: 16)),
+                Text('Requested fare',
+                    style: TextStyle(
+                        color: AppColors.cream.withOpacity(0.6), fontSize: 16)),
                 const SizedBox(height: 12),
-                Text('Rs ${_fare.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.cream, fontSize: 56, fontWeight: FontWeight.w900)),
+                Text('Rs ${_fare.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                        color: AppColors.cream,
+                        fontSize: 56,
+                        fontWeight: FontWeight.w900)),
                 const Spacer(),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(32),
                   decoration: const BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(32),
+                        topRight: Radius.circular(32)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Your Captain', style: TextStyle(color: AppColors.bark, fontSize: 18, fontWeight: FontWeight.w800)),
+                      const Text('Your Captain',
+                          style: TextStyle(
+                              color: AppColors.bark,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800)),
                       const SizedBox(height: 20),
                       Row(
                         children: [
                           CircleAvatar(
                             radius: 24,
                             backgroundColor: AppColors.primary.withOpacity(0.1),
-                            child: Text(initials, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800)),
+                            child: Text(initials,
+                                style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w800)),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(_captainName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.bark)),
+                            child: Text(_captainName,
+                                style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.bark)),
                           ),
                           IconButton(
                             onPressed: _callCaptain,
-                            icon: const Icon(Icons.phone, color: AppColors.primary),
+                            icon: const Icon(Icons.phone,
+                                color: AppColors.primary),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
                       Divider(color: AppColors.sage.withOpacity(0.2)),
                       const SizedBox(height: 24),
-                      const Text('Contact (after captain confirms)', style: TextStyle(color: AppColors.sage, fontSize: 13, fontWeight: FontWeight.w600)),
+                      const Text('Contact (after captain confirms)',
+                          style: TextStyle(
+                              color: AppColors.sage,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
-                      Text(_phoneDisplay, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.bark, letterSpacing: 1.2)),
-                      if (_status == 'pending' && _lastCounterBy == 'captain') ...[
+                      Text(_phoneDisplay,
+                          style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.bark,
+                              letterSpacing: 1.2)),
+                      if (_status == 'pending' &&
+                          _lastCounterBy == 'captain') ...[
                         const SizedBox(height: 18),
                         Container(
                           width: double.infinity,
@@ -277,14 +333,18 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
                                 children: [
                                   Expanded(
                                     child: OutlinedButton(
-                                      onPressed: _isSendingCounter ? null : _sendCounterAgain,
+                                      onPressed: _isSendingCounter
+                                          ? null
+                                          : _sendCounterAgain,
                                       child: const Text('Adjust Fare'),
                                     ),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: ElevatedButton(
-                                      onPressed: _isSendingCounter ? null : _acceptCaptainCounter,
+                                      onPressed: _isSendingCounter
+                                          ? null
+                                          : _acceptCaptainCounter,
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.moss,
                                         foregroundColor: AppColors.cream,
@@ -307,10 +367,13 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.moss,
                             foregroundColor: AppColors.cream,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
                             elevation: 0,
                           ),
-                          child: const Text('Call Captain', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                          child: const Text('Call Captain',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w800, fontSize: 16)),
                         ),
                       ),
                       if (_dealId != null) ...[
@@ -321,7 +384,10 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
                       Center(
                         child: TextButton(
                           onPressed: _cancelBooking,
-                          child: const Text('Cancel booking', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+                          child: const Text('Cancel booking',
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.w700)),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -338,10 +404,12 @@ class _DealConfirmedScreenState extends State<DealConfirmedScreen> with TickerPr
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary.withOpacity(0.1),
                             foregroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
                             elevation: 0,
                           ),
-                          child: const Text('View My Bookings', style: TextStyle(fontWeight: FontWeight.w800)),
+                          child: const Text('View My Bookings',
+                              style: TextStyle(fontWeight: FontWeight.w800)),
                         ),
                       ),
                     ],
@@ -378,7 +446,8 @@ class _FloatingDot extends StatelessWidget {
             child: Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                  color: AppColors.primary, shape: BoxShape.circle),
             ),
           ),
         );
@@ -386,6 +455,3 @@ class _FloatingDot extends StatelessWidget {
     );
   }
 }
-
-
-

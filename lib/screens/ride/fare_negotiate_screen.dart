@@ -8,6 +8,7 @@ import '../../providers/user_provider.dart';
 import '../../utils/helpers.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/co_riders_section.dart';
+import '../../widgets/places_autocomplete_field.dart';
 
 class FareNegotiateScreen extends StatefulWidget {
   final RideModel ride;
@@ -469,12 +470,23 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               TextField(
-                                controller: _pickupCtrl,
+                                controller: _messageCtrl,
+                                maxLines: 2,
                                 decoration: const InputDecoration(
-                                  labelText: 'Exact pickup point',
-                                  hintText: 'Enter your pickup point',
+                                  labelText: 'Note for captain (optional)',
+                                  hintText: 'e.g. I am at the building gate',
                                   border: OutlineInputBorder(),
                                 ),
+                              ),
+                              const SizedBox(height: 8),
+                              PlacesAutocompleteField(
+                                controller: _pickupCtrl,
+                                label: 'Exact pickup point',
+                                icon: Icons.place_outlined,
+                                onPlaceSelected: (latLng) {
+                                  _pickupLat = latLng.latitude;
+                                  _pickupLng = latLng.longitude;
+                                },
                               ),
                               const SizedBox(height: 8),
                               Container(
@@ -517,7 +529,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                                       onPressed: _isCreatingDeal
                                           ? null
                                           : _acceptCaptainFare,
-                                      icon: const Icon(Icons.check_circle_outline),
+                                      icon: const Icon(
+                                          Icons.check_circle_outline),
                                       label: Text(
                                         'Done Rs ${widget.ride.suggestedFare.toStringAsFixed(0)}',
                                       ),
@@ -532,7 +545,8 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                                     child: OutlinedButton.icon(
                                       onPressed:
                                           _isCreatingDeal ? null : _sendOffer,
-                                      icon: const Icon(Icons.price_change_outlined),
+                                      icon: const Icon(
+                                          Icons.price_change_outlined),
                                       label: const Text('Adjust Fare'),
                                     ),
                                   ),
@@ -584,26 +598,24 @@ class _FareNegotiateScreenState extends State<FareNegotiateScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        TextField(
+                        PlacesAutocompleteField(
                           controller: _pickupCtrl,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Exact pickup point',
-                            hintText: 'Type pickup area/address',
-                            prefixIcon: Icon(Icons.place_outlined),
-                            border: OutlineInputBorder(),
-                          ),
+                          label: 'Exact pickup point',
+                          icon: Icons.place_outlined,
+                          onPlaceSelected: (latLng) {
+                            _pickupLat = latLng.latitude;
+                            _pickupLng = latLng.longitude;
+                          },
                         ),
                         const SizedBox(height: 10),
-                        TextField(
+                        PlacesAutocompleteField(
                           controller: _dropCtrl,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Drop point (if different)',
-                            hintText: 'Type drop area/address',
-                            prefixIcon: Icon(Icons.flag_outlined),
-                            border: OutlineInputBorder(),
-                          ),
+                          label: 'Drop point (if different)',
+                          icon: Icons.flag_outlined,
+                          onPlaceSelected: (latLng) {
+                            _dropLat = latLng.latitude;
+                            _dropLng = latLng.longitude;
+                          },
                         ),
                         const SizedBox(height: 10),
                         TextField(

@@ -4,11 +4,14 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../models/ride_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_tracking_service.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/helpers.dart';
 import '../../utils/phone_utils.dart';
 import '../../widgets/deal_chat_panel.dart';
 
@@ -23,8 +26,10 @@ class _RequestsScreenState extends State<RequestsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
   String? _rideId;
+  RideModel? _ride;
   List<Map<String, dynamic>> _deals = [];
   bool _loading = true;
+  bool _rideLoading = true;
   final _locationService = LocationTrackingService();
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _dealsSub;
   Timer? _pollTimer;
@@ -37,10 +42,13 @@ class _RequestsScreenState extends State<RequestsScreen>
     _tabCtrl = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _rideId = ModalRoute.of(context)?.settings.arguments as String?;
+      _loadRide();
       _loadDeals();
       _subscribeDeals();
-      _pollTimer =
-          Timer.periodic(const Duration(seconds: 30), (_) => _loadDeals());
+      _pollTimer = Timer.periodic(
+        const Duration(seconds: 30),
+        (_) => _loadDeals(),
+      );
     });
   }
 
@@ -54,21 +62,36 @@ class _RequestsScreenState extends State<RequestsScreen>
         .listen((_) => _loadDeals());
   }
 
+  Future<void> _loadRide() async {
+    if (_rideId == null) {
+      setState(() => _rideLoading = false);
+      return;
+    }
+    try {
+      final service = Provider.of<FirestoreService>(context, listen: false);
+      final ride = await service.getRideById(_rideId!);
+      if (mounted) {
+        setState(() {
+          _ride = ride;
+          _rideLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _rideLoading = false);
+    }
+  }
+
   void _updateSeatCounts() {
     _confirmedSeats = _deals
         .where(
-            (d) => ['confirmed', 'started', 'completed'].contains(d['status']))
+          (d) => ['confirmed', 'started', 'completed'].contains(d['status']),
+        )
         .length;
-    final ride = _deals.isNotEmpty
-        ? _deals.first['ride'] as Map<String, dynamic>?
-        : null;
-    _totalSeats = (ride?['totalSeats'] ?? 0) as int;
+    _totalSeats = _ride?.totalSeats ?? 0;
     if (_totalSeats == 0 && _rideId != null) {
-      FirebaseFirestore.instance
-          .collection('rides')
-          .doc(_rideId)
-          .get()
-          .then((doc) {
+      FirebaseFirestore.instance.collection('rides').doc(_rideId).get().then((
+        doc,
+      ) {
         if (doc.exists && mounted) {
           setState(() => _totalSeats = (doc.data()?['totalSeats'] ?? 0) as int);
         }
@@ -96,21 +119,20 @@ class _RequestsScreenState extends State<RequestsScreen>
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to load: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Failed to load: $e', isError: true);
       }
     }
   }
 
   Future<void> _accept(String dealId) async {
     try {
-      await Provider.of<FirestoreService>(context, listen: false)
-          .confirmDeal(dealId);
+      await Provider.of<FirestoreService>(
+        context,
+        listen: false,
+      ).confirmDeal(dealId);
       await Provider.of<UserProvider>(context, listen: false).reloadWallet();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request accepted'), duration: Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Request accepted');
         await _loadDeals();
         _tabCtrl.animateTo(1);
       }
@@ -126,11 +148,13 @@ class _RequestsScreenState extends State<RequestsScreen>
             ),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Cancel')),
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
               ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Top Up')),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Top Up'),
+              ),
             ],
           ),
         );
@@ -139,9 +163,9 @@ class _RequestsScreenState extends State<RequestsScreen>
         }
         return;
       }
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
+      if (mounted) {
+        AppHelpers.showSnackBar(context, 'Error: $e', isError: true);
+      }
     }
   }
 
@@ -163,26 +187,27 @@ class _RequestsScreenState extends State<RequestsScreen>
   Future<void> _startRide(String dealId) async {
     if (_rideId == null) return;
     try {
-      await Provider.of<FirestoreService>(context, listen: false)
-          .startDeal(dealId);
+      await Provider.of<FirestoreService>(
+        context,
+        listen: false,
+      ).startDeal(dealId);
       _locationService.startCaptainTracking(_rideId!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ride started — sharing your location'), duration: Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(
+            context, 'Ride started - sharing your location');
         await _loadDeals();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Error: $e', isError: true);
       }
     }
   }
 
   Future<void> _counter(String dealId, double currentFare) async {
-    final controller =
-        TextEditingController(text: currentFare > 0 ? currentFare.toStringAsFixed(0) : '');
+    final controller = TextEditingController(
+      text: currentFare > 0 ? currentFare.toStringAsFixed(0) : '',
+    );
     final amount = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -217,18 +242,17 @@ class _RequestsScreenState extends State<RequestsScreen>
     if (amount == null) return;
 
     try {
-      await Provider.of<FirestoreService>(context, listen: false)
-          .counterDeal(dealId, amount);
+      await Provider.of<FirestoreService>(
+        context,
+        listen: false,
+      ).counterDeal(dealId, amount);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Adjusted fare sent'), duration: Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Adjusted fare sent');
         await _loadDeals();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Error: $e', isError: true);
       }
     }
   }
@@ -294,8 +318,11 @@ class _RequestsScreenState extends State<RequestsScreen>
                             color: AppColors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new_rounded,
-                              color: AppColors.white, size: 18),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.white,
+                            size: 18,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -303,17 +330,22 @@ class _RequestsScreenState extends State<RequestsScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Ride Requests',
-                                style: TextStyle(
-                                    color: AppColors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800)),
+                            const Text(
+                              'Ride Requests',
+                              style: TextStyle(
+                                color: AppColors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                             Text(
                               _totalSeats > 0
                                   ? '$_confirmedSeats / $_totalSeats seats confirmed'
                                   : 'Accept or decline passengers',
                               style: const TextStyle(
-                                  color: Color(0xAAFFFFFF), fontSize: 13),
+                                color: Color(0xAAFFFFFF),
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
@@ -322,6 +354,108 @@ class _RequestsScreenState extends State<RequestsScreen>
                   ),
                 ),
                 const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _rideLoading
+                      ? const SizedBox(
+                          height: 84,
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : _ride == null
+                          ? Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.white.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Text(
+                                'Ride details unavailable.',
+                                style: TextStyle(color: AppColors.white),
+                              ),
+                            )
+                          : Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.sage.withOpacity(0.2),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${_ride!.startLocation} -> ${_ride!.endLocation}',
+                                    style: const TextStyle(
+                                      color: AppColors.bark,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  if ((_ride!.exactLocation ?? '')
+                                      .trim()
+                                      .isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Exact pickup: ${_ride!.exactLocation}',
+                                      style: const TextStyle(
+                                        color: AppColors.sage,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                  if ((_ride!.exactDropLocation ?? '')
+                                      .trim()
+                                      .isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Exact drop: ${_ride!.exactDropLocation}',
+                                      style: const TextStyle(
+                                        color: AppColors.sage,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _SummaryPill(
+                                        label: _ride!.rideType.toUpperCase(),
+                                      ),
+                                      _SummaryPill(
+                                        label: _ride!.rideMode.toUpperCase(),
+                                      ),
+                                      _SummaryPill(label: _ride!.seatsLabel),
+                                      if (_ride!.displayVehicle.isNotEmpty)
+                                        _SummaryPill(
+                                            label: _ride!.displayVehicle),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Fare Rs ${_ride!.suggestedFare.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      color: AppColors.moss,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Departure: ${DateFormat('MMM d, yyyy h:mm a').format(_ride!.departureTime)}',
+                                    style: const TextStyle(
+                                      color: AppColors.sage,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                ),
+                const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
@@ -333,12 +467,15 @@ class _RequestsScreenState extends State<RequestsScreen>
                     child: TabBar(
                       controller: _tabCtrl,
                       indicator: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(14)),
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       labelColor: AppColors.bark,
                       unselectedLabelColor: AppColors.white,
                       labelStyle: const TextStyle(
-                          fontWeight: FontWeight.w800, fontSize: 14),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
                       tabs: const [
                         Tab(text: 'Pending'),
                         Tab(text: 'Confirmed'),
@@ -450,23 +587,36 @@ class _RequestsScreenState extends State<RequestsScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 16)),
-              Text('Rs ${(d['agreedFare'] ?? 0).toString()}',
-                  style: const TextStyle(
-                      color: AppColors.moss, fontWeight: FontWeight.w800)),
+              Text(
+                name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                'Rs ${(d['agreedFare'] ?? 0).toString()}',
+                style: const TextStyle(
+                  color: AppColors.moss,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               if (pickup.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text('Pickup: $pickup',
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(
+                  'Pickup: $pickup',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
               if (drop.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text('Drop: $drop',
-                    style:
-                        const TextStyle(fontSize: 12, color: AppColors.sage)),
+                Text(
+                  'Drop: $drop',
+                  style: const TextStyle(fontSize: 12, color: AppColors.sage),
+                ),
               ],
               const SizedBox(height: 10),
               _contactActions(customerPhone?.toString()),
@@ -519,22 +669,30 @@ class _RequestsScreenState extends State<RequestsScreen>
     );
   }
 
-  Widget _buildList(List<Map<String, dynamic>> deals,
-      {required bool isPending}) {
+  Widget _buildList(
+    List<Map<String, dynamic>> deals, {
+    required bool isPending,
+  }) {
     if (deals.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isPending ? Icons.hail_rounded : Icons.history_rounded,
-                color: AppColors.moss.withOpacity(0.3), size: 64),
+            Icon(
+              isPending ? Icons.hail_rounded : Icons.history_rounded,
+              color: AppColors.moss.withOpacity(0.3),
+              size: 64,
+            ),
             const SizedBox(height: 12),
             Text(
-              isPending ? 'No pending requests.' : 'No done/history requests yet.',
+              isPending
+                  ? 'No pending requests.'
+                  : 'No done/history requests yet.',
               style: const TextStyle(
-                  color: AppColors.sage,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600),
+                color: AppColors.sage,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -571,39 +729,53 @@ class _RequestsScreenState extends State<RequestsScreen>
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: AppColors.moss.withOpacity(0.1),
-                    child: Text(initials,
-                        style: const TextStyle(
-                            color: AppColors.moss,
-                            fontWeight: FontWeight.w800)),
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                        color: AppColors.moss,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                                color: AppColors.bark)),
-                        Text('${(customer['rating'] ?? 0).toString()} rating',
-                            style: const TextStyle(
-                                color: AppColors.sage, fontSize: 12)),
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: AppColors.bark,
+                          ),
+                        ),
+                        Text(
+                          '${(customer['rating'] ?? 0).toString()} rating',
+                          style: const TextStyle(
+                            color: AppColors.sage,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Text('Rs ${fare.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                          color: AppColors.moss,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16)),
+                  Text(
+                    'Rs ${fare.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      color: AppColors.moss,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
                 ],
               ),
               if ((d['customerMessage'] ?? '').toString().isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text(d['customerMessage'],
-                    style:
-                        const TextStyle(color: AppColors.sage, fontSize: 13)),
+                Text(
+                  d['customerMessage'],
+                  style: const TextStyle(color: AppColors.sage, fontSize: 13),
+                ),
               ],
               if (isPending &&
                   (d['passengerPickupAddress']?.toString() ?? '')
@@ -612,7 +784,9 @@ class _RequestsScreenState extends State<RequestsScreen>
                 Text(
                   'Pickup: ${d['passengerPickupAddress']}',
                   style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
               if (!isPending && dealId.isNotEmpty) ...[
@@ -623,9 +797,13 @@ class _RequestsScreenState extends State<RequestsScreen>
               ],
               if (!isPending) ...[
                 const SizedBox(height: 12),
-                Text('Status: ${d['status']}',
-                    style: const TextStyle(
-                        color: AppColors.bark, fontWeight: FontWeight.w700)),
+                Text(
+                  'Status: ${d['status']}',
+                  style: const TextStyle(
+                    color: AppColors.bark,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 if (d['status'] == 'confirmed') ...[
                   const SizedBox(height: 12),
                   SizedBox(
@@ -636,15 +814,19 @@ class _RequestsScreenState extends State<RequestsScreen>
                         backgroundColor: AppColors.bark,
                         foregroundColor: AppColors.white,
                       ),
-                      child: const Text('Start Ride',
-                          style: TextStyle(fontWeight: FontWeight.w800)),
+                      child: const Text(
+                        'Start Ride',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
                 ],
                 if (d['status'] == 'started') ...[
                   const SizedBox(height: 8),
-                  const Text('Location sharing active',
-                      style: TextStyle(color: AppColors.moss, fontSize: 12)),
+                  const Text(
+                    'Location sharing active',
+                    style: TextStyle(color: AppColors.moss, fontSize: 12),
+                  ),
                 ],
               ],
               if (isPending) ...[
@@ -662,8 +844,9 @@ class _RequestsScreenState extends State<RequestsScreen>
                       child: ElevatedButton(
                         onPressed: () => _accept(dealId),
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.moss,
-                            foregroundColor: AppColors.white),
+                          backgroundColor: AppColors.moss,
+                          foregroundColor: AppColors.white,
+                        ),
                         child: const Text('Accept'),
                       ),
                     ),
@@ -678,10 +861,34 @@ class _RequestsScreenState extends State<RequestsScreen>
   }
 }
 
+class _SummaryPill extends StatelessWidget {
+  final String label;
+
+  const _SummaryPill({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.sage.withOpacity(0.15)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.bark,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
 class _InsufficientBalanceData {
   final double required;
   final double current;
   _InsufficientBalanceData({required this.required, required this.current});
 }
-
-

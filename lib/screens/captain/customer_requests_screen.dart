@@ -1,24 +1,40 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/helpers.dart';
 import '../../utils/phone_utils.dart';
 
 class CaptainCustomerRequestsScreen extends StatefulWidget {
   const CaptainCustomerRequestsScreen({super.key});
 
   @override
-  State<CaptainCustomerRequestsScreen> createState() => _CaptainCustomerRequestsScreenState();
+  State<CaptainCustomerRequestsScreen> createState() =>
+      _CaptainCustomerRequestsScreenState();
 }
 
-class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsScreen> {
+class _CaptainCustomerRequestsScreenState
+    extends State<CaptainCustomerRequestsScreen> {
   bool _loading = true;
   List<Map<String, dynamic>> _requests = [];
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadRequests();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _loadRequests(showLoading: false),
+    );
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<Position?> _position() async {
@@ -33,13 +49,18 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
     }
   }
 
-  Future<void> _loadRequests() async {
+  Future<void> _loadRequests({bool showLoading = true}) async {
+    if (showLoading && mounted) setState(() => _loading = true);
     try {
       final pos = await _position();
-      final res = await ApiService.get('/customer-requests', queryParams: {
-        if (pos != null) 'lat': pos.latitude.toString(),
-        if (pos != null) 'lng': pos.longitude.toString(),
-      });
+      final res = await ApiService.get(
+        '/customer-requests',
+        queryParams: {
+          if (pos != null) 'lat': pos.latitude.toString(),
+          if (pos != null) 'lng': pos.longitude.toString(),
+          if (pos != null) 'radiusKm': '15',
+        },
+      );
       if (mounted) {
         setState(() {
           _requests = List<Map<String, dynamic>>.from(res['requests'] ?? []);
@@ -88,14 +109,16 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
       return;
     }
     try {
-      await ApiService.post('/customer-requests/$requestId/offers', {'fare': fare});
-      await _loadRequests();
+      await ApiService.post('/customer-requests/$requestId/offers', {
+        'fare': fare,
+      });
+      await _loadRequests(showLoading: false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offer sent to customer'), duration: Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Offer sent to customer');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Offer failed: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Offer failed: $e', isError: true);
       }
     }
   }
@@ -110,7 +133,7 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
         foregroundColor: AppColors.white,
       ),
       body: RefreshIndicator(
-        onRefresh: _loadRequests,
+        onRefresh: () => _loadRequests(showLoading: false),
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : ListView(
@@ -137,32 +160,93 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
         : distance <= 10
             ? '${distance.toStringAsFixed(1)} km away - nearby'
             : '${distance.toStringAsFixed(1)} km away';
-    final requestedAt = DateTime.tryParse((request['requestedAt'] ?? '').toString());
+    final requestedAt = DateTime.tryParse(
+      (request['requestedAt'] ?? '').toString(),
+    );
     final requestedLabel = requestedAt == null
         ? '-'
         : '${requestedAt.toLocal().day}/${requestedAt.toLocal().month}/${requestedAt.toLocal().year} ${TimeOfDay.fromDateTime(requestedAt.toLocal()).format(context)}';
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${request['startLocation']} -> ${request['endLocation']}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          Text(
+            '${request['startLocation']} -> ${request['endLocation']}',
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+          ),
+          if ((request['pickupLocation'] ?? '')
+              .toString()
+              .trim()
+              .isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Exact pickup: ${request['pickupLocation']}',
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          if ((request['dropLocation'] ?? '').toString().trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Exact drop: ${request['dropLocation']}',
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           const SizedBox(height: 4),
-          Text(distanceLabel, style: const TextStyle(color: AppColors.moss, fontWeight: FontWeight.w800)),
+          Text(
+            distanceLabel,
+            style: const TextStyle(
+              color: AppColors.moss,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('Time: $requestedLabel', style: const TextStyle(color: AppColors.textMuted)),
+          Text(
+            'Time: $requestedLabel',
+            style: const TextStyle(color: AppColors.textMuted),
+          ),
+          if ((request['city'] ?? '').toString().trim().isNotEmpty)
+            Text(
+              'City: ${request['city']}',
+              style: const TextStyle(color: AppColors.textMuted),
+            ),
           if ((request['desiredFare'] ?? '').toString().isNotEmpty)
             Text('Customer budget Rs ${request['desiredFare']}'),
-          Text('Status: ${status.toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(
+            'Status: ${status.toUpperCase()}',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
           if (customerPhone.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text('Customer: $customerPhone', style: const TextStyle(fontWeight: FontWeight.w800)),
-            Row(children: [
-              TextButton.icon(onPressed: () => dialPhone(context, customerPhone), icon: const Icon(Icons.call), label: const Text('Call')),
-              TextButton.icon(onPressed: () => openWhatsApp(context, customerPhone), icon: const Icon(Icons.chat), label: const Text('WhatsApp')),
-            ]),
+            Text(
+              'Customer: $customerPhone',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () => dialPhone(context, customerPhone),
+                  icon: const Icon(Icons.call),
+                  label: const Text('Call'),
+                ),
+                TextButton.icon(
+                  onPressed: () => openWhatsApp(context, customerPhone),
+                  icon: const Icon(Icons.chat),
+                  label: const Text('WhatsApp'),
+                ),
+              ],
+            ),
           ],
           if (status != 'accepted') ...[
             const SizedBox(height: 10),
@@ -172,7 +256,10 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
                 onPressed: () => _offer((request['id'] ?? '').toString()),
                 icon: const Icon(Icons.local_offer_outlined),
                 label: const Text('Send offer'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.moss, foregroundColor: AppColors.white),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.moss,
+                  foregroundColor: AppColors.white,
+                ),
               ),
             ),
           ],
@@ -181,5 +268,3 @@ class _CaptainCustomerRequestsScreenState extends State<CaptainCustomerRequestsS
     );
   }
 }
-
-

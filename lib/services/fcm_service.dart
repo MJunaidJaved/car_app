@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/app_navigator.dart';
+import '../utils/helpers.dart';
 import 'api_service.dart';
 
 @pragma('vm:entry-point')
@@ -53,15 +54,9 @@ class FcmService {
   static void _showForegroundBanner(String title, String body) {
     final ctx = appNavigatorKey.currentContext;
     if (ctx == null) return;
-    ScaffoldMessenger.of(ctx).showSnackBar(
-      SnackBar(
-        content: Text(body.isNotEmpty ? '$title\n$body' : title),
-        duration: const Duration(seconds: 2),
-        action: SnackBarAction(
-          label: 'View',
-          onPressed: () {},
-        ),
-      ),
+    AppHelpers.showSnackBar(
+      ctx,
+      body.isNotEmpty ? '$title\n$body' : title,
     );
   }
 
@@ -136,4 +131,3 @@ class FcmService {
     }
   }
 }
-

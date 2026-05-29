@@ -23,6 +23,7 @@ class RideService with ChangeNotifier {
     double? weightCapacity,
     String? truckSize,
     String? exactLocation,
+    String? exactDropLocation,
   }) async {
     try {
       await ApiService.post('/rides', {
@@ -46,6 +47,8 @@ class RideService with ChangeNotifier {
         if (truckSize != null) 'truckSize': truckSize,
         if (exactLocation != null && exactLocation.trim().isNotEmpty)
           'exactLocation': exactLocation.trim(),
+        if (exactDropLocation != null && exactDropLocation.trim().isNotEmpty)
+          'exactDropLocation': exactDropLocation.trim(),
       });
     } catch (e) {
       rethrow;
@@ -68,7 +71,10 @@ class RideService with ChangeNotifier {
       if (endLocation != null && endLocation.isNotEmpty)
         'endLocation': endLocation,
       if (type != null && type.isNotEmpty && type != 'all') 'rideType': type,
-      if (rideMode != null && rideMode.isNotEmpty) 'rideMode': rideMode,
+      if (rideMode != null &&
+          rideMode.isNotEmpty &&
+          rideMode.toLowerCase() != 'all')
+        'rideMode': rideMode,
       if (userLat != null) 'lat': userLat.toString(),
       if (userLng != null) 'lng': userLng.toString(),
       if (userLat != null && userLng != null) 'radiusKm': radiusKm.toString(),

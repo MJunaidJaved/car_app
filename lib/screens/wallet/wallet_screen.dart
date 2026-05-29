@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/helpers.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -14,21 +17,40 @@ class _WalletScreenState extends State<WalletScreen> {
   double _balance = 0;
   List<Map<String, dynamic>> _transactions = [];
   bool _loading = true;
+  Timer? _refreshTimer;
+
+  double _asDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
 
   @override
   void initState() {
     super.initState();
     _loadWallet();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _loadWallet(showLoading: false),
+    );
   }
 
-  Future<void> _loadWallet() async {
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadWallet({bool showLoading = true}) async {
+    if (showLoading && mounted) setState(() => _loading = true);
     try {
       final walletRes = await ApiService.get('/wallet');
       final txRes = await ApiService.get('/wallet/transactions');
+      final wallet = walletRes['wallet'] as Map<String, dynamic>? ?? {};
       setState(() {
-        _balance = (walletRes['wallet']['balance'] ?? 0).toDouble();
-        _transactions =
-            List<Map<String, dynamic>>.from(txRes['transactions'] ?? []);
+        _balance = _asDouble(wallet['balance'] ?? walletRes['balance']);
+        _transactions = List<Map<String, dynamic>>.from(
+          txRes['transactions'] ?? [],
+        );
         _loading = false;
       });
     } catch (e) {
@@ -39,16 +61,16 @@ class _WalletScreenState extends State<WalletScreen> {
   Future<void> _topUp(int amount) async {
     try {
       await ApiService.post('/wallet/topup', {'amount': amount});
-      await _loadWallet();
+      await _loadWallet(showLoading: false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Rs $amount added successfully!'), duration: const Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Rs $amount added successfully!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Top-up failed. Try again.'), duration: Duration(seconds: 2)),
+        AppHelpers.showSnackBar(
+          context,
+          'Top-up failed. Try again.',
+          isError: true,
         );
       }
     }
@@ -56,10 +78,12 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -85,377 +109,405 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ),
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: AppColors.white,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        const Text(
-                          'Wallet',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: Colors.amber.withOpacity(0.4)),
-                      ),
-                      child: const Row(
+            child: RefreshIndicator(
+              onRefresh: () => _loadWallet(showLoading: false),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: Row(
                         children: [
-                          Icon(Icons.info_outline,
-                              color: Colors.amber, size: 20),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Simulated wallet — top-up adds balance instantly. Easypaisa/JazzCash integration coming soon.',
-                              style: TextStyle(
-                                  color: AppColors.bark,
-                                  fontSize: 12,
-                                  height: 1.3),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: AppColors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          const Text(
+                            'Wallet',
+                            style: TextStyle(
+                              color: AppColors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (!_loading && _balance < 200)
+
+                    const SizedBox(height: 12),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.amber.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
-                          border:
-                              Border.all(color: Colors.red.withOpacity(0.4)),
+                          border: Border.all(
+                            color: Colors.amber.withOpacity(0.4),
+                          ),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.warning_amber_rounded,
-                                color: Colors.red, size: 20),
+                            Icon(
+                              Icons.info_outline,
+                              color: Colors.amber,
+                              size: 20,
+                            ),
                             SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Low balance! Top up to confirm rides.',
+                                'Simulated wallet — top-up adds balance instantly. Easypaisa/JazzCash integration coming soon.',
                                 style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700),
+                                  color: AppColors.bark,
+                                  fontSize: 12,
+                                  height: 1.3,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-
-                  // Balance Card
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(22),
-                      decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: AppColors.white.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Available Balance',
-                            style: TextStyle(
-                              color: AppColors.white.withOpacity(0.75),
-                              fontSize: 13,
+                    const SizedBox(height: 12),
+                    if (!_loading && _balance < 200)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.red.withOpacity(0.4),
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _loading
-                                ? '...'
-                                : 'Rs ${_balance.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              color: AppColors.white,
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
+                          child: const Row(
                             children: [
-                              _WalletAction(
-                                icon: Icons.add_rounded,
-                                label: 'Add Money',
-                                onTap: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) =>
-                                        _TopUpSheet(onTopUp: _topUp),
-                                  );
-                                },
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.red,
+                                size: 20,
                               ),
-                              const SizedBox(width: 12),
-                              _WalletAction(
-                                icon: Icons.send_rounded,
-                                label: 'Transfer',
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Transfer feature coming soon!')),
-                                  );
-                                },
-                              ),
-                              const SizedBox(width: 12),
-                              _WalletAction(
-                                icon: Icons.history_rounded,
-                                label: 'History',
-                                onTap: () {},
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Low balance! Top up to confirm rides.',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 24),
-
-                  // Easypaisa Banner
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                            color: AppColors.sage.withOpacity(0.3), width: 1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.dark.withOpacity(0.04),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                    // Balance Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: AppColors.white.withOpacity(0.2),
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Available Balance',
+                              style: TextStyle(
+                                color: AppColors.white.withOpacity(0.75),
+                                fontSize: 13,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.account_balance_wallet_outlined,
-                              color: AppColors.primary,
-                              size: 22,
+                            const SizedBox(height: 6),
+                            Text(
+                              _loading
+                                  ? '...'
+                                  : 'Rs ${_balance.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                color: AppColors.white,
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -1,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            const SizedBox(height: 16),
+                            Row(
                               children: [
-                                Text(
-                                  'Easypaisa Connected',
-                                  style: TextStyle(
-                                    color: AppColors.bark,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  'Tap to top up instantly',
-                                  style: TextStyle(
-                                    color: AppColors.sage,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            color: AppColors.sage,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Referral Card
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: AppColors.bark,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Refer & Earn',
-                                  style: TextStyle(
-                                    color: AppColors.cream,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Share code, get Rs 50 wallet credit',
-                                  style: TextStyle(
-                                    color: AppColors.cream.withOpacity(0.75),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                GestureDetector(
+                                _WalletAction(
+                                  icon: Icons.add_rounded,
+                                  label: 'Add Money',
                                   onTap: () {
-                                    Clipboard.setData(
-                                        const ClipboardData(text: 'POOL2024'));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content:
-                                              Text('Referral code copied!')),
+                                    showModalBottomSheet(
+                                      context: context,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) =>
+                                          _TopUpSheet(onTopUp: _topUp),
                                     );
                                   },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color:
-                                            AppColors.primary.withOpacity(0.3),
-                                      ),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'POOL2024',
-                                          style: TextStyle(
-                                            color: AppColors.white,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 1,
-                                          ),
-                                        ),
-                                        SizedBox(width: 10),
-                                        Icon(
-                                          Icons.copy_rounded,
-                                          color: AppColors.white,
-                                          size: 16,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                _WalletAction(
+                                  icon: Icons.send_rounded,
+                                  label: 'Transfer',
+                                  onTap: () {
+                                    AppHelpers.showSnackBar(
+                                      context,
+                                      'Transfer feature coming soon!',
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                _WalletAction(
+                                  icon: Icons.history_rounded,
+                                  label: 'History',
+                                  onTap: () {},
                                 ),
                               ],
                             ),
-                          ),
-                          const Icon(
-                            Icons.card_giftcard_rounded,
-                            color: AppColors.primary,
-                            size: 48,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Transaction History
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      'Recent Transactions',
-                      style: TextStyle(
-                        color: AppColors.bark,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                    // Easypaisa Banner
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: AppColors.sage.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.dark.withOpacity(0.04),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(13),
+                              ),
+                              child: const Icon(
+                                Icons.account_balance_wallet_outlined,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Easypaisa Connected',
+                                    style: TextStyle(
+                                      color: AppColors.bark,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Tap to top up instantly',
+                                    style: TextStyle(
+                                      color: AppColors.sage,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppColors.sage,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
 
-                  if (_loading)
-                    const Center(child: CircularProgressIndicator())
-                  else if (_transactions.isEmpty)
+                    const SizedBox(height: 20),
+
+                    // Referral Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: AppColors.bark,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Refer & Earn',
+                                    style: TextStyle(
+                                      color: AppColors.cream,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Share code, get Rs 50 wallet credit',
+                                    style: TextStyle(
+                                      color: AppColors.cream.withOpacity(0.75),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Clipboard.setData(
+                                        const ClipboardData(text: 'POOL2024'),
+                                      );
+                                      AppHelpers.showSnackBar(
+                                        context,
+                                        'Referral code copied!',
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.white.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: AppColors.primary.withOpacity(
+                                            0.3,
+                                          ),
+                                        ),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'POOL2024',
+                                            style: TextStyle(
+                                              color: AppColors.white,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 1,
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Icon(
+                                            Icons.copy_rounded,
+                                            color: AppColors.white,
+                                            size: 16,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.card_giftcard_rounded,
+                              color: AppColors.primary,
+                              size: 48,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Transaction History
                     const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text('No transactions yet.',
-                          style: TextStyle(color: AppColors.sage)),
-                    )
-                  else
-                    ..._transactions.map((tx) {
-                      final isDebit =
-                          tx['type'] == 'debit' || tx['type'] == 'commission';
-                      final amount = (tx['amount'] ?? 0).toDouble();
-                      final date = tx['createdAt'] ?? '';
-                      return _TransactionItem(
-                        title: tx['description'] ?? tx['type'] ?? 'Transaction',
-                        date: date.length > 10 ? date.substring(0, 10) : date,
-                        amount:
-                            '${isDebit ? '-' : '+'}Rs ${amount.toStringAsFixed(0)}',
-                        isDebit: isDebit,
-                      );
-                    }),
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Recent Transactions',
+                        style: TextStyle(
+                          color: AppColors.bark,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
-                  const SizedBox(height: 80),
-                ],
+                    if (_loading)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_transactions.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          'No transactions yet.',
+                          style: TextStyle(color: AppColors.sage),
+                        ),
+                      )
+                    else
+                      ..._transactions.map((tx) {
+                        final txType = (tx['type'] ?? '').toString();
+                        final isDebit = txType == 'debit' ||
+                            txType == 'commission' ||
+                            txType == 'commission_deduction';
+                        final amount = _asDouble(tx['amount']).abs();
+                        final date = tx['createdAt'] ?? '';
+                        final balanceAfter = tx['balanceAfter'];
+                        return _TransactionItem(
+                          title:
+                              tx['description'] ?? tx['type'] ?? 'Transaction',
+                          date: date.length > 10 ? date.substring(0, 10) : date,
+                          amount:
+                              '${isDebit ? '-' : '+'}Rs ${amount.toStringAsFixed(0)}',
+                          isDebit: isDebit,
+                          balanceAfter: balanceAfter == null
+                              ? null
+                              : 'Balance Rs ${_asDouble(balanceAfter).toStringAsFixed(0)}',
+                        );
+                      }),
+
+                    const SizedBox(height: 80),
+                  ],
+                ),
               ),
             ),
           ),
@@ -510,12 +562,14 @@ class _TransactionItem extends StatelessWidget {
   final String date;
   final String amount;
   final bool isDebit;
+  final String? balanceAfter;
 
   const _TransactionItem({
     required this.title,
     required this.date,
     required this.amount,
     required this.isDebit,
+    this.balanceAfter,
   });
 
   @override
@@ -568,7 +622,7 @@ class _TransactionItem extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  date,
+                  balanceAfter == null ? date : '$date - $balanceAfter',
                   style: const TextStyle(color: AppColors.sage, fontSize: 12),
                 ),
               ],
@@ -598,62 +652,80 @@ class _TopUpSheet extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+          topLeft: Radius.circular(32),
+          topRight: Radius.circular(32),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Top Up Wallet',
-              style: TextStyle(
-                  color: AppColors.bark,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800)),
+          const Text(
+            'Top Up Wallet',
+            style: TextStyle(
+              color: AppColors.bark,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text('Choose an amount to add',
-              style: TextStyle(color: AppColors.sage, fontSize: 14)),
+          const Text(
+            'Choose an amount to add',
+            style: TextStyle(color: AppColors.sage, fontSize: 14),
+          ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [500, 1000, 2000]
-                .map((amt) => GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                        onTopUp(amt);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                        decoration: BoxDecoration(
-                            color: AppColors.bg,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                                color: AppColors.sage.withOpacity(0.3))),
-                        child: Text('Rs $amt',
-                            style: const TextStyle(
-                                color: AppColors.bark,
-                                fontWeight: FontWeight.w700)),
+                .map(
+                  (amt) => GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      onTopUp(amt);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
                       ),
-                    ))
+                      decoration: BoxDecoration(
+                        color: AppColors.bg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.sage.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        'Rs $amt',
+                        style: const TextStyle(
+                          color: AppColors.bark,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.cream,
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16))),
-            child: const Text('Cancel',
-                style: TextStyle(fontWeight: FontWeight.w800)),
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.cream,
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-

@@ -8,6 +8,7 @@ class RideModel {
   final String startLocation;
   final String endLocation;
   final String? exactLocation;
+  final String? exactDropLocation;
   final double startLat;
   final double startLng;
   final double endLat;
@@ -42,6 +43,7 @@ class RideModel {
     required this.startLocation,
     required this.endLocation,
     this.exactLocation,
+    this.exactDropLocation,
     required this.startLat,
     required this.startLng,
     required this.endLat,
@@ -83,6 +85,7 @@ class RideModel {
       startLocation: data['startLocation'] ?? '',
       endLocation: data['endLocation'] ?? '',
       exactLocation: data['exactLocation'] as String?,
+      exactDropLocation: data['exactDropLocation'] as String?,
       startLat: (data['startLat'] ?? 0.0).toDouble(),
       startLng: (data['startLng'] ?? 0.0).toDouble(),
       endLat: (data['endLat'] ?? 0.0).toDouble(),
@@ -134,6 +137,8 @@ class RideModel {
       'endLocation': endLocation,
       if (exactLocation != null && exactLocation!.trim().isNotEmpty)
         'exactLocation': exactLocation,
+      if (exactDropLocation != null && exactDropLocation!.trim().isNotEmpty)
+        'exactDropLocation': exactDropLocation,
       'startLat': startLat,
       'startLng': startLng,
       'endLat': endLat,
@@ -173,6 +178,7 @@ class RideModel {
     String? startLocation,
     String? endLocation,
     String? exactLocation,
+    String? exactDropLocation,
     double? startLat,
     double? startLng,
     double? endLat,
@@ -207,6 +213,7 @@ class RideModel {
       startLocation: startLocation ?? this.startLocation,
       endLocation: endLocation ?? this.endLocation,
       exactLocation: exactLocation ?? this.exactLocation,
+      exactDropLocation: exactDropLocation ?? this.exactDropLocation,
       startLat: startLat ?? this.startLat,
       startLng: startLng ?? this.startLng,
       endLat: endLat ?? this.endLat,

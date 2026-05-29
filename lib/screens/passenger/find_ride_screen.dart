@@ -10,6 +10,7 @@ import '../../services/ride_service.dart';
 import '../../utils/helpers.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/app_widgets.dart';
+import '../../widgets/places_autocomplete_field.dart';
 
 class FindRideScreen extends StatefulWidget {
   const FindRideScreen({super.key});
@@ -20,14 +21,16 @@ class FindRideScreen extends StatefulWidget {
 class _FindRideScreenState extends State<FindRideScreen> {
   final _fromCtrl = TextEditingController();
   final _toCtrl = TextEditingController();
-  String _selectedType = 'car';
-  String _rideModeFilter = 'share';
+  String _selectedType = 'all';
+  String _rideModeFilter = 'all';
   bool _isSearching = false;
   List<RideModel> _results = [];
   bool _showMap = false;
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   LatLng _defaultLocation = const LatLng(31.5204, 74.3587);
+  LatLng? _fromLatLng;
+  LatLng? _toLatLng;
 
   @override
   void initState() {
@@ -61,18 +64,49 @@ class _FindRideScreenState extends State<FindRideScreen> {
     final markers = <Marker>{};
     for (final ride in _results) {
       if (ride.startLat == 0.0 && ride.startLng == 0.0) continue;
-      markers.add(Marker(
-        markerId: MarkerId(ride.id),
-        position: LatLng(ride.startLat, ride.startLng),
-        infoWindow: InfoWindow(
-          title: ride.captainName,
-          snippet: '${ride.startLocation} -> ${ride.endLocation}',
+      markers.add(
+        Marker(
+          markerId: MarkerId(ride.id),
+          position: LatLng(ride.startLat, ride.startLng),
+          infoWindow: InfoWindow(
+            title: ride.captainName,
+            snippet: '${ride.startLocation} -> ${ride.endLocation}',
+          ),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          onTap: () {},
         ),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        onTap: () {},
-      ));
+      );
+    }
+    if (_fromLatLng != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('selected_pickup'),
+          position: _fromLatLng!,
+          infoWindow: const InfoWindow(title: 'Pickup'),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        ),
+      );
+    }
+    if (_toLatLng != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('selected_drop'),
+          position: _toLatLng!,
+          infoWindow: const InfoWindow(title: 'Drop'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+      );
     }
     setState(() => _markers = markers);
+  }
+
+  Future<void> _useCurrentPickup() async {
+    await _getUserLocation();
+    _fromLatLng = _defaultLocation;
+    _fromCtrl.text = 'Current location';
+    _updateMarkers();
   }
 
   Future<void> _search() async {
@@ -80,7 +114,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
     try {
       final rideService = Provider.of<RideService>(context, listen: false);
       var results = await rideService.findRides(
-        startLocation: _fromCtrl.text.trim(),
+        startLocation: _fromLatLng == null ? _fromCtrl.text.trim() : null,
         endLocation: _toCtrl.text.trim(),
         type: _selectedType,
         rideMode: _rideModeFilter,
@@ -222,25 +256,64 @@ class _FindRideScreenState extends State<FindRideScreen> {
                     ),
                     child: Column(
                       children: [
-                        TextField(
+                        PlacesAutocompleteField(
                           controller: _fromCtrl,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Pickup location',
-                            hintText: 'Type pickup area',
-                            prefixIcon: Icon(Icons.trip_origin),
-                            border: OutlineInputBorder(),
+                          label: 'Pickup location',
+                          icon: Icons.trip_origin,
+                          onPlaceSelected: (latLng) {
+                            _fromLatLng = latLng;
+                            _defaultLocation = latLng;
+                            _mapController?.animateCamera(
+                              CameraUpdate.newLatLng(latLng),
+                            );
+                            _updateMarkers();
+                          },
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: _useCurrentPickup,
+                            icon: const Icon(Icons.gps_fixed_rounded, size: 18),
+                            label: const Text('Use current pickup'),
                           ),
                         ),
                         const SizedBox(height: 10),
-                        TextField(
+                        PlacesAutocompleteField(
                           controller: _toCtrl,
-                          textInputAction: TextInputAction.search,
-                          decoration: const InputDecoration(
-                            labelText: 'Drop location',
-                            hintText: 'Type destination area',
-                            prefixIcon: Icon(Icons.location_on_outlined),
-                            border: OutlineInputBorder(),
+                          label: 'Drop location',
+                          icon: Icons.location_on_outlined,
+                          onPlaceSelected: (latLng) {
+                            _toLatLng = latLng;
+                            _updateMarkers();
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: SizedBox(
+                            height: 150,
+                            child: GoogleMap(
+                              initialCameraPosition: CameraPosition(
+                                target: _fromLatLng ?? _defaultLocation,
+                                zoom: 13,
+                              ),
+                              onMapCreated: (controller) =>
+                                  _mapController = controller,
+                              markers: _markers,
+                              myLocationEnabled: true,
+                              myLocationButtonEnabled: false,
+                              zoomControlsEnabled: false,
+                              onTap: (latLng) {
+                                setState(() {
+                                  _fromLatLng = latLng;
+                                  _defaultLocation = latLng;
+                                });
+                                _mapController?.animateCamera(
+                                  CameraUpdate.newLatLng(latLng),
+                                );
+                                _updateMarkers();
+                              },
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -275,6 +348,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
                 Builder(
                   builder: (context) {
                     final types = <String>[
+                      'all',
                       'car',
                       'bike',
                       'bus',
@@ -342,6 +416,15 @@ class _FindRideScreenState extends State<FindRideScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      ChoiceChip(
+                        label: const Text('All'),
+                        selected: _rideModeFilter == 'all',
+                        onSelected: (_) async {
+                          setState(() => _rideModeFilter = 'all');
+                          await _search();
+                        },
+                      ),
+                      const SizedBox(width: 10),
                       ChoiceChip(
                         label: const Text('Share'),
                         selected: _rideModeFilter == 'share',
@@ -597,6 +680,14 @@ class _RideResultCard extends StatelessWidget {
                             color: AppColors.bark,
                             fontSize: 14,
                             fontWeight: FontWeight.w700)),
+                    if ((ride.exactDropLocation ?? '').trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text('Exact drop: ${ride.exactDropLocation}',
+                          style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600)),
+                    ],
                   ],
                 ),
               ),
@@ -654,9 +745,7 @@ class _RideResultCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: (isFull || isLadiesLocked)
-                  ? null
-                  : onBookNow,
+              onPressed: (isFull || isLadiesLocked) ? null : onBookNow,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.cream,

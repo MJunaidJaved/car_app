@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/helpers.dart';
 import '../../utils/phone_utils.dart';
+import '../../widgets/notification_bell.dart';
+import '../../widgets/places_autocomplete_field.dart';
 
 class CustomerRequestScreen extends StatefulWidget {
   const CustomerRequestScreen({super.key});
@@ -17,31 +23,42 @@ class _ResolvedLocation {
   final double lng;
   final String? city;
 
-  const _ResolvedLocation({
-    required this.lat,
-    required this.lng,
-    this.city,
-  });
+  const _ResolvedLocation({required this.lat, required this.lng, this.city});
 }
 
 class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
   final _fromCtrl = TextEditingController();
   final _toCtrl = TextEditingController();
+  final _pickupCtrl = TextEditingController();
+  final _dropPointCtrl = TextEditingController();
   DateTime _requestedAt = DateTime.now().add(const Duration(hours: 1));
   bool _loading = true;
   bool _posting = false;
   List<Map<String, dynamic>> _requests = [];
+  GoogleMapController? _mapController;
+  LatLng _mapCenter = const LatLng(31.5204, 74.3587);
+  LatLng? _fromLatLng;
+  LatLng? _toLatLng;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadMine();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _loadMine(showLoading: false),
+    );
   }
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _fromCtrl.dispose();
     _toCtrl.dispose();
+    _pickupCtrl.dispose();
+    _dropPointCtrl.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -57,6 +74,55 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     }
   }
 
+  Set<Marker> _requestMarkers() {
+    return {
+      if (_fromLatLng != null)
+        Marker(
+          markerId: const MarkerId('pickup'),
+          position: _fromLatLng!,
+          infoWindow: const InfoWindow(title: 'Pickup'),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        ),
+      if (_toLatLng != null)
+        Marker(
+          markerId: const MarkerId('drop'),
+          position: _toLatLng!,
+          infoWindow: const InfoWindow(title: 'Drop'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+    };
+  }
+
+  Future<void> _useCurrentPickup() async {
+    final pos = await _position();
+    if (pos == null) return;
+    final latLng = LatLng(pos.latitude, pos.longitude);
+    _fromLatLng = latLng;
+    _mapCenter = latLng;
+    _fromCtrl.text = 'Current location';
+    try {
+      final marks = await placemarkFromCoordinates(
+        pos.latitude,
+        pos.longitude,
+      ).timeout(const Duration(seconds: 4));
+      if (marks.isNotEmpty) {
+        final p = marks.first;
+        final label = [
+          p.street,
+          p.subLocality,
+          p.locality,
+          p.administrativeArea,
+        ].where((v) => (v ?? '').trim().isNotEmpty).join(', ');
+        if (label.isNotEmpty) _fromCtrl.text = label;
+      }
+    } catch (_) {}
+    if (mounted) {
+      setState(() {});
+      _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
+    }
+  }
+
   Future<_ResolvedLocation?> _resolveAddress(
     String address, {
     Position? fallbackPosition,
@@ -64,8 +130,9 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     final clean = address.trim();
     if (clean.isEmpty) return null;
     try {
-      final locations = await locationFromAddress('$clean, Pakistan')
-          .timeout(const Duration(seconds: 5));
+      final locations = await locationFromAddress(
+        '$clean, Pakistan',
+      ).timeout(const Duration(seconds: 5));
       if (locations.isNotEmpty) {
         final loc = locations.first;
         String? city;
@@ -95,7 +162,8 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     );
   }
 
-  Future<void> _loadMine() async {
+  Future<void> _loadMine({bool showLoading = true}) async {
+    if (showLoading && mounted) setState(() => _loading = true);
     try {
       final res = await ApiService.get('/customer-requests/my');
       if (mounted) {
@@ -113,22 +181,36 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     if (_fromCtrl.text.trim().isEmpty ||
         _toCtrl.text.trim().isEmpty ||
         _posting) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter both From and To locations.'), duration: Duration(seconds: 2)),
+      AppHelpers.showSnackBar(
+        context,
+        'Please enter both From and To locations.',
+        isError: true,
       );
       return;
     }
     setState(() => _posting = true);
     try {
       final pos = await _position();
-      final fromLocation = await _resolveAddress(
-        _fromCtrl.text,
-        fallbackPosition: pos,
-      );
-      final toLocation = await _resolveAddress(_toCtrl.text);
+      final fromLocation = _fromLatLng == null
+          ? await _resolveAddress(_fromCtrl.text, fallbackPosition: pos)
+          : _ResolvedLocation(
+              lat: _fromLatLng!.latitude,
+              lng: _fromLatLng!.longitude,
+            );
+      final toLocation = _toLatLng == null
+          ? await _resolveAddress(_toCtrl.text)
+          : _ResolvedLocation(
+              lat: _toLatLng!.latitude,
+              lng: _toLatLng!.longitude,
+            );
       await ApiService.post('/customer-requests', {
         'startLocation': _fromCtrl.text.trim(),
         'endLocation': _toCtrl.text.trim(),
+        'pickupLocation': _pickupCtrl.text.trim().isNotEmpty
+            ? _pickupCtrl.text.trim()
+            : _fromCtrl.text.trim(),
+        if (_dropPointCtrl.text.trim().isNotEmpty)
+          'dropLocation': _dropPointCtrl.text.trim(),
         'requestedAt': _requestedAt.toUtc().toIso8601String(),
         if (fromLocation != null) 'startLat': fromLocation.lat,
         if (fromLocation != null) 'startLng': fromLocation.lng,
@@ -140,17 +222,17 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
       });
       _fromCtrl.clear();
       _toCtrl.clear();
+      _pickupCtrl.clear();
+      _dropPointCtrl.clear();
+      _fromLatLng = null;
+      _toLatLng = null;
       await _loadMine();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request posted. Captains notified.'), duration: Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Request posted. Captains notified.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Post failed: $e'), duration: const Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Post failed: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _posting = false);
@@ -171,7 +253,13 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     );
     if (time == null) return;
     setState(() {
-      _requestedAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _requestedAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
     });
   }
 
@@ -259,9 +347,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
       await _loadMine();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Action failed: $e'), duration: const Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Action failed: $e', isError: true);
       }
     }
   }
@@ -274,9 +360,18 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         title: const Text('Post Ride Request'),
         backgroundColor: AppColors.bark,
         foregroundColor: AppColors.white,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: NotificationBell(
+              iconColor: AppColors.white,
+              backgroundColor: Colors.transparent,
+            ),
+          ),
+        ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadMine,
+        onRefresh: () => _loadMine(showLoading: false),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -288,8 +383,80 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
               ),
               child: Column(
                 children: [
-                  TextField(controller: _fromCtrl, decoration: const InputDecoration(labelText: 'From')),
-                  TextField(controller: _toCtrl, decoration: const InputDecoration(labelText: 'To')),
+                  PlacesAutocompleteField(
+                    controller: _fromCtrl,
+                    label: 'From',
+                    icon: Icons.trip_origin,
+                    onPlaceSelected: (latLng) {
+                      setState(() {
+                        _fromLatLng = latLng;
+                        _mapCenter = latLng;
+                      });
+                      _mapController?.animateCamera(
+                        CameraUpdate.newLatLng(latLng),
+                      );
+                    },
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: _useCurrentPickup,
+                      icon: const Icon(Icons.gps_fixed_rounded, size: 18),
+                      label: const Text('Use current pickup'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  PlacesAutocompleteField(
+                    controller: _toCtrl,
+                    label: 'To',
+                    icon: Icons.location_on_outlined,
+                    onPlaceSelected: (latLng) {
+                      setState(() => _toLatLng = latLng);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: SizedBox(
+                      height: 170,
+                      child: GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: _mapCenter,
+                          zoom: 13,
+                        ),
+                        onMapCreated: (controller) =>
+                            _mapController = controller,
+                        markers: _requestMarkers(),
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: false,
+                        zoomControlsEnabled: false,
+                        onTap: (latLng) {
+                          setState(() {
+                            _fromLatLng = latLng;
+                            _mapCenter = latLng;
+                          });
+                          _mapController?.animateCamera(
+                            CameraUpdate.newLatLng(latLng),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _pickupCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Exact pickup point',
+                      hintText: 'e.g. Main gate, shop name, street',
+                    ),
+                  ),
+                  TextField(
+                    controller: _dropPointCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Exact drop point',
+                      hintText: 'e.g. Office gate, building entrance',
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -320,12 +487,18 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Captain Offers', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            const Text(
+              'Captain Offers',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+            ),
             const SizedBox(height: 10),
             if (_loading)
               const Center(child: CircularProgressIndicator())
             else if (_requests.isEmpty)
-              const Text('No posted requests yet.', style: TextStyle(color: AppColors.textMuted))
+              const Text(
+                'No posted requests yet.',
+                style: TextStyle(color: AppColors.textMuted),
+              )
             else
               ..._requests.map(_requestCard),
           ],
@@ -337,32 +510,68 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
   Widget _requestCard(Map<String, dynamic> request) {
     final offers = List<Map<String, dynamic>>.from(request['offers'] ?? []);
     offers.sort((a, b) {
-      final aFare = double.tryParse((a['counterFare'] ?? a['fare'] ?? 0).toString()) ?? 0;
-      final bFare = double.tryParse((b['counterFare'] ?? b['fare'] ?? 0).toString()) ?? 0;
+      final aFare =
+          double.tryParse((a['counterFare'] ?? a['fare'] ?? 0).toString()) ?? 0;
+      final bFare =
+          double.tryParse((b['counterFare'] ?? b['fare'] ?? 0).toString()) ?? 0;
       return aFare.compareTo(bFare);
     });
     final acceptedPhone = (request['acceptedCaptainPhone'] ?? '').toString();
-    final requestedAt = DateTime.tryParse((request['requestedAt'] ?? '').toString());
+    final requestedAt = DateTime.tryParse(
+      (request['requestedAt'] ?? '').toString(),
+    );
     final requestedLabel = requestedAt == null
         ? '-'
         : '${requestedAt.toLocal().day}/${requestedAt.toLocal().month}/${requestedAt.toLocal().year} ${TimeOfDay.fromDateTime(requestedAt.toLocal()).format(context)}';
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${request['startLocation']} -> ${request['endLocation']}', style: const TextStyle(fontWeight: FontWeight.w800)),
-          Text('Time: $requestedLabel', style: const TextStyle(color: AppColors.textMuted)),
+          Text(
+            '${request['startLocation']} -> ${request['endLocation']}',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          if ((request['pickupLocation'] ?? '').toString().trim().isNotEmpty)
+            Text(
+              'Exact pickup: ${request['pickupLocation']}',
+              style: const TextStyle(color: AppColors.textMuted),
+            ),
+          if ((request['dropLocation'] ?? '').toString().trim().isNotEmpty)
+            Text(
+              'Exact drop: ${request['dropLocation']}',
+              style: const TextStyle(color: AppColors.textMuted),
+            ),
+          Text(
+            'Time: $requestedLabel',
+            style: const TextStyle(color: AppColors.textMuted),
+          ),
           Text('Status: ${(request['status'] ?? '').toString().toUpperCase()}'),
           if (acceptedPhone.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text('Captain: $acceptedPhone', style: const TextStyle(fontWeight: FontWeight.w800)),
-            Row(children: [
-              TextButton.icon(onPressed: () => dialPhone(context, acceptedPhone), icon: const Icon(Icons.call), label: const Text('Call')),
-              TextButton.icon(onPressed: () => openWhatsApp(context, acceptedPhone), icon: const Icon(Icons.chat), label: const Text('WhatsApp')),
-            ]),
+            Text(
+              'Captain: $acceptedPhone',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () => dialPhone(context, acceptedPhone),
+                  icon: const Icon(Icons.call),
+                  label: const Text('Call'),
+                ),
+                TextButton.icon(
+                  onPressed: () => openWhatsApp(context, acceptedPhone),
+                  icon: const Icon(Icons.chat),
+                  label: const Text('WhatsApp'),
+                ),
+              ],
+            ),
           ],
           const SizedBox(height: 8),
           ...offers.map((offer) {
@@ -382,22 +591,63 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
             return Container(
               margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(12)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${offer['captainName'] ?? 'Captain'} offered Rs ${offer['fare']}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                if (vehicle.isNotEmpty)
-                  Text('Vehicle: $vehicle', style: const TextStyle(color: AppColors.textMuted)),
-                if (registration.isNotEmpty)
-                  Text('Reg: $registration', style: const TextStyle(color: AppColors.textMuted)),
-                if (seats.isNotEmpty && seats != 'null')
-                  Text('Available seats: $seats', style: const TextStyle(color: AppColors.textMuted)),
-                if ((offer['counterFare'] ?? '').toString().isNotEmpty) Text('Counter: Rs ${offer['counterFare']}'),
-                Row(children: [
-                  Expanded(child: OutlinedButton(onPressed: () => _respond(requestId, offerId, 'counter', pickupInitial: pickupInitial), child: const Text('Adjust Fare'))),
-                  const SizedBox(width: 8),
-                  Expanded(child: ElevatedButton(onPressed: () => _respond(requestId, offerId, 'accept', pickupInitial: pickupInitial), child: const Text('Done'))),
-                ]),
-              ]),
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${offer['captainName'] ?? 'Captain'} offered Rs ${offer['fare']}',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  if (vehicle.isNotEmpty)
+                    Text(
+                      'Vehicle: $vehicle',
+                      style: const TextStyle(color: AppColors.textMuted),
+                    ),
+                  if (registration.isNotEmpty)
+                    Text(
+                      'Reg: $registration',
+                      style: const TextStyle(color: AppColors.textMuted),
+                    ),
+                  if (seats.isNotEmpty && seats != 'null')
+                    Text(
+                      'Available seats: $seats',
+                      style: const TextStyle(color: AppColors.textMuted),
+                    ),
+                  if ((offer['counterFare'] ?? '').toString().isNotEmpty)
+                    Text('Counter: Rs ${offer['counterFare']}'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _respond(
+                            requestId,
+                            offerId,
+                            'counter',
+                            pickupInitial: pickupInitial,
+                          ),
+                          child: const Text('Adjust Fare'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _respond(
+                            requestId,
+                            offerId,
+                            'accept',
+                            pickupInitial: pickupInitial,
+                          ),
+                          child: const Text('Done'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             );
           }),
         ],
@@ -405,5 +655,3 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     );
   }
 }
-
-

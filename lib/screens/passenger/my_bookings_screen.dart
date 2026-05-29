@@ -5,6 +5,8 @@ import '../../services/firestore_service.dart';
 import '../../services/deal_realtime_service.dart';
 import '../../utils/phone_utils.dart';
 import '../../utils/deal_status_utils.dart';
+import '../../utils/helpers.dart';
+import '../../widgets/notification_bell.dart';
 import 'package:provider/provider.dart';
 
 class MyBookingsScreen extends StatefulWidget {
@@ -20,6 +22,17 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   bool _loading = true;
   final _realtime = DealRealtimeService();
 
+  bool _isVisibleBooking(Map<String, dynamic> booking) {
+    final status = (booking['status'] ?? '').toString().toLowerCase();
+    if (!['pending', 'confirmed', 'started'].contains(status)) return true;
+    final ride = booking['ride'] as Map<String, dynamic>? ?? {};
+    final departureRaw =
+        (ride['departureTime'] ?? booking['departureTime'] ?? '').toString();
+    final departure = DateTime.tryParse(departureRaw);
+    if (departure == null) return true;
+    return departure.isAfter(DateTime.now());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -27,7 +40,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       onData: (bookings) {
         if (mounted)
           setState(() {
-            _bookings = bookings;
+            _bookings = bookings.where(_isVisibleBooking).toList();
             _loading = false;
           });
       },
@@ -65,14 +78,15 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       await Provider.of<FirestoreService>(context, listen: false)
           .cancelDeal(dealId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Booking cancelled'), duration: Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Booking cancelled');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Cancel failed: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(
+          context,
+          'Cancel failed: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -129,18 +143,25 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         ),
                       ),
                       const SizedBox(width: 14),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('My Bookings',
-                              style: TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800)),
-                          Text('Your booked rides',
-                              style: TextStyle(
-                                  color: Color(0xAAFFFFFF), fontSize: 13)),
-                        ],
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('My Bookings',
+                                style: TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800)),
+                            Text('Your booked rides',
+                                style: TextStyle(
+                                    color: Color(0xAAFFFFFF), fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      NotificationBell(
+                        icon: Icons.notifications_outlined,
+                        iconColor: AppColors.white,
+                        backgroundColor: AppColors.white.withOpacity(0.15),
                       ),
                     ],
                   ),
@@ -250,6 +271,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                   status: b['status'] ?? 'pending',
                                   rideId: rideId,
                                   captainPhone: captainPhone,
+                                  pickupAddress: (b['passengerPickupAddress'] ??
+                                          ride['exactLocation'] ??
+                                          '')
+                                      .toString(),
+                                  dropAddress: (b['passengerDropAddress'] ??
+                                          ride['exactDropLocation'] ??
+                                          '')
+                                      .toString(),
                                   canRate: b['status'] == 'completed' &&
                                       b['rating'] == null,
                                   onCancel: () => _cancelBooking(dealId),
@@ -277,6 +306,8 @@ class _BookingCard extends StatelessWidget {
   final double fare;
   final String status;
   final String captainPhone;
+  final String pickupAddress;
+  final String dropAddress;
   final bool canRate;
   final VoidCallback onCancel;
 
@@ -289,6 +320,8 @@ class _BookingCard extends StatelessWidget {
     required this.fare,
     required this.status,
     required this.captainPhone,
+    this.pickupAddress = '',
+    this.dropAddress = '',
     this.canRate = false,
     required this.onCancel,
   });
@@ -393,12 +426,34 @@ class _BookingCard extends StatelessWidget {
                   color: AppColors.bark,
                   fontSize: 14,
                   fontWeight: FontWeight.w700)),
+          if (pickupAddress.trim().isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              'Exact pickup: $pickupAddress',
+              style: const TextStyle(
+                color: AppColors.sage,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Text(endLocation,
               style: const TextStyle(
                   color: AppColors.bark,
                   fontSize: 14,
                   fontWeight: FontWeight.w700)),
+          if (dropAddress.trim().isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              'Exact drop: $dropAddress',
+              style: const TextStyle(
+                color: AppColors.sage,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(10),
@@ -499,5 +554,3 @@ class _BookingCard extends StatelessWidget {
     );
   }
 }
-
-

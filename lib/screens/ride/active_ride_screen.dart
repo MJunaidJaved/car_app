@@ -9,14 +9,13 @@ import 'package:geolocator/geolocator.dart';
 import '../../providers/user_provider.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/deal_status_utils.dart';
+import '../../utils/helpers.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_tracking_service.dart';
 import '../../utils/phone_utils.dart';
 import '../../widgets/deal_chat_panel.dart';
 import '../../widgets/co_riders_section.dart';
 import '../../models/ride_model.dart';
-
-
 
 class ActiveRideScreen extends StatefulWidget {
   const ActiveRideScreen({super.key});
@@ -26,16 +25,16 @@ class ActiveRideScreen extends StatefulWidget {
 
 class _ActiveRideScreenState extends State<ActiveRideScreen> {
   bool _showSosConfirm = false;
-bool _loading = true;
-String? _rideId;
-String? _dealId;
-Map<String, dynamic>? _deal;
-GoogleMapController? _mapController;
-Set<Marker> _markers = {};
-Set<Polyline> _polylines = {};
-LatLng? _captainLocation;
-LatLng _defaultLocation = const LatLng(31.5204, 74.3587);
-final _locationService = LocationTrackingService();
+  bool _loading = true;
+  String? _rideId;
+  String? _dealId;
+  Map<String, dynamic>? _deal;
+  GoogleMapController? _mapController;
+  Set<Marker> _markers = {};
+  Set<Polyline> _polylines = {};
+  LatLng? _captainLocation;
+  LatLng _defaultLocation = const LatLng(31.5204, 74.3587);
+  final _locationService = LocationTrackingService();
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _dealSub;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _rideDealsSub;
   List<Map<String, dynamic>> _confirmedPassengers = [];
@@ -52,7 +51,8 @@ final _locationService = LocationTrackingService();
     if (fromRide.isNotEmpty) return fromRide;
     final c = _deal?['captain'] as Map<String, dynamic>?;
     if (c == null) return '';
-    return '${c['vehicleMake'] ?? ''} ${c['vehicleModel'] ?? ''} ${c['vehicleColor'] ?? ''} ${c['vehicleRegistration'] ?? ''}'.trim();
+    return '${c['vehicleMake'] ?? ''} ${c['vehicleModel'] ?? ''} ${c['vehicleColor'] ?? ''} ${c['vehicleRegistration'] ?? ''}'
+        .trim();
   }
 
   String get _captainPhone {
@@ -62,7 +62,8 @@ final _locationService = LocationTrackingService();
 
   String get _dealStatus => _deal?['status']?.toString() ?? '';
   String get _captainDistanceLabel {
-    if (_captainLocation == null || _deal == null) return 'Distance unavailable';
+    if (_captainLocation == null || _deal == null)
+      return 'Distance unavailable';
     final pickupLat = (_deal!['passengerPickupLat'] ?? 0).toDouble();
     final pickupLng = (_deal!['passengerPickupLng'] ?? 0).toDouble();
     final baseLat = pickupLat != 0 ? pickupLat : _defaultLocation.latitude;
@@ -88,7 +89,8 @@ final _locationService = LocationTrackingService();
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       _rideId = args?['rideId']?.toString();
       _dealId = args?['dealId']?.toString();
       final user = Provider.of<UserProvider>(context, listen: false).user;
@@ -134,8 +136,11 @@ final _locationService = LocationTrackingService();
       await _loadConfirmedPassengers();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Update failed: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(
+          context,
+          'Update failed: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -178,7 +183,8 @@ final _locationService = LocationTrackingService();
             title: 'Your pickup',
             snippet: _deal!['passengerPickupAddress']?.toString(),
           ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         ));
       }
     }
@@ -195,7 +201,9 @@ final _locationService = LocationTrackingService();
           markerId: MarkerId('p_$dealId'),
           position: LatLng(lat, lng),
           infoWindow: InfoWindow(
-            title: p['customerName']?.toString() ?? p['firstName']?.toString() ?? 'Passenger',
+            title: p['customerName']?.toString() ??
+                p['firstName']?.toString() ??
+                'Passenger',
             snippet: p['passengerPickupAddress']?.toString(),
           ),
           icon: BitmapDescriptor.defaultMarkerWithHue(
@@ -218,7 +226,8 @@ final _locationService = LocationTrackingService();
       return;
     }
     try {
-      final deal = await Provider.of<FirestoreService>(context, listen: false).getDeal(_dealId!);
+      final deal = await Provider.of<FirestoreService>(context, listen: false)
+          .getDeal(_dealId!);
       if (mounted) {
         setState(() {
           _deal = deal;
@@ -268,7 +277,8 @@ final _locationService = LocationTrackingService();
               markerId: const MarkerId('captain'),
               position: loc,
               infoWindow: InfoWindow(title: _captainName),
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueAzure),
             ),
           };
         });
@@ -285,21 +295,26 @@ final _locationService = LocationTrackingService();
         title: const Text('Cancel booking?'),
         content: const Text('Your booking will be cancelled.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Yes, cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('No')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Yes, cancel')),
         ],
       ),
     );
     if (confirm != true || !mounted) return;
     try {
-      await Provider.of<FirestoreService>(context, listen: false).cancelDeal(_dealId!);
+      await Provider.of<FirestoreService>(context, listen: false)
+          .cancelDeal(_dealId!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled'), duration: Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Booking cancelled');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Cancel failed: $e', isError: true);
       }
     }
   }
@@ -307,16 +322,15 @@ final _locationService = LocationTrackingService();
   Future<void> _startRideAsCaptain() async {
     if (_dealId == null || _rideId == null) return;
     try {
-      await Provider.of<FirestoreService>(context, listen: false).startDeal(_dealId!);
+      await Provider.of<FirestoreService>(context, listen: false)
+          .startDeal(_dealId!);
       _locationService.startCaptainTracking(_rideId!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ride started — passengers notified'), duration: Duration(seconds: 2)),
-        );
+        AppHelpers.showSnackBar(context, 'Ride started - passengers notified');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Start failed: $e'), duration: const Duration(seconds: 2)));
+        AppHelpers.showSnackBar(context, 'Start failed: $e', isError: true);
       }
     }
   }
@@ -339,8 +353,6 @@ final _locationService = LocationTrackingService();
       final ride = _deal!['ride'] as Map<String, dynamic>? ?? {};
       final startLat = (ride['startLat'] ?? 0.0).toDouble();
       final startLng = (ride['startLng'] ?? 0.0).toDouble();
-      final endLat = (ride['endLat'] ?? 0.0).toDouble();
-      final endLng = (ride['endLng'] ?? 0.0).toDouble();
 
       _refreshPassengerMarkers();
 
@@ -409,15 +421,16 @@ final _locationService = LocationTrackingService();
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color:        AppColors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
+                      border:
+                          Border.all(color: const Color(0xFFCCBFA3), width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color:      Colors.black.withOpacity(0.02),
+                          color: Colors.black.withOpacity(0.02),
                           blurRadius: 10,
                         ),
                       ],
@@ -426,7 +439,8 @@ final _locationService = LocationTrackingService();
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 8, height: 8,
+                          width: 8,
+                          height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: _statusHeaderColor,
@@ -436,8 +450,8 @@ final _locationService = LocationTrackingService();
                         Text(
                           _statusHeaderLabel,
                           style: const TextStyle(
-                            color:      AppColors.textDark,
-                            fontSize:   12,
+                            color: AppColors.textDark,
+                            fontSize: 12,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -449,15 +463,16 @@ final _locationService = LocationTrackingService();
                   GestureDetector(
                     onTap: _triggerSOS,
                     child: Container(
-                      width: 52, height: 52,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
-                        color:        AppColors.sos,
+                        color: AppColors.sos,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color:      AppColors.sos.withOpacity(0.3),
+                            color: AppColors.sos.withOpacity(0.3),
                             blurRadius: 15,
-                            offset:     const Offset(0, 6),
+                            offset: const Offset(0, 6),
                           ),
                         ],
                       ),
@@ -465,8 +480,8 @@ final _locationService = LocationTrackingService();
                         child: Text(
                           'SOS',
                           style: TextStyle(
-                            color:      AppColors.white,
-                            fontSize:   14,
+                            color: AppColors.white,
+                            fontSize: 14,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.5,
                           ),
@@ -481,21 +496,24 @@ final _locationService = LocationTrackingService();
 
           // Bottom ride card
           Positioned(
-            bottom: 0, left: 0, right: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: Container(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
               decoration: BoxDecoration(
                 color: AppColors.white,
                 borderRadius: const BorderRadius.only(
-                  topLeft:  Radius.circular(32),
+                  topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
                 ),
-                border: const Border(top: BorderSide(color: Color(0xFFCCBFA3), width: 1)),
+                border: const Border(
+                    top: BorderSide(color: Color(0xFFCCBFA3), width: 1)),
                 boxShadow: [
                   BoxShadow(
-                    color:      Colors.black.withOpacity(0.02),
+                    color: Colors.black.withOpacity(0.02),
                     blurRadius: 30,
-                    offset:     const Offset(0, -10),
+                    offset: const Offset(0, -10),
                   ),
                 ],
               ),
@@ -512,9 +530,9 @@ final _locationService = LocationTrackingService();
                         child: Text(
                           _captainInitial,
                           style: const TextStyle(
-                            color:      AppColors.primary,
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w800,
-                            fontSize:   20,
+                            fontSize: 20,
                           ),
                         ),
                       ),
@@ -533,12 +551,18 @@ final _locationService = LocationTrackingService();
                             ),
                             Row(
                               children: [
-                                const Icon(Icons.star_rounded, color: AppColors.primary, size: 16),
+                                const Icon(Icons.star_rounded,
+                                    color: AppColors.primary, size: 16),
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    _vehicle.isNotEmpty ? _vehicle : 'Vehicle details',
-                                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                                    _vehicle.isNotEmpty
+                                        ? _vehicle
+                                        : 'Vehicle details',
+                                    style: const TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -551,14 +575,16 @@ final _locationService = LocationTrackingService();
                       GestureDetector(
                         onTap: () => dialPhone(context, _captainPhone),
                         child: Container(
-                          width: 46, height: 46,
+                          width: 46,
+                          height: 46,
                           decoration: BoxDecoration(
-                            color:        AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Icon(
                             Icons.phone_rounded,
-                            color: AppColors.primary, size: 22,
+                            color: AppColors.primary,
+                            size: 22,
                           ),
                         ),
                       ),
@@ -574,10 +600,14 @@ final _locationService = LocationTrackingService();
                     children: [
                       Column(
                         children: [
-                          const Icon(Icons.circle, color: Color(0xFF4A7C59), size: 10),
+                          const Icon(Icons.circle,
+                              color: Color(0xFF4A7C59), size: 10),
                           Container(
-                              width: 1.5, height: 36, color: const Color(0xFFCCBFA3)),
-                          const Icon(Icons.circle, color: AppColors.primary, size: 10),
+                              width: 1.5,
+                              height: 36,
+                              color: const Color(0xFFCCBFA3)),
+                          const Icon(Icons.circle,
+                              color: AppColors.primary, size: 10),
                         ],
                       ),
                       const SizedBox(width: 14),
@@ -585,9 +615,17 @@ final _locationService = LocationTrackingService();
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_start, style: const TextStyle(color: AppColors.textDark, fontSize: 14, fontWeight: FontWeight.w700)),
+                            Text(_start,
+                                style: const TextStyle(
+                                    color: AppColors.textDark,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700)),
                             const SizedBox(height: 24),
-                            Text(_end, style: const TextStyle(color: AppColors.textDark, fontSize: 14, fontWeight: FontWeight.w700)),
+                            Text(_end,
+                                style: const TextStyle(
+                                    color: AppColors.textDark,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700)),
                           ],
                         ),
                       ),
@@ -595,17 +633,19 @@ final _locationService = LocationTrackingService();
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color:        AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              _captainLocation != null ? 'Captain live' : 'Waiting for captain',
+                              _captainLocation != null
+                                  ? 'Captain live'
+                                  : 'Waiting for captain',
                               style: const TextStyle(
-                                color:      AppColors.primary,
-                                fontSize:   12,
+                                color: AppColors.primary,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -637,7 +677,7 @@ final _locationService = LocationTrackingService();
                       GestureDetector(
                         onTap: () => openWhatsApp(context, _captainPhone),
                         child: const _InfoChip(
-                          icon:  Icons.chat_rounded,
+                          icon: Icons.chat_rounded,
                           label: 'WhatsApp',
                         ),
                       ),
@@ -647,7 +687,10 @@ final _locationService = LocationTrackingService();
                   if (_rideId != null && !_isCaptain)
                     CoRidersSection(
                       rideId: _rideId!,
-                      currentUserId: Provider.of<UserProvider>(context, listen: false).user?.id,
+                      currentUserId:
+                          Provider.of<UserProvider>(context, listen: false)
+                              .user
+                              ?.id,
                     ),
                   if (_dealId != null) ...[
                     const SizedBox(height: 16),
@@ -656,7 +699,9 @@ final _locationService = LocationTrackingService();
 
                   const SizedBox(height: 24),
 
-                  if (_isCaptain && (_dealStatus == 'confirmed' || _dealStatus == 'started')) ...[
+                  if (_isCaptain &&
+                      (_dealStatus == 'confirmed' ||
+                          _dealStatus == 'started')) ...[
                     if (_confirmedPassengers.isNotEmpty) ...[
                       const Text(
                         'Confirmed passengers',
@@ -669,9 +714,13 @@ final _locationService = LocationTrackingService();
                       const SizedBox(height: 10),
                       ..._confirmedPassengers.map((p) {
                         final dealId = p['dealId']?.toString() ?? '';
-                        final name = p['customerName']?.toString() ?? p['firstName']?.toString() ?? 'Passenger';
-                        final pickup = p['passengerPickupAddress']?.toString() ?? '';
-                        final status = p['boardingStatus']?.toString() ?? 'waiting';
+                        final name = p['customerName']?.toString() ??
+                            p['firstName']?.toString() ??
+                            'Passenger';
+                        final pickup =
+                            p['passengerPickupAddress']?.toString() ?? '';
+                        final status =
+                            p['boardingStatus']?.toString() ?? 'waiting';
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(12),
@@ -682,17 +731,24 @@ final _locationService = LocationTrackingService();
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                              Text(pickup, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                              Text(name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w800)),
+                              Text(pickup,
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textMuted)),
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  if (status != 'boarded' && status != 'dropped')
+                                  if (status != 'boarded' &&
+                                      status != 'dropped')
                                     Expanded(
                                       child: OutlinedButton(
                                         onPressed: dealId.isEmpty
                                             ? null
-                                            : () => _setBoarding(dealId, 'boarded'),
+                                            : () =>
+                                                _setBoarding(dealId, 'boarded'),
                                         child: const Text('Boarded'),
                                       ),
                                     ),
@@ -702,7 +758,8 @@ final _locationService = LocationTrackingService();
                                       child: ElevatedButton(
                                         onPressed: dealId.isEmpty
                                             ? null
-                                            : () => _setBoarding(dealId, 'dropped'),
+                                            : () =>
+                                                _setBoarding(dealId, 'dropped'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.moss,
                                           foregroundColor: AppColors.white,
@@ -728,10 +785,13 @@ final _locationService = LocationTrackingService();
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.bark,
                           foregroundColor: AppColors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
-                        child: const Text('Start Ride', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                        child: const Text('Start Ride',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w800, fontSize: 16)),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -739,9 +799,12 @@ final _locationService = LocationTrackingService();
                   if (!_isCaptain && canCancelDeal(_dealStatus))
                     TextButton(
                       onPressed: _cancelBooking,
-                      child: const Text('Cancel booking', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+                      child: const Text('Cancel booking',
+                          style: TextStyle(
+                              color: Colors.red, fontWeight: FontWeight.w700)),
                     ),
-                  if (!_isCaptain && (_dealStatus == 'started' || _dealStatus == 'confirmed'))
+                  if (!_isCaptain &&
+                      (_dealStatus == 'started' || _dealStatus == 'confirmed'))
                     SizedBox(
                       height: 56,
                       child: ElevatedButton(
@@ -749,13 +812,17 @@ final _locationService = LocationTrackingService();
                             ? () async {
                                 try {
                                   if (_dealId != null) {
-                                    await Provider.of<FirestoreService>(context, listen: false)
+                                    await Provider.of<FirestoreService>(context,
+                                            listen: false)
                                         .completeDeal(_dealId!);
                                   }
                                 } catch (e) {
                                   if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 2)));
+                                    AppHelpers.showSnackBar(
+                                      context,
+                                      'Error: $e',
+                                      isError: true,
+                                    );
                                   }
                                   return;
                                 }
@@ -768,7 +835,8 @@ final _locationService = LocationTrackingService();
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.moss,
                           foregroundColor: AppColors.white,
-                          disabledBackgroundColor: AppColors.sage.withOpacity(0.3),
+                          disabledBackgroundColor:
+                              AppColors.sage.withOpacity(0.3),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
@@ -797,30 +865,33 @@ final _locationService = LocationTrackingService();
                     margin: const EdgeInsets.all(32),
                     padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
-                      color:        AppColors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(32),
-                      border: Border.all(color: const Color(0xFFCCBFA3), width: 1),
+                      border:
+                          Border.all(color: const Color(0xFFCCBFA3), width: 1),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 72, height: 72,
+                          width: 72,
+                          height: 72,
                           decoration: BoxDecoration(
-                            color:        AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: const Icon(
                             Icons.warning_amber_rounded,
-                            color: AppColors.primary, size: 40,
+                            color: AppColors.primary,
+                            size: 40,
                           ),
                         ),
                         const SizedBox(height: 20),
                         const Text(
                           'Send SOS Alert?',
                           style: TextStyle(
-                            color:      AppColors.textDark,
-                            fontSize:   22,
+                            color: AppColors.textDark,
+                            fontSize: 22,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -829,7 +900,8 @@ final _locationService = LocationTrackingService();
                           'This will alert emergency contacts\nand share your live location.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: AppColors.textMuted, fontSize: 15,
+                            color: AppColors.textMuted,
+                            fontSize: 15,
                             height: 1.5,
                             fontWeight: FontWeight.w500,
                           ),
@@ -843,42 +915,44 @@ final _locationService = LocationTrackingService();
                                     setState(() => _showSosConfirm = false),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.textDark,
-                                  side: const BorderSide(color: Color(0xFFCCBFA3)),
+                                  side: const BorderSide(
+                                      color: Color(0xFFCCBFA3)),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                 ),
-                                child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
+                                child: const Text('Cancel',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w700)),
                               ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
                               child: ElevatedButton(
-                                  onPressed: () {
-                                    setState(() => _showSosConfirm = false);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('SOS Alert Sent to Emergency Contacts!'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: AppColors.white,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
+                                onPressed: () {
+                                  setState(() => _showSosConfirm = false);
+                                  AppHelpers.showSnackBar(
+                                    context,
+                                    'SOS Alert Sent to Emergency Contacts!',
+                                    isError: true,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
-                                  child: const Text(
-                                    'Send SOS',
-                                    style: TextStyle(fontWeight: FontWeight.w900),
-                                  ),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                child: const Text(
+                                  'Send SOS',
+                                  style: TextStyle(fontWeight: FontWeight.w900),
+                                ),
                               ),
                             ),
                           ],
@@ -905,7 +979,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color:        AppColors.primary.withOpacity(0.08),
+        color: AppColors.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -916,7 +990,8 @@ class _InfoChip extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: AppColors.primary, fontSize: 12,
+              color: AppColors.primary,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -925,5 +1000,3 @@ class _InfoChip extends StatelessWidget {
     );
   }
 }
-
-
