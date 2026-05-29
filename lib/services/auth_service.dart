@@ -188,12 +188,28 @@ class AuthService {
     final uid = cred.user?.uid;
     if (uid == null) throw Exception('Failed to sign in');
 
-    final response = await ApiService.get('/auth/profile');
-    final user =
-        _userFromResponse(response['user'] as Map<String, dynamic>, uid);
-    await _persistUser(user);
-    await _pushFcmToken();
-    return user;
+    try {
+      final response = await ApiService.get('/auth/profile');
+      final user =
+          _userFromResponse(response['user'] as Map<String, dynamic>, uid);
+      await _persistUser(user);
+      await _pushFcmToken();
+      return user;
+    } on ApiException catch (e) {
+      if (e.statusCode != 404 && e.code != 'USER_NOT_FOUND') rethrow;
+      final firebaseUser = FirebaseAuth.instance.currentUser!;
+      final fallbackUser = UserModel(
+        id: uid,
+        email: firebaseUser.email ?? email,
+        name: firebaseUser.displayName ?? email.split('@').first,
+        phone: firebaseUser.phoneNumber ?? '',
+        role: '',
+        photoUrl: firebaseUser.photoURL,
+        createdAt: DateTime.now(),
+      );
+      await _persistUser(fallbackUser);
+      return fallbackUser;
+    }
   }
 
   Future<UserModel?> restoreSession() async {

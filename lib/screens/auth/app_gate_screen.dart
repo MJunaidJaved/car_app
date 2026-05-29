@@ -69,6 +69,23 @@ class _AppGateScreenState extends State<AppGateScreen> {
             Navigator.pushReplacementNamed(context, '/role-select');
           }
         }
+      } on ApiException catch (e) {
+        if (e.statusCode == 404 || e.code == 'USER_NOT_FOUND') {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/role-select');
+          }
+          return;
+        }
+        debugPrint('AppGateScreen: API error fetching profile: $e');
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          AppHelpers.showSnackBar(
+            context,
+            'Session expired. Please log in again.',
+            isError: true,
+          );
+          Navigator.pushReplacementNamed(context, '/login');
+        }
       } catch (e) {
         debugPrint('AppGateScreen: API error fetching profile: $e');
         // Profile fetch failed, clear Firebase and go to login
