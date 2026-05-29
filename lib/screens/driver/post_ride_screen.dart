@@ -149,36 +149,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
     _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
   }
 
-  Future<void> _resolveTypedRoute() async {
-    Future<LatLng?> lookup(String value) async {
-      final text = value.trim();
-      if (text.isEmpty) return null;
-      try {
-        final results = await locationFromAddress('$text, Pakistan')
-            .timeout(const Duration(seconds: 6));
-        if (results.isEmpty) return null;
-        return LatLng(results.first.latitude, results.first.longitude);
-      } catch (_) {
-        return null;
-      }
-    }
-
-    if (_startLat == 0.0 || _startLng == 0.0) {
-      final from = await lookup(_fromCtrl.text);
-      if (from != null) {
-        _startLat = from.latitude;
-        _startLng = from.longitude;
-      }
-    }
-    if (_endLat == 0.0 || _endLng == 0.0) {
-      final to = await lookup(_toCtrl.text);
-      if (to != null) {
-        _endLat = to.latitude;
-        _endLng = to.longitude;
-      }
-    }
-  }
-
   Future<void> _useCurrentPickupLocation() async {
     try {
       var permission = await Geolocator.checkPermission();
@@ -206,6 +176,9 @@ class _PostRideScreenState extends State<PostRideScreen> {
       if (mounted) {
         AppHelpers.showSnackBar(context, 'Pickup location added from GPS');
         setState(() {});
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLng(LatLng(_startLat, _startLng)),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -294,7 +267,14 @@ class _PostRideScreenState extends State<PostRideScreen> {
         _time.hour,
         _time.minute,
       );
-      await _resolveTypedRoute();
+      if (!departureTime.isAfter(DateTime.now())) {
+        AppHelpers.showSnackBar(
+          context,
+          'Select a future date and time for the ride.',
+          isError: true,
+        );
+        return;
+      }
 
       if (_startLat == 0.0 ||
           _startLng == 0.0 ||
@@ -302,7 +282,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
           _endLng == 0.0) {
         AppHelpers.showSnackBar(
           context,
-          'Select From and To from suggestions, or enter searchable city/area names.',
+          'Select From and To from map, current location, or autocomplete suggestions.',
           isError: true,
         );
         return;
@@ -435,6 +415,10 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   controller: _fromCtrl,
                                   label: 'From',
                                   icon: Icons.my_location_rounded,
+                                  onChanged: (_) {
+                                    _startLat = 0.0;
+                                    _startLng = 0.0;
+                                  },
                                   onPlaceSelected: (latLng) {
                                     _startLat = latLng.latitude;
                                     _startLng = latLng.longitude;
@@ -462,6 +446,10 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   controller: _toCtrl,
                                   label: 'To',
                                   icon: Icons.location_on_outlined,
+                                  onChanged: (_) {
+                                    _endLat = 0.0;
+                                    _endLng = 0.0;
+                                  },
                                   onPlaceSelected: (latLng) {
                                     _endLat = latLng.latitude;
                                     _endLng = latLng.longitude;

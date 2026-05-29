@@ -738,6 +738,9 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                     controller: _homeFromCtrl,
                                     label: 'From area',
                                     icon: Icons.my_location_rounded,
+                                    onChanged: (_) {
+                                      _homeFromLatLng = null;
+                                    },
                                     onPlaceSelected: (latLng) {
                                       _homeFromLatLng = latLng;
                                       _searchHomeRides(categories);
@@ -748,6 +751,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                     controller: _homeToCtrl,
                                     label: 'To / drop area',
                                     icon: Icons.flag_rounded,
+                                    onChanged: (_) {},
                                     onPlaceSelected: (latLng) {
                                       _searchHomeRides(categories);
                                     },

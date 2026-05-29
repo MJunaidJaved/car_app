@@ -12,6 +12,7 @@ class PlacesAutocompleteField extends StatefulWidget {
   final IconData icon;
   final String? Function(String?)? validator;
   final ValueChanged<LatLng>? onPlaceSelected;
+  final ValueChanged<String>? onChanged;
 
   const PlacesAutocompleteField({
     super.key,
@@ -20,10 +21,12 @@ class PlacesAutocompleteField extends StatefulWidget {
     required this.icon,
     this.validator,
     this.onPlaceSelected,
+    this.onChanged,
   });
 
   @override
-  State<PlacesAutocompleteField> createState() => _PlacesAutocompleteFieldState();
+  State<PlacesAutocompleteField> createState() =>
+      _PlacesAutocompleteFieldState();
 }
 
 class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
@@ -112,10 +115,12 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
                   final item = _suggestions[index];
                   return ListTile(
                     dense: true,
-                    leading: const Icon(Icons.place_outlined, color: AppColors.moss, size: 20),
+                    leading: const Icon(Icons.place_outlined,
+                        color: AppColors.moss, size: 20),
                     title: Text(
                       item.description,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                     onTap: () => _selectSuggestion(item),
                   );
@@ -157,6 +162,7 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
         controller: widget.controller,
         focusNode: _focusNode,
         validator: widget.validator,
+        onChanged: widget.onChanged,
         style: const TextStyle(
           color: AppColors.textDark,
           fontSize: 15,

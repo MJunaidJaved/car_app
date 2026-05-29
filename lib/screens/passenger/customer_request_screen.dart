@@ -21,9 +21,8 @@ class CustomerRequestScreen extends StatefulWidget {
 class _ResolvedLocation {
   final double lat;
   final double lng;
-  final String? city;
 
-  const _ResolvedLocation({required this.lat, required this.lng, this.city});
+  const _ResolvedLocation({required this.lat, required this.lng});
 }
 
 class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
@@ -160,45 +159,6 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
   }
 
-  Future<_ResolvedLocation?> _resolveAddress(
-    String address, {
-    Position? fallbackPosition,
-  }) async {
-    final clean = address.trim();
-    if (clean.isEmpty) return null;
-    try {
-      final locations = await locationFromAddress(
-        '$clean, Pakistan',
-      ).timeout(const Duration(seconds: 5));
-      if (locations.isNotEmpty) {
-        final loc = locations.first;
-        String? city;
-        try {
-          final places = await placemarkFromCoordinates(
-            loc.latitude,
-            loc.longitude,
-          ).timeout(const Duration(seconds: 4));
-          if (places.isNotEmpty) {
-            city = (places.first.locality?.trim().isNotEmpty == true)
-                ? places.first.locality!.trim()
-                : places.first.administrativeArea?.trim();
-          }
-        } catch (_) {}
-        return _ResolvedLocation(
-          lat: loc.latitude,
-          lng: loc.longitude,
-          city: city,
-        );
-      }
-    } catch (_) {}
-
-    if (fallbackPosition == null) return null;
-    return _ResolvedLocation(
-      lat: fallbackPosition.latitude,
-      lng: fallbackPosition.longitude,
-    );
-  }
-
   Future<void> _loadMine({bool showLoading = true}) async {
     if (showLoading && mounted) setState(() => _loading = true);
     try {
@@ -259,7 +219,6 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         'endLng': toLocation.lng,
         if (pos != null) 'customerLat': pos.latitude,
         if (pos != null) 'customerLng': pos.longitude,
-        if ((fromLocation.city ?? '').isNotEmpty) 'city': fromLocation.city,
       });
       _fromCtrl.clear();
       _toCtrl.clear();
@@ -428,6 +387,9 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                     controller: _fromCtrl,
                     label: 'From',
                     icon: Icons.trip_origin,
+                    onChanged: (_) {
+                      _fromLatLng = null;
+                    },
                     onPlaceSelected: (latLng) {
                       setState(() {
                         _fromLatLng = latLng;
@@ -451,6 +413,9 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                     controller: _toCtrl,
                     label: 'To',
                     icon: Icons.location_on_outlined,
+                    onChanged: (_) {
+                      _toLatLng = null;
+                    },
                     onPlaceSelected: (latLng) {
                       setState(() => _toLatLng = latLng);
                       _mapController?.animateCamera(

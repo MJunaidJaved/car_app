@@ -113,17 +113,18 @@ class _FindRideScreenState extends State<FindRideScreen> {
     setState(() => _isSearching = true);
     try {
       final rideService = Provider.of<RideService>(context, listen: false);
-      var results = await rideService.findRides(
+      final searchPoint = _fromLatLng ?? _defaultLocation;
+      final results = await rideService.findRides(
         startLocation: _fromLatLng == null ? _fromCtrl.text.trim() : null,
         endLocation: _toCtrl.text.trim(),
         type: _selectedType,
         rideMode: _rideModeFilter,
-        userLat: _defaultLocation.latitude,
-        userLng: _defaultLocation.longitude,
+        userLat: searchPoint.latitude,
+        userLng: searchPoint.longitude,
         radiusKm: 20,
       );
-      final userLat = _defaultLocation.latitude;
-      final userLng = _defaultLocation.longitude;
+      final userLat = searchPoint.latitude;
+      final userLng = searchPoint.longitude;
       results.sort((a, b) {
         final da = _distanceScore(a.startLat, a.startLng, userLat, userLng);
         final db = _distanceScore(b.startLat, b.startLng, userLat, userLng);
@@ -260,6 +261,9 @@ class _FindRideScreenState extends State<FindRideScreen> {
                           controller: _fromCtrl,
                           label: 'Pickup location',
                           icon: Icons.trip_origin,
+                          onChanged: (_) {
+                            _fromLatLng = null;
+                          },
                           onPlaceSelected: (latLng) {
                             _fromLatLng = latLng;
                             _defaultLocation = latLng;
@@ -282,6 +286,9 @@ class _FindRideScreenState extends State<FindRideScreen> {
                           controller: _toCtrl,
                           label: 'Drop location',
                           icon: Icons.location_on_outlined,
+                          onChanged: (_) {
+                            _toLatLng = null;
+                          },
                           onPlaceSelected: (latLng) {
                             _toLatLng = latLng;
                             _updateMarkers();
