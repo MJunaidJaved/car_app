@@ -8,6 +8,7 @@ import '../../utils/deal_status_utils.dart';
 import '../../utils/helpers.dart';
 import '../../widgets/notification_bell.dart';
 import 'package:provider/provider.dart';
+import '../../models/ride_model.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -265,20 +266,24 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                 return _BookingCard(
                                   dealId: dealId,
                                   captainName: ride['captainName'] ?? 'Captain',
-                                  startLocation: ride['startLocation'] ?? '',
-                                  endLocation: ride['endLocation'] ?? '',
+                                  startLocation: RideModel.formatLocationLabel(
+                                    ride['startLocation'],
+                                  ),
+                                  endLocation: RideModel.formatLocationLabel(
+                                    ride['endLocation'],
+                                  ),
                                   fare: (b['agreedFare'] ?? 0).toDouble(),
                                   status: b['status'] ?? 'pending',
                                   rideId: rideId,
                                   captainPhone: captainPhone,
-                                  pickupAddress: (b['passengerPickupAddress'] ??
-                                          ride['exactLocation'] ??
-                                          '')
-                                      .toString(),
-                                  dropAddress: (b['passengerDropAddress'] ??
-                                          ride['exactDropLocation'] ??
-                                          '')
-                                      .toString(),
+                                  pickupAddress: RideModel.formatLocationLabel(
+                                    b['passengerPickupAddress'] ??
+                                        ride['exactLocation'],
+                                  ),
+                                  dropAddress: RideModel.formatLocationLabel(
+                                    b['passengerDropAddress'] ??
+                                        ride['exactDropLocation'],
+                                  ),
                                   canRate: b['status'] == 'completed' &&
                                       b['rating'] == null,
                                   onCancel: () => _cancelBooking(dealId),

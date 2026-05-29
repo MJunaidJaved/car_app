@@ -570,8 +570,9 @@ class _RequestsScreenState extends State<RequestsScreen>
         final name = customer['name'] ?? d['customerName'] ?? 'Passenger';
         final customerPhone =
             customer['phone'] ?? d['customerPhone'] ?? d['passengerPhone'];
-        final pickup = d['passengerPickupAddress']?.toString() ?? '';
-        final drop = d['passengerDropAddress']?.toString() ?? '';
+        final pickup =
+            RideModel.formatLocationLabel(d['passengerPickupAddress']);
+        final drop = RideModel.formatLocationLabel(d['passengerDropAddress']);
         final lat = (d['passengerPickupLat'] ?? 0).toDouble();
         final lng = (d['passengerPickupLng'] ?? 0).toDouble();
         final dealId = d['id']?.toString() ?? '';
@@ -778,11 +779,23 @@ class _RequestsScreenState extends State<RequestsScreen>
                 ),
               ],
               if (isPending &&
-                  (d['passengerPickupAddress']?.toString() ?? '')
+                  RideModel.formatLocationLabel(d['passengerPickupAddress'])
                       .isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Pickup: ${d['passengerPickupAddress']}',
+                  'Exact pickup: ${RideModel.formatLocationLabel(d['passengerPickupAddress'])}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              if (isPending &&
+                  RideModel.formatLocationLabel(d['passengerDropAddress'])
+                      .isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Exact drop: ${RideModel.formatLocationLabel(d['passengerDropAddress'])}',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

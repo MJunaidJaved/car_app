@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../utils/app_colors.dart';
 import 'package:flutter/services.dart';
+import '../../models/ride_model.dart';
 import '../../services/api_service.dart';
 import '../../widgets/notification_bell.dart';
 
@@ -236,8 +237,10 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                               final r = activeRides[i];
                               return _CaptainRideCard(
                                 rideId: r['id'] ?? '',
-                                startLocation: r['startLocation'] ?? '',
-                                endLocation: r['endLocation'] ?? '',
+                                startLocation: RideModel.formatLocationLabel(
+                                    r['startLocation']),
+                                endLocation: RideModel.formatLocationLabel(
+                                    r['endLocation']),
                                 departureTime: r['departureTime'] ?? '',
                                 suggestedFare:
                                     (r['suggestedFare'] ?? 0).toDouble(),
@@ -245,10 +248,13 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                                 totalSeats: r['totalSeats'] ?? 0,
                                 rideType: r['rideType'] ?? 'office',
                                 status: r['status'] ?? 'active',
-                                exactLocation:
-                                    (r['exactLocation'] ?? '').toString(),
+                                exactLocation: RideModel.formatLocationLabel(
+                                  r['exactLocation'],
+                                ),
                                 exactDropLocation:
-                                    (r['exactDropLocation'] ?? '').toString(),
+                                    RideModel.formatLocationLabel(
+                                  r['exactDropLocation'],
+                                ),
                               );
                             },
                           );
@@ -291,8 +297,10 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                               final r = pastRides[i];
                               return _CaptainRideCard(
                                 rideId: r['id'] ?? '',
-                                startLocation: r['startLocation'] ?? '',
-                                endLocation: r['endLocation'] ?? '',
+                                startLocation: RideModel.formatLocationLabel(
+                                    r['startLocation']),
+                                endLocation: RideModel.formatLocationLabel(
+                                    r['endLocation']),
                                 departureTime: r['departureTime'] ?? '',
                                 suggestedFare:
                                     (r['suggestedFare'] ?? 0).toDouble(),
@@ -300,10 +308,13 @@ class _MyRidesScreenState extends State<MyRidesScreen>
                                 totalSeats: r['totalSeats'] ?? 0,
                                 rideType: r['rideType'] ?? 'office',
                                 status: r['status'] ?? 'completed',
-                                exactLocation:
-                                    (r['exactLocation'] ?? '').toString(),
+                                exactLocation: RideModel.formatLocationLabel(
+                                  r['exactLocation'],
+                                ),
                                 exactDropLocation:
-                                    (r['exactDropLocation'] ?? '').toString(),
+                                    RideModel.formatLocationLabel(
+                                  r['exactDropLocation'],
+                                ),
                               );
                             },
                           );

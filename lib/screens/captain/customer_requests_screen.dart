@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../models/ride_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/helpers.dart';
@@ -166,6 +167,10 @@ class _CaptainCustomerRequestsScreenState
     final requestedLabel = requestedAt == null
         ? '-'
         : '${requestedAt.toLocal().day}/${requestedAt.toLocal().month}/${requestedAt.toLocal().year} ${TimeOfDay.fromDateTime(requestedAt.toLocal()).format(context)}';
+    final start = RideModel.formatLocationLabel(request['startLocation']);
+    final end = RideModel.formatLocationLabel(request['endLocation']);
+    final pickup = RideModel.formatLocationLabel(request['pickupLocation']);
+    final drop = RideModel.formatLocationLabel(request['dropLocation']);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -177,26 +182,23 @@ class _CaptainCustomerRequestsScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${request['startLocation']} -> ${request['endLocation']}',
+            '${start.isEmpty ? 'From' : start} -> ${end.isEmpty ? 'To' : end}',
             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
           ),
-          if ((request['pickupLocation'] ?? '')
-              .toString()
-              .trim()
-              .isNotEmpty) ...[
+          if (pickup.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              'Exact pickup: ${request['pickupLocation']}',
+              'Exact pickup: $pickup',
               style: const TextStyle(
                 color: AppColors.textMuted,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
-          if ((request['dropLocation'] ?? '').toString().trim().isNotEmpty) ...[
+          if (drop.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              'Exact drop: ${request['dropLocation']}',
+              'Exact drop: $drop',
               style: const TextStyle(
                 color: AppColors.textMuted,
                 fontWeight: FontWeight.w600,

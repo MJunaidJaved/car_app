@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../models/ride_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
@@ -115,7 +116,20 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           );
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      try {
+        final walletRes = await ApiService.get('/wallet');
+        final txRes = await ApiService.get('/wallet/transactions');
+        if (mounted) {
+          setState(() {
+            _walletBalance = _asDouble(walletRes['wallet']?['balance']);
+            _recentTransactions = List<Map<String, dynamic>>.from(
+              txRes['transactions'] ?? [],
+            );
+          });
+        }
+      } catch (_) {}
+    }
   }
 
   String _formatTxTime(dynamic createdAt) {
@@ -130,6 +144,11 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
   double _asDouble(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String _locationLabel(dynamic value, {String fallback = ''}) {
+    final label = RideModel.formatLocationLabel(value);
+    return label.isEmpty ? fallback : label;
   }
 
   Widget _customerRequestSummaryCard(Map<String, dynamic> request) {
@@ -157,7 +176,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${request['startLocation'] ?? 'From'} -> ${request['endLocation'] ?? 'To'}',
+                '${_locationLabel(request['startLocation'], fallback: 'From')} -> ${_locationLabel(request['endLocation'], fallback: 'To')}',
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   color: AppColors.bark,
@@ -169,7 +188,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                   .isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
-                  'Exact pickup: ${request['pickupLocation']}',
+                  'Exact pickup: ${_locationLabel(request['pickupLocation'])}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -185,7 +204,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                   .isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
-                  'Exact drop: ${request['dropLocation']}',
+                  'Exact drop: ${_locationLabel(request['dropLocation'])}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -828,7 +847,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${request['startLocation'] ?? 'From'} -> ${request['endLocation'] ?? 'To'}',
+                                  '${_locationLabel(request['startLocation'], fallback: 'From')} -> ${_locationLabel(request['endLocation'], fallback: 'To')}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w800,
                                     color: AppColors.bark,
@@ -840,7 +859,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     .isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Exact pickup: ${request['pickupLocation']}',
+                                    'Exact pickup: ${_locationLabel(request['pickupLocation'])}',
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -856,7 +875,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     .isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Exact drop: ${request['dropLocation']}',
+                                    'Exact drop: ${_locationLabel(request['dropLocation'])}',
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -978,9 +997,17 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                   else if (_latestRides.isNotEmpty)
                     ..._latestRides.map((ride) {
                       final rideId = (ride['id'] ?? '').toString();
-                      final start =
-                          (ride['startLocation'] ?? 'Unknown').toString();
-                      final end = (ride['endLocation'] ?? 'Unknown').toString();
+                      final start = _locationLabel(
+                        ride['startLocation'],
+                        fallback: 'Unknown',
+                      );
+                      final end = _locationLabel(
+                        ride['endLocation'],
+                        fallback: 'Unknown',
+                      );
+                      final exactPickup = _locationLabel(ride['exactLocation']);
+                      final exactDrop =
+                          _locationLabel(ride['exactDropLocation']);
                       final fare = (ride['suggestedFare'] ?? 0).toString();
                       final status = (ride['status'] ?? '').toString();
                       final pendingCount = _pendingRequestsByRide[rideId] ?? 0;
@@ -1013,13 +1040,10 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     color: AppColors.bark,
                                   ),
                                 ),
-                                if ((ride['exactLocation'] ?? '')
-                                    .toString()
-                                    .trim()
-                                    .isNotEmpty) ...[
+                                if (exactPickup.isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Exact pickup: ${ride['exactLocation']}',
+                                    'Exact pickup: $exactPickup',
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -1029,13 +1053,10 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     ),
                                   ),
                                 ],
-                                if ((ride['exactDropLocation'] ?? '')
-                                    .toString()
-                                    .trim()
-                                    .isNotEmpty) ...[
+                                if (exactDrop.isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Exact drop: ${ride['exactDropLocation']}',
+                                    'Exact drop: $exactDrop',
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(

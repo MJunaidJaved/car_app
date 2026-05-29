@@ -618,7 +618,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '${request['startLocation'] ?? 'From'} -> ${request['endLocation'] ?? 'To'}',
+                                          '${RideModel.formatLocationLabel(request['startLocation']).isEmpty ? 'From' : RideModel.formatLocationLabel(request['startLocation'])} -> ${RideModel.formatLocationLabel(request['endLocation']).isEmpty ? 'To' : RideModel.formatLocationLabel(request['endLocation'])}',
                                           style: const TextStyle(
                                             color: AppColors.dark,
                                             fontWeight: FontWeight.w800,
@@ -630,7 +630,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                             .isNotEmpty) ...[
                                           const SizedBox(height: 6),
                                           Text(
-                                            'Exact pickup: ${request['pickupLocation']}',
+                                            'Exact pickup: ${RideModel.formatLocationLabel(request['pickupLocation'])}',
                                             style: const TextStyle(
                                               color: AppColors.textMuted,
                                               fontSize: 12,
@@ -644,7 +644,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                             .isNotEmpty) ...[
                                           const SizedBox(height: 4),
                                           Text(
-                                            'Exact drop: ${request['dropLocation']}',
+                                            'Exact drop: ${RideModel.formatLocationLabel(request['dropLocation'])}',
                                             style: const TextStyle(
                                               color: AppColors.textMuted,
                                               fontSize: 12,
@@ -835,8 +835,14 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                             ..._recentBookings.map((b) {
                               final dealId = (b['id'] ?? '').toString();
                               final rideId = (b['rideId'] ?? '').toString();
+                              final start = RideModel.formatLocationLabel(
+                                b['ride']?['startLocation'],
+                              );
+                              final end = RideModel.formatLocationLabel(
+                                b['ride']?['endLocation'],
+                              );
                               final route =
-                                  '${b['ride']?['startLocation'] ?? 'Unknown'} -> ${b['ride']?['endLocation'] ?? 'Unknown'}';
+                                  '${start.isEmpty ? 'Unknown' : start} -> ${end.isEmpty ? 'Unknown' : end}';
                               final fare = (b['agreedFare'] ?? 0).toString();
                               final status = (b['status'] ?? '').toString();
                               return Padding(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../models/ride_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/helpers.dart';
@@ -528,6 +529,10 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
   }
 
   Widget _requestCard(Map<String, dynamic> request) {
+    final start = RideModel.formatLocationLabel(request['startLocation']);
+    final end = RideModel.formatLocationLabel(request['endLocation']);
+    final pickup = RideModel.formatLocationLabel(request['pickupLocation']);
+    final drop = RideModel.formatLocationLabel(request['dropLocation']);
     final offers = List<Map<String, dynamic>>.from(request['offers'] ?? []);
     offers.sort((a, b) {
       final aFare =
@@ -554,17 +559,17 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${request['startLocation']} -> ${request['endLocation']}',
+            '${start.isEmpty ? 'From' : start} -> ${end.isEmpty ? 'To' : end}',
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
-          if ((request['pickupLocation'] ?? '').toString().trim().isNotEmpty)
+          if (pickup.isNotEmpty)
             Text(
-              'Exact pickup: ${request['pickupLocation']}',
+              'Exact pickup: $pickup',
               style: const TextStyle(color: AppColors.textMuted),
             ),
-          if ((request['dropLocation'] ?? '').toString().trim().isNotEmpty)
+          if (drop.isNotEmpty)
             Text(
-              'Exact drop: ${request['dropLocation']}',
+              'Exact drop: $drop',
               style: const TextStyle(color: AppColors.textMuted),
             ),
           Text(
@@ -597,9 +602,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
           ...offers.map((offer) {
             final offerId = (offer['id'] ?? '').toString();
             final requestId = (request['id'] ?? '').toString();
-            final pickupInitial =
-                (request['pickupLocation'] ?? request['startLocation'] ?? '')
-                    .toString();
+            final pickupInitial = pickup.isNotEmpty ? pickup : start;
             final vehicle = (offer['captainVehicleInfo'] ??
                     offer['captainVehicleType'] ??
                     '')

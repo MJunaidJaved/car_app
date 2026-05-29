@@ -82,10 +82,10 @@ class RideModel {
       captainId: data['captainId'] ?? '',
       captainName: data['captainName'] ?? '',
       captainPhone: data['captainPhone'] as String?,
-      startLocation: data['startLocation'] ?? '',
-      endLocation: data['endLocation'] ?? '',
-      exactLocation: data['exactLocation'] as String?,
-      exactDropLocation: data['exactDropLocation'] as String?,
+      startLocation: formatLocationLabel(data['startLocation']),
+      endLocation: formatLocationLabel(data['endLocation']),
+      exactLocation: formatLocationLabel(data['exactLocation']),
+      exactDropLocation: formatLocationLabel(data['exactDropLocation']),
       startLat: (data['startLat'] ?? 0.0).toDouble(),
       startLng: (data['startLng'] ?? 0.0).toDouble(),
       endLat: (data['endLat'] ?? 0.0).toDouble(),
@@ -259,6 +259,48 @@ class RideModel {
       return parts.join(' • ');
     }
     return info.toString();
+  }
+
+  /// Formats location fields whether stored as plain text or map objects.
+  static String formatLocationLabel(dynamic value) {
+    if (value == null) return '';
+    if (value is String) {
+      final label = value.trim();
+      return label == '[object Object]' ? '' : label;
+    }
+    if (value is Map) {
+      const keys = [
+        'formattedAddress',
+        'formatted_address',
+        'description',
+        'name',
+        'address',
+        'label',
+        'placeName',
+        'text',
+      ];
+      for (final key in keys) {
+        final label = value[key]?.toString().trim() ?? '';
+        if (label.isNotEmpty && label != '[object Object]') return label;
+      }
+      final parts = [
+        value['street'],
+        value['subLocality'],
+        value['sublocality'],
+        value['locality'],
+        value['city'],
+        value['administrativeArea'],
+        value['state'],
+        value['country'],
+      ]
+          .map((v) => v?.toString().trim() ?? '')
+          .where((v) => v.isNotEmpty && v != '[object Object]')
+          .toSet()
+          .toList();
+      return parts.join(', ');
+    }
+    final label = value.toString().trim();
+    return label == '[object Object]' ? '' : label;
   }
 
   String get displayVehicle => formatVehicleInfo(vehicleInfo);
