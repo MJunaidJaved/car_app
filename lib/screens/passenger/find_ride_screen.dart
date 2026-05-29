@@ -120,7 +120,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
         rideMode: _rideModeFilter,
         userLat: _defaultLocation.latitude,
         userLng: _defaultLocation.longitude,
-        radiusKm: 15,
+        radiusKm: 20,
       );
       final userLat = _defaultLocation.latitude;
       final userLng = _defaultLocation.longitude;

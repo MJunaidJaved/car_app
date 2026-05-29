@@ -58,7 +58,7 @@ class _CaptainCustomerRequestsScreenState
         queryParams: {
           if (pos != null) 'lat': pos.latitude.toString(),
           if (pos != null) 'lng': pos.longitude.toString(),
-          if (pos != null) 'radiusKm': '15',
+          if (pos != null) 'radiusKm': '20',
         },
       );
       if (mounted) {

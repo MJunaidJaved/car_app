@@ -132,22 +132,11 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
         rideMode: rideMode ?? _rideModeFilter,
         userLat: effectiveLat,
         userLng: effectiveLng,
-        radiusKm: 15,
+        radiusKm: 20,
       );
       final dealsFuture = _loadDoneDeals();
       final postedFuture = _loadPostedRequests();
-      var rides = await ridesFuture;
-      if (rides.isEmpty &&
-          (effectiveLat != null ||
-              effectiveLng != null ||
-              (startLocation ?? '').trim().isNotEmpty ||
-              (endLocation ?? '').trim().isNotEmpty)) {
-        rides = await rideService.findRides(
-          type: type,
-          rideMode: rideMode ?? _rideModeFilter,
-          radiusKm: 15,
-        );
-      }
+      final rides = await ridesFuture;
       await Future.wait([dealsFuture, postedFuture]);
       rides.sort((a, b) {
         final byDistance = _distanceScore(a).compareTo(_distanceScore(b));

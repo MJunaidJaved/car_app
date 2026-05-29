@@ -3,7 +3,7 @@
 
 class ApiConfig {
   // 🚀 Hugging Face Live Direct URL (Yahan end mein '/api' laga diya hai taake 404 error kabhi na aaye)
-  static const String baseUrl = 'https://huzaifa1313-carpool.hf.space/api';
+  static const String baseUrl = 'https://carpool-team-carpool.hf.space/api';
 
   // ============= AUTH ENDPOINTS =============
   static const String syncUser = '$baseUrl/auth/sync';
@@ -15,7 +15,7 @@ class ApiConfig {
   // ============= RIDE ENDPOINTS =============
   static const String postRide = '$baseUrl/rides';          // Post a new ride
   static const String getActiveRides = '$baseUrl/rides';    // Get active rides (GET)
-  static const String getMyRides = '$baseUrl/rides/my';     // Captain's own rides
+  static const String getMyRides = '$baseUrl/rides/my-rides';     // Captain's own rides
 
   // Dynamic Endpoints ke liye functions (agar URL mein ID pass karni ho)
   static String getRideById(String rideId) => '$baseUrl/rides/$rideId';

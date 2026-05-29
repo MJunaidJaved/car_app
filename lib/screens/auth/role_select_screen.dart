@@ -106,7 +106,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
       final selectedRole = _selected!;
       final genderToSave = _gender ?? _existingGender;
 
-      await ApiService.patch('/auth/profile', {
+      final syncResponse = await ApiService.post('/auth/sync', {
         'role': selectedRole,
         if (genderToSave != null) 'gender': genderToSave,
       });
@@ -114,8 +114,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen>
 
       // Force token refresh and fetch the saved backend profile before routing.
       await firebaseUser.getIdToken(true);
-      final response = await ApiService.get('/auth/profile');
-      final userData = response['user'] as Map<String, dynamic>;
+      final userData = Map<String, dynamic>.from(syncResponse['user'] ?? {});
 
       if (userProvider.user != null) {
         final updatedUser = userProvider.user?.copyWith(

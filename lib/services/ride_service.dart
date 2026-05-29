@@ -63,7 +63,7 @@ class RideService with ChangeNotifier {
     String? rideMode,
     double? userLat,
     double? userLng,
-    double radiusKm = 15,
+    double radiusKm = 20,
   }) async {
     final queryParams = <String, String>{
       if (startLocation != null && startLocation.isNotEmpty)

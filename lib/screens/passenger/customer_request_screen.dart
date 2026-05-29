@@ -225,21 +225,25 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
       );
       return;
     }
+    if (_fromLatLng == null || _toLatLng == null) {
+      AppHelpers.showSnackBar(
+        context,
+        'Select both From and To on the map or autocomplete before posting.',
+        isError: true,
+      );
+      return;
+    }
     setState(() => _posting = true);
     try {
       final pos = await _position();
-      final fromLocation = _fromLatLng == null
-          ? await _resolveAddress(_fromCtrl.text, fallbackPosition: pos)
-          : _ResolvedLocation(
-              lat: _fromLatLng!.latitude,
-              lng: _fromLatLng!.longitude,
-            );
-      final toLocation = _toLatLng == null
-          ? await _resolveAddress(_toCtrl.text)
-          : _ResolvedLocation(
-              lat: _toLatLng!.latitude,
-              lng: _toLatLng!.longitude,
-            );
+      final fromLocation = _ResolvedLocation(
+        lat: _fromLatLng!.latitude,
+        lng: _fromLatLng!.longitude,
+      );
+      final toLocation = _ResolvedLocation(
+        lat: _toLatLng!.latitude,
+        lng: _toLatLng!.longitude,
+      );
       await ApiService.post('/customer-requests', {
         'startLocation': _fromCtrl.text.trim(),
         'endLocation': _toCtrl.text.trim(),
@@ -249,13 +253,13 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         if (_dropPointCtrl.text.trim().isNotEmpty)
           'dropLocation': _dropPointCtrl.text.trim(),
         'requestedAt': _requestedAt.toUtc().toIso8601String(),
-        if (fromLocation != null) 'startLat': fromLocation.lat,
-        if (fromLocation != null) 'startLng': fromLocation.lng,
-        if (toLocation != null) 'endLat': toLocation.lat,
-        if (toLocation != null) 'endLng': toLocation.lng,
+        'startLat': fromLocation.lat,
+        'startLng': fromLocation.lng,
+        'endLat': toLocation.lat,
+        'endLng': toLocation.lng,
         if (pos != null) 'customerLat': pos.latitude,
         if (pos != null) 'customerLng': pos.longitude,
-        if ((fromLocation?.city ?? '').isNotEmpty) 'city': fromLocation!.city,
+        if ((fromLocation.city ?? '').isNotEmpty) 'city': fromLocation.city,
       });
       _fromCtrl.clear();
       _toCtrl.clear();

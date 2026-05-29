@@ -29,9 +29,21 @@ class ApiService {
       throw ApiAuthException('Session expired. Please sign in again.');
     }
     if (statusCode < 200 || statusCode >= 300) {
-      throw Exception(
-        '$path failed with status $statusCode: $body',
-      );
+      String message = body;
+      String? code;
+      try {
+        final decoded = jsonDecode(body);
+        if (decoded is Map<String, dynamic>) {
+          message = (decoded['error'] ?? decoded['message'] ?? body).toString();
+          code = decoded['code']?.toString();
+        }
+      } catch (_) {
+        if (body.trimLeft().startsWith('<')) {
+          message =
+              'Backend route not found or Space is serving HTML. Check deployment and API base URL.';
+        }
+      }
+      throw ApiException(message, statusCode: statusCode, code: code);
     }
   }
 
@@ -145,4 +157,14 @@ class ApiAuthException implements Exception {
   final String message;
   @override
   String toString() => message;
+}
+
+class ApiException implements Exception {
+  ApiException(this.message, {required this.statusCode, this.code});
+  final String message;
+  final int statusCode;
+  final String? code;
+
+  @override
+  String toString() => code == null ? message : '$message ($code)';
 }

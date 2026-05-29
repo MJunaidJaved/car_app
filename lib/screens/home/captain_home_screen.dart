@@ -56,9 +56,9 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
     try {
       final ridesRes = await ApiService.get('/rides/my-rides');
       final rides = List<Map<String, dynamic>>.from(ridesRes['rides'] ?? []);
-      final dashboardRides =
+      final activeDashboardRides =
           rides.where((ride) => _isDashboardRideActive(ride)).toList();
-      dashboardRides.sort((a, b) {
+      rides.sort((a, b) {
         final aAt = DateTime.tryParse((a['createdAt'] ?? '').toString()) ??
             DateTime.fromMillisecondsSinceEpoch(0);
         final bAt = DateTime.tryParse((b['createdAt'] ?? '').toString()) ??
@@ -66,7 +66,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
         return bAt.compareTo(aAt);
       });
       Map<String, dynamic>? active;
-      for (final r in dashboardRides) {
+      for (final r in activeDashboardRides) {
         if (r['status'] == 'active') {
           active = r;
           break;
@@ -74,21 +74,16 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       }
       final walletRes = await ApiService.get('/wallet');
       final txRes = await ApiService.get('/wallet/transactions');
-      var customerReqRes = await ApiService.get(
+      final customerReqRes = await ApiService.get(
         '/customer-requests',
         queryParams: {
           if (_mapReady) 'lat': _currentLocation.latitude.toString(),
           if (_mapReady) 'lng': _currentLocation.longitude.toString(),
-          if (_mapReady) 'radiusKm': '15',
+          if (_mapReady) 'radiusKm': '20',
         },
       );
-      if (_mapReady &&
-          List<Map<String, dynamic>>.from(customerReqRes['requests'] ?? [])
-              .isEmpty) {
-        customerReqRes = await ApiService.get('/customer-requests');
-      }
       final pendingMap = <String, int>{};
-      for (final ride in dashboardRides) {
+      for (final ride in rides.take(20)) {
         final rideId = (ride['id'] ?? '').toString();
         if (rideId.isEmpty) continue;
         try {
@@ -109,7 +104,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       if (mounted) {
         setState(() {
           _activeRide = active;
-          _latestRides = dashboardRides;
+          _latestRides = rides.take(20).toList();
           _pendingRequestsByRide = pendingMap;
           _nearbyCustomerRequests = List<Map<String, dynamic>>.from(
             customerReqRes['requests'] ?? [],
