@@ -33,8 +33,9 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
 
   bool _isDashboardRideActive(Map<String, dynamic> ride) {
     final status = (ride['status'] ?? '').toString().toLowerCase();
-    if (status.isNotEmpty && status != 'active' && status != 'in_progress')
+    if (status.isNotEmpty && status != 'active' && status != 'in_progress') {
       return false;
+    }
     final dt = DateTime.tryParse((ride['departureTime'] ?? '').toString());
     if (dt == null) return true;
     return dt.isAfter(DateTime.now());
@@ -73,7 +74,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       }
       final walletRes = await ApiService.get('/wallet');
       final txRes = await ApiService.get('/wallet/transactions');
-      final customerReqRes = await ApiService.get(
+      var customerReqRes = await ApiService.get(
         '/customer-requests',
         queryParams: {
           if (_mapReady) 'lat': _currentLocation.latitude.toString(),
@@ -81,6 +82,11 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           if (_mapReady) 'radiusKm': '15',
         },
       );
+      if (_mapReady &&
+          List<Map<String, dynamic>>.from(customerReqRes['requests'] ?? [])
+              .isEmpty) {
+        customerReqRes = await ApiService.get('/customer-requests');
+      }
       final pendingMap = <String, int>{};
       for (final ride in dashboardRides) {
         final rideId = (ride['id'] ?? '').toString();
@@ -129,6 +135,147 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
   double _asDouble(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  Widget _customerRequestSummaryCard(Map<String, dynamic> request) {
+    final desiredFare = request['desiredFare'];
+    final distance = double.tryParse((request['distanceKm'] ?? '').toString());
+    final distanceLabel = distance == null
+        ? 'Distance unavailable'
+        : distance <= 10
+            ? '${distance.toStringAsFixed(1)} km away - nearby'
+            : '${distance.toStringAsFixed(1)} km away';
+    final status = (request['status'] ?? 'open').toString().toUpperCase();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      child: GestureDetector(
+        onTap: _openCustomerRequests,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.sage.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${request['startLocation'] ?? 'From'} -> ${request['endLocation'] ?? 'To'}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.bark,
+                ),
+              ),
+              if ((request['pickupLocation'] ?? '')
+                  .toString()
+                  .trim()
+                  .isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Exact pickup: ${request['pickupLocation']}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.sage,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              if ((request['dropLocation'] ?? '')
+                  .toString()
+                  .trim()
+                  .isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Exact drop: ${request['dropLocation']}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.sage,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '$distanceLabel | ${desiredFare == null ? 'Offer your fare' : 'Budget Rs $desiredFare'}',
+                      style: const TextStyle(
+                        color: AppColors.moss,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.bg,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      status,
+                      style: const TextStyle(
+                        color: AppColors.bark,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _MiniPill(
+                    label: (request['vehicleType'] ?? 'car')
+                        .toString()
+                        .toUpperCase(),
+                  ),
+                  _MiniPill(
+                    label: (request['rideMode'] ?? 'solo')
+                        .toString()
+                        .toUpperCase(),
+                  ),
+                  if ((request['city'] ?? '').toString().trim().isNotEmpty)
+                    _MiniPill(label: request['city'].toString()),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Tap Details to view request and send fare offer.',
+                      style: TextStyle(
+                        color: AppColors.sage,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton(
+                    onPressed: _openCustomerRequests,
+                    child: const Text('Details'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _tryOpenPostRide(BuildContext context, {Map<String, dynamic>? args}) {
@@ -815,15 +962,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            if (_activeRide != null) {
-                              _openRideRequests(
-                                (_activeRide!['id'] ?? '').toString(),
-                              );
-                            } else {
-                              Navigator.pushNamed(context, '/my-rides');
-                            }
-                          },
+                          onTap: _openCustomerRequests,
                           child: const Text(
                             'See all',
                             style: TextStyle(
@@ -837,7 +976,11 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (_latestRides.isNotEmpty)
+                  if (_nearbyCustomerRequests.isNotEmpty)
+                    ..._nearbyCustomerRequests
+                        .take(5)
+                        .map(_customerRequestSummaryCard)
+                  else if (_latestRides.isNotEmpty)
                     ..._latestRides.map((ride) {
                       final rideId = (ride['id'] ?? '').toString();
                       final start =
@@ -1006,7 +1149,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Text(
-                        'No active rides. Post a ride to receive requests.',
+                        'No customer requests yet. New posts will appear here automatically.',
                         style: TextStyle(color: AppColors.sage),
                       ),
                     ),
