@@ -1,0 +1,180 @@
+{
+  "project_info": {
+    "project_number": "1041778024633",
+    "project_id": "carpoolapp-f3b29",
+    "storage_bucket": "carpoolapp-f3b29.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041778024633:android:c94d3ea710cf7ff3d07b68",
+        "android_client_info": {
+          "package_name": "com.example.carpool_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041778024633-48k1uujovnr6q9nf7e92ici2817ss3t9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.carpool_app",
+            "certificate_hash": "e8cc6ffc36f349d9d0d58aa09ba22ef3ae8e8e74"
+          }
+        },
+        {
+          "client_id": "1041778024633-8imd7edtuq9urdh72uujbnjm3pa6eura.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.carpool_app",
+            "certificate_hash": "1f11a66847dbe8ba3cd8126e63a70bca1a34f3d7"
+          }
+        },
+        {
+          "client_id": "1041778024633-f4n2s1pp8t9fd8gjv8d1cvettjel2a9b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.carpool_app",
+            "certificate_hash": "e450a8ada055e03d778845748b5bc7f030e91e8a"
+          }
+        },
+        {
+          "client_id": "1041778024633-8241r5turo6mpooq5uqgtg49nvq5va8h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0X4rVR8KkYV419awziD_0i0raeZashfo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041778024633-8241r5turo6mpooq5uqgtg49nvq5va8h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041778024633:android:77aa7b098c0a4124d07b68",
+        "android_client_info": {
+          "package_name": "com.shareway.carpool"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041778024633-3ivgfdo3i1f86n4qe1c1q3d76ogn5341.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "e450a8ada055e03d778845748b5bc7f030e91e8a"
+          }
+        },
+        {
+          "client_id": "1041778024633-4gihigrc47scdu5v56lkguf0au84mbbl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "2a3cb9d6e075fcda3b69672a9d8c0891122321c4"
+          }
+        },
+        {
+          "client_id": "1041778024633-6ldp5drlllka66p9gksp0p1qk93nv8r6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "2f8c8b2cd5b2b4690d535ee9e491b29e6a666c1d"
+          }
+        },
+        {
+          "client_id": "1041778024633-8pc1spi0dn1037j2jkft30fjebkdpfqf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "1f11a66847dbe8ba3cd8126e63a70bca1a34f3d7"
+          }
+        },
+        {
+          "client_id": "1041778024633-ab9r7r58n8a8jhf3eciunaqace2vcp6m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "0e52c7733ae2011463ba928f9f030c52c1f4a5ce"
+          }
+        },
+        {
+          "client_id": "1041778024633-b0lc3flj4kqnmngitifhg1hhgttoh34m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "3c40009dd5188688af0779cd21db059a0300a9d9"
+          }
+        },
+        {
+          "client_id": "1041778024633-hg2ii6sl7l50p5sk7k0enrpk4s6aa3ph.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "b8850b2083e33b8aee42618a0021f3b728a7fcbe"
+          }
+        },
+        {
+          "client_id": "1041778024633-ns1mffqtmiur5ri81fs5jtiam6ii5ghd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "04fdf7e8e875ccdf7e3848ab850a00ee50c62307"
+          }
+        },
+        {
+          "client_id": "1041778024633-q50b4foic6blp9tad72c76h0e5dcuk35.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "e8cc6ffc36f349d9d0d58aa09ba22ef3ae8e8e74"
+          }
+        },
+        {
+          "client_id": "1041778024633-ts7e6ao7608vol0009cso4s9tsei29lg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "faf0597b110b39a9e7fda24f9e3a4fa0184f6d28"
+          }
+        },
+        {
+          "client_id": "1041778024633-u6ubpqe09nou4ju7a96ri1ftau98j3c0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareway.carpool",
+            "certificate_hash": "9b88f5558c833ae172fe6c2ac43e86a634d4b376"
+          }
+        },
+        {
+          "client_id": "1041778024633-8241r5turo6mpooq5uqgtg49nvq5va8h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0X4rVR8KkYV419awziD_0i0raeZashfo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041778024633-8241r5turo6mpooq5uqgtg49nvq5va8h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

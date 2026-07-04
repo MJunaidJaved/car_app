@@ -1,0 +1,16 @@
+# key.properties.example - Copy this to key.properties and fill in your actual values
+# This file is NEVER committed to version control for security reasons
+# Location: android/key.properties
+
+# Path to your release keystore
+storeFile=C:\\path\\to\\your\\keystore\\carpool_release.jks
+
+# Password for the keystore
+storePassword=your_keystore_password
+
+# Alias of the key within the keystore
+keyAlias=your_key_alias
+
+# Password for the key
+keyPassword=your_key_password
+
