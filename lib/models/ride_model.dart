@@ -39,6 +39,12 @@ class RideModel {
   final DateTime createdAt;
   final bool isProximityMatch; // true = direct match, false = passes near route
   final double? proximityDistance; // distance in km to destination
+  final bool isDirectMatch;
+  final bool routePassesThrough;
+  final double? distanceFromPickup;
+  final double? distanceFromDest;
+  final double? routeProximityKm;
+  final int routeMatchScore;
 
   RideModel({
     required this.id,
@@ -79,6 +85,12 @@ class RideModel {
     required this.createdAt,
     this.isProximityMatch = true,
     this.proximityDistance,
+    this.isDirectMatch = false,
+    this.routePassesThrough = false,
+    this.distanceFromPickup,
+    this.distanceFromDest,
+    this.routeProximityKm,
+    this.routeMatchScore = 0,
   });
 
   factory RideModel.fromFirestore(DocumentSnapshot doc) {
@@ -129,11 +141,26 @@ class RideModel {
       routeDisplay: data['routeLabel']?.toString(),
       captainRating: (data['captainRating'] ?? 0.0).toDouble(),
       createdAt: _parseDate(data['createdAt']),
-      isProximityMatch: (data['isProximityMatch'] ?? data['isDirectMatch'] ?? true),
-      proximityDistance: data['proximityDistance'] != null
-          ? double.tryParse(data['proximityDistance'].toString())
-          : null,
+      isProximityMatch:
+          (data['isProximityMatch'] ?? data['routePassesThrough'] ?? true) ==
+              true,
+      proximityDistance: _doubleFromAny(
+        data['proximityDistance'] ?? data['routeProximityKm'],
+      ),
+      isDirectMatch: data['isDirectMatch'] == true,
+      routePassesThrough: data['routePassesThrough'] == true,
+      distanceFromPickup: _doubleFromAny(data['distanceFromPickup']),
+      distanceFromDest: _doubleFromAny(data['distanceFromDest']),
+      routeProximityKm: _doubleFromAny(data['routeProximityKm']),
+      routeMatchScore:
+          int.tryParse((data['routeMatchScore'] ?? 0).toString()) ?? 0,
     );
+  }
+
+  static double? _doubleFromAny(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 
   static DateTime _parseDate(dynamic value) {

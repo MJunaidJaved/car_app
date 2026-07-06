@@ -18,7 +18,7 @@ class MyBookingsScreen extends StatefulWidget {
 
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
   String _selectedFilter = 'all';
-  final _filters = ['all', 'upcoming', 'completed', 'cancelled'];
+  final _filters = ['all', 'upcoming', 'confirmed', 'completed'];
   List<Map<String, dynamic>> _bookings = [];
   bool _loading = true;
   final _realtime = DealRealtimeService();
@@ -53,6 +53,23 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
+  Future<void> _refreshBookings() async {
+    try {
+      final bookings = await Provider.of<FirestoreService>(
+        context,
+        listen: false,
+      ).getMyBookings();
+      if (mounted) {
+        setState(() {
+          _bookings = bookings.where(_isVisibleBooking).toList();
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   void dispose() {
     _realtime.stop();
@@ -60,6 +77,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Future<void> _cancelBooking(String dealId) async {
+    final service = Provider.of<FirestoreService>(context, listen: false);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -82,8 +100,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     if (confirm != true) return;
 
     try {
-      await Provider.of<FirestoreService>(context, listen: false)
-          .cancelDeal(dealId);
+      await service.cancelDeal(dealId);
+      await _refreshBookings();
       if (mounted) {
         AppHelpers.showSnackBar(context, 'Booking cancelled');
       }
@@ -255,11 +273,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                           builder: (context) {
                             final filtered = _bookings.where((b) {
                               if (_selectedFilter == 'all') return true;
-                              final status = b['status'] ?? '';
+                              final status =
+                                  (b['status'] ?? '').toString().toLowerCase();
+                              final tabStatus =
+                                  (b['tabStatus'] ?? '').toString().toLowerCase();
                               if (_selectedFilter == 'upcoming') {
-                                return status == 'pending' ||
-                                    status == 'confirmed' ||
+                                return tabStatus == 'upcoming' ||
+                                    status == 'pending' ||
                                     status == 'started';
+                              }
+                              if (_selectedFilter == 'confirmed') {
+                                return tabStatus == 'confirmed' ||
+                                    status == 'confirmed';
                               }
                               return status == _selectedFilter;
                             }).toList();
@@ -324,8 +349,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                         ride['exactDropLocation'],
                                   ),
                                   canRate: b['status'] == 'completed' &&
-                                      b['rating'] == null,
+                                      (b['canRate'] == true ||
+                                          b['rating'] == null),
                                   onCancel: () => _cancelBooking(dealId),
+                                  onRated: _refreshBookings,
                                 );
                               },
                             );
@@ -343,11 +370,15 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   int _bookingCount(String filter) {
     return _bookings.where((b) {
       final status = (b['status'] ?? '').toString();
+      final tabStatus = (b['tabStatus'] ?? '').toString();
       if (filter == 'all') return true;
       if (filter == 'upcoming') {
-        return status == 'pending' ||
-            status == 'confirmed' ||
+        return tabStatus == 'upcoming' ||
+            status == 'pending' ||
             status == 'started';
+      }
+      if (filter == 'confirmed') {
+        return tabStatus == 'confirmed' || status == 'confirmed';
       }
       return status == filter;
     }).length;
@@ -367,6 +398,7 @@ class _BookingCard extends StatelessWidget {
   final String dropAddress;
   final bool canRate;
   final VoidCallback onCancel;
+  final Future<void> Function()? onRated;
 
   const _BookingCard({
     required this.dealId,
@@ -381,6 +413,7 @@ class _BookingCard extends StatelessWidget {
     this.dropAddress = '',
     this.canRate = false,
     required this.onCancel,
+    this.onRated,
   });
 
   Color get _statusColor {
@@ -591,8 +624,14 @@ class _BookingCard extends StatelessWidget {
                 ),
               if (canRate)
                 ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/rate-review',
-                      arguments: dealId),
+                  onPressed: () async {
+                    await Navigator.pushNamed(
+                      context,
+                      '/rate-review',
+                      arguments: dealId,
+                    );
+                    await onRated?.call();
+                  },
                   style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.bg,
                       foregroundColor: AppColors.moss,

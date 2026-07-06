@@ -21,6 +21,9 @@ class UserModel {
   final String? captainVehicleType;
   final double rating;
   final int totalRides;
+  final int reviewCount;
+  final int completedRides;
+  final List<Map<String, dynamic>> recentReviews;
   final DateTime createdAt;
 
   UserModel({
@@ -44,6 +47,9 @@ class UserModel {
     this.captainVehicleType,
     this.rating = 0.0,
     this.totalRides = 0,
+    this.reviewCount = 0,
+    this.completedRides = 0,
+    this.recentReviews = const [],
     required this.createdAt,
   });
 
@@ -76,8 +82,17 @@ class UserModel {
       city: data['city'] as String?,
       vehiclePhotoUrl: data['vehiclePhotoUrl'] as String?,
       captainVehicleType: data['captainVehicleType'] as String?,
-      rating: (data['rating'] ?? 0.0).toDouble(),
-      totalRides: data['totalRides'] ?? 0,
+      rating: (data['averageRating'] ?? data['rating'] ?? 0.0).toDouble(),
+      totalRides: int.tryParse((data['totalRides'] ?? 0).toString()) ?? 0,
+      reviewCount:
+          int.tryParse((data['reviewCount'] ?? data['totalReviews'] ?? 0).toString()) ??
+              0,
+      completedRides:
+          int.tryParse((data['completedRides'] ?? data['totalRides'] ?? 0).toString()) ??
+              0,
+      recentReviews: data['recentReviews'] is List
+          ? List<Map<String, dynamic>>.from(data['recentReviews'])
+          : const [],
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] is Timestamp
               ? (data['createdAt'] as Timestamp).toDate()
@@ -110,6 +125,9 @@ class UserModel {
       if (captainVehicleType != null) 'captainVehicleType': captainVehicleType,
       'rating': rating,
       'totalRides': totalRides,
+      'reviewCount': reviewCount,
+      'completedRides': completedRides,
+      'recentReviews': recentReviews,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -135,6 +153,9 @@ class UserModel {
     String? captainVehicleType,
     double? rating,
     int? totalRides,
+    int? reviewCount,
+    int? completedRides,
+    List<Map<String, dynamic>>? recentReviews,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -159,6 +180,9 @@ class UserModel {
       captainVehicleType: captainVehicleType ?? this.captainVehicleType,
       rating: rating ?? this.rating,
       totalRides: totalRides ?? this.totalRides,
+      reviewCount: reviewCount ?? this.reviewCount,
+      completedRides: completedRides ?? this.completedRides,
+      recentReviews: recentReviews ?? this.recentReviews,
       createdAt: createdAt ?? this.createdAt,
     );
   }

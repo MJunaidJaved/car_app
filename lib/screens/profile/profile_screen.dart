@@ -9,12 +9,13 @@ import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
 import '../../utils/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../utils/helpers.dart';
 
 // ImgBB API Key
-const String IMGBB_API_KEY = 'f3e1d9b185dbeda5209741c804c2c705';
+const String imgbbApiKey = 'f3e1d9b185dbeda5209741c804c2c705';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,6 +27,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
+  bool _loadedExternalProfile = false;
+  UserModel? _externalUser;
 
 
   // Helper method to get user ID from response
@@ -42,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final base64Image = base64Encode(bytes);
 
       final response = await http.post(
-        Uri.parse('https://api.imgbb.com/1/upload?key=$IMGBB_API_KEY'),
+        Uri.parse('https://api.imgbb.com/1/upload?key=$imgbbApiKey'),
         body: {
           'image': base64Image,
           'name': 'carpool_${type}_${DateTime.now().millisecondsSinceEpoch}',
@@ -66,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Only upload car photo
   Future<void> _uploadCarPhoto() async {
+    if (_isUploading) return;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -113,14 +117,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userMap = response['user'] as Map<String, dynamic>;
       final userId = _getUserIdFromMap(userMap);
       final updatedUser = UserModel.fromMap(userMap, userId);
+      if (!mounted) return;
       Provider.of<UserProvider>(context, listen: false).setUser(updatedUser);
 
       AppHelpers.showSnackBar(context, 'Car photo updated!');
       setState(() {});
     } catch (e) {
+      if (!mounted) return;
       AppHelpers.showSnackBar(context, 'Upload failed: $e', isError: true);
     } finally {
-      setState(() => _isUploading = false);
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 
@@ -133,8 +139,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userMap = response['user'] as Map<String, dynamic>;
       final userId = _getUserIdFromMap(userMap);
       final updatedUser = UserModel.fromMap(userMap, userId);
+      if (!context.mounted) return;
       Provider.of<UserProvider>(context, listen: false).setUser(updatedUser);
       if (mounted) setState(() {});
+    } catch (_) {}
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loadedExternalProfile) return;
+    _loadedExternalProfile = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is UserModel && args.role == 'captain') {
+      _externalUser = args;
+      _loadExternalCaptain(args.id);
+    }
+  }
+
+  Future<void> _loadExternalCaptain(String captainId) async {
+    try {
+      final data = await FirestoreService().getCaptainProfile(captainId);
+      if (!mounted) return;
+      setState(() {
+        _externalUser =
+            UserModel.fromMap(data, data['id']?.toString() ?? captainId);
+      });
     } catch (_) {}
   }
 
@@ -146,7 +176,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ));
     final args = ModalRoute.of(context)?.settings.arguments;
     final isExternal = args is UserModel;
-    final user = isExternal ? args : Provider.of<UserProvider>(context).user;
+    final user = isExternal
+        ? (_externalUser ?? args)
+        : Provider.of<UserProvider>(context).user;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -522,23 +554,103 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: AppColors.sage.withValues(alpha:0.2)),
                           Expanded(
                               child: _TrustStat(
-                                  value: '${user?.totalRides ?? 0}',
-                                  label: 'Rides',
+                                  value: '${user?.completedRides ?? user?.totalRides ?? 0}',
+                                  label: 'Completed',
                                   icon: Icons.directions_car_filled_rounded)),
                           Container(
                               width: 1,
                               height: 40,
                               color: AppColors.sage.withValues(alpha:0.2)),
-                          const Expanded(
+                          Expanded(
                               child: _TrustStat(
-                                  value: '—',
-                                  label: 'On-time',
-                                  icon: Icons.timer_outlined)),
+                                  value: '${user?.reviewCount ?? 0}',
+                                  label: 'Reviews',
+                                  icon: Icons.rate_review_outlined)),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
+                  if ((user?.recentReviews ?? const []).isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(18),
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: AppColors.sage.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Recent Feedback',
+                              style: TextStyle(
+                                color: AppColors.bark,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ...user!.recentReviews.take(3).map((review) {
+                              final text = (review['review'] ?? '').toString();
+                              final rating = (review['rating'] ?? 0).toString();
+                              final customer =
+                                  (review['customerName'] ?? 'Customer').toString();
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.star_rounded,
+                                            color: AppColors.amber, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          rating,
+                                          style: const TextStyle(
+                                            color: AppColors.bark,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            customer,
+                                            style: const TextStyle(
+                                              color: AppColors.sage,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (text.trim().isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        text,
+                                        style: const TextStyle(
+                                          color: AppColors.bark,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
                   if (!isExternal) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -595,6 +707,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         context, '/home', (_) => false);
                                   }
                                 } catch (e) {
+                                  if (!context.mounted) return;
                                   AppHelpers.showSnackBar(
                                       context, 'Failed to switch role: $e',
                                       isError: true);
@@ -640,7 +753,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Text(
                 'Powered by HiTECH TECHNOLOGIES',
                 style: TextStyle(
-                  color: AppColors.white.withOpacity(0.95),
+                  color: AppColors.white.withValues(alpha: 0.95),
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),

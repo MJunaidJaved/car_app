@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../providers/user_provider.dart';
 import '../../services/ride_service.dart';
 import '../../services/api_service.dart';
@@ -110,6 +109,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureCustomerPhone());
   }
 
+  // ignore: unused_element
   String _greeting(String? fullName) {
     final hour = DateTime.now().hour;
     final name = (fullName ?? 'User').split(' ').first;
@@ -328,6 +328,17 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
       backgroundColor: AppColors.bg,
       body: Stack(
         children: [
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.veryLightBlue, AppColors.white],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
           Positioned(
             top: 0,
             left: 0,
@@ -558,6 +569,58 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                       ),
                                     ),
                                   ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _PassengerQuickAction(
+                                          label: 'Book',
+                                          icon: Icons.search_rounded,
+                                          color: AppColors.primary,
+                                          onTap: () => Navigator.pushNamed(
+                                            context,
+                                            '/find-ride',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _PassengerQuickAction(
+                                          label: 'Bookings',
+                                          icon: Icons.calendar_month_rounded,
+                                          color: AppColors.emerald,
+                                          onTap: () => Navigator.pushNamed(
+                                            context,
+                                            '/my-bookings',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _PassengerQuickAction(
+                                          label: 'Request',
+                                          icon: Icons.edit_location_alt_rounded,
+                                          color: AppColors.amber,
+                                          onTap: () => Navigator.pushNamed(
+                                            context,
+                                            '/customer-request',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _PassengerQuickAction(
+                                          label: 'Tours',
+                                          icon: Icons.map_rounded,
+                                          color: AppColors.vehicleBus,
+                                          onTap: () => Navigator.pushNamed(
+                                            context,
+                                            '/tours',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -628,8 +691,8 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                       color: AppColors.white,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: AppColors.skyBlue.withOpacity(
-                                          0.45,
+                                        color: AppColors.skyBlue.withValues(
+                                          alpha: 0.45,
                                         ),
                                       ),
                                     ),
@@ -968,19 +1031,16 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                           const SizedBox(height: 14),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              child: Row(
-                                children: categories.asMap().entries.map((
-                                  entry,
-                                ) {
-                                  final i = entry.key;
-                                  final cat = entry.value;
-                                  return Padding(
+                            child: Row(
+                              children: categories.asMap().entries.map((
+                                entry,
+                              ) {
+                                final i = entry.key;
+                                final cat = entry.value;
+                                return Expanded(
+                                  child: Padding(
                                     padding: EdgeInsets.only(
-                                      right:
-                                          i == categories.length - 1 ? 0 : 12,
+                                      right: i == categories.length - 1 ? 0 : 6,
                                     ),
                                     child: _CategoryTab(
                                       label: cat['label'],
@@ -996,9 +1056,9 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                         );
                                       },
                                     ),
-                                  );
-                                }).toList(),
-                              ),
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -1102,6 +1162,66 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   }
 }
 
+class _PassengerQuickAction extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _PassengerQuickAction({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 82,
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 9),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.22)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [color, Color.lerp(color, AppColors.deepNavy, 0.18)!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppColors.white, size: 19),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.bark,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _CategoryTab extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -1121,57 +1241,55 @@ class _CategoryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 72, maxWidth: 92),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [color, Color.lerp(color, Colors.black, 0.15)!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(18),
-            border: isSelected
-                ? null
-                : Border.all(color: color.withValues(alpha: 0.35), width: 1.2),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.35),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
-                    ),
-                  ]
-                : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 72,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 3),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [color, Color.lerp(color, Colors.black, 0.15)!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected ? null : AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? Colors.transparent : color.withValues(alpha: 0.25),
+            width: 1.1,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: isSelected ? AppColors.white : color,
-                size: 24,
-              ),
-              const SizedBox(height: 6),
-              Flexible(
-                child: Text(
-                  label.split(' ')[0],
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isSelected ? AppColors.white : AppColors.textDark,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: isSelected ? 0.28 : 0.10),
+              blurRadius: isSelected ? 12 : 8,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.white : color,
+              size: 21,
+            ),
+            const SizedBox(height: 5),
+            Flexible(
+              child: Text(
+                label.split(' ')[0],
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isSelected ? AppColors.white : AppColors.textDark,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1207,9 +1325,7 @@ class _LiveRideCard extends StatelessWidget {
     final isFemaleUser = (user?.gender ?? '').toLowerCase() == 'female';
     final isLadiesLocked = ride.isLadiesRide && !isFemaleUser;
     // Show the actual departure date + time prominently
-    final dtLabel = ride.departureTime != null
-        ? AppHelpers.formatDateTime(ride.departureTime!)
-        : time;
+    final dtLabel = AppHelpers.formatDateTime(ride.departureTime);
     final vehicleColor = AppColors.vehicleColor(ride.vehicleType);
 
     return Hero(
@@ -1432,6 +1548,7 @@ class _LiveRideCard extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _RideInfoChip extends StatelessWidget {
   final IconData icon;
   final String label;

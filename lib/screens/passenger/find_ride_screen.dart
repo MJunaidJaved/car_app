@@ -133,6 +133,8 @@ class _FindRideScreenState extends State<FindRideScreen>
         rideMode: _rideModeFilter,
         userLat: searchPoint.latitude,
         userLng: searchPoint.longitude,
+        destLat: _toLatLng?.latitude,
+        destLng: _toLatLng?.longitude,
         afterDocId: _lastDocId,
       );
       if (!mounted) return;
@@ -168,24 +170,10 @@ class _FindRideScreenState extends State<FindRideScreen>
         rideMode: _rideModeFilter,
         userLat: searchPoint.latitude,
         userLng: searchPoint.longitude,
+        destLat: _toLatLng?.latitude,
+        destLng: _toLatLng?.longitude,
       );
       final results = page.rides;
-
-      results.sort((a, b) {
-        final da = AppHelpers.distanceKm(
-          searchPoint.latitude,
-          searchPoint.longitude,
-          a.startLat,
-          a.startLng,
-        );
-        final db = AppHelpers.distanceKm(
-          searchPoint.latitude,
-          searchPoint.longitude,
-          b.startLat,
-          b.startLng,
-        );
-        return da.compareTo(db);
-      });
 
       setState(() {
         _results = results;

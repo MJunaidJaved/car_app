@@ -63,6 +63,8 @@ class RideService with ChangeNotifier {
     String? rideMode,
     double? userLat,
     double? userLng,
+    double? destLat,
+    double? destLng,
     int limit = 20,
     String? afterDocId,
   }) async {
@@ -73,6 +75,8 @@ class RideService with ChangeNotifier {
       rideMode: rideMode,
       userLat: userLat,
       userLng: userLng,
+      destLat: destLat,
+      destLng: destLng,
       limit: limit,
       afterDocId: afterDocId,
     );
@@ -87,6 +91,8 @@ class RideService with ChangeNotifier {
     String? rideMode,
     double? userLat,
     double? userLng,
+    double? destLat,
+    double? destLng,
     int limit = 20,
     String? afterDocId,
   }) async {
@@ -104,6 +110,8 @@ class RideService with ChangeNotifier {
         'rideMode': rideMode,
       if (userLat != null) 'lat': userLat.toString(),
       if (userLng != null) 'lng': userLng.toString(),
+      if (destLat != null) 'destLat': destLat.toString(),
+      if (destLng != null) 'destLng': destLng.toString(),
     };
 
     final response = await ApiService.get('/rides', queryParams: queryParams);

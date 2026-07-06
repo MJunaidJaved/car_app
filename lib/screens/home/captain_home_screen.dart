@@ -23,13 +23,10 @@ class CaptainHomeScreen extends StatefulWidget {
 class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
   bool _isOnline = true;
   Map<String, dynamic>? _activeRide;
-  List<Map<String, dynamic>> _latestRides = [];
   Map<String, int> _pendingRequestsByRide = {};
   List<Map<String, dynamic>> _recentDealRequests = [];
   List<Map<String, dynamic>> _nearbyCustomerRequests = [];
   double _walletBalance = 0;
-  List<Map<String, dynamic>> _recentTransactions = [];
-  GoogleMapController? _mapController;
   LatLng _currentLocation = const LatLng(31.5204, 74.3587);
   bool _mapReady = false;
   Timer? _refreshTimer;
@@ -82,13 +79,13 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
             if (_mapReady) 'lng': _currentLocation.longitude.toString(),
           },
         ),
-        ApiService.get('/captain/stats').catchError((_) => {}),
+        ApiService.get('/captain/stats')
+            .catchError((_) => <String, dynamic>{}),
       ]);
 
       final profileRes = results[0];
       final ridesRes = results[1];
       final walletRes = results[2];
-      final txRes = results[3];
       final customerReqRes = results[4];
       final statsRes = results[5] as Map<String, dynamic>?;
 
@@ -166,16 +163,12 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       if (mounted) {
         setState(() {
           _activeRide = active;
-          _latestRides = rides.take(20).toList();
           _pendingRequestsByRide = pendingMap;
           _recentDealRequests = recentDealRequests.take(20).toList();
           _nearbyCustomerRequests = List<Map<String, dynamic>>.from(
             customerReqRes['requests'] ?? [],
           );
           _walletBalance = _asDouble(walletRes['wallet']?['balance']);
-          _recentTransactions = List<Map<String, dynamic>>.from(
-            txRes['transactions'] ?? [],
-          );
           // Update stats
           if (statsRes != null) {
             _todayStats = statsRes['today'] ?? _todayStats;
@@ -194,15 +187,13 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           if (mounted) {
             setState(() {
               _walletBalance = _asDouble(fallbackResults[0]['wallet']?['balance']);
-              _recentTransactions = List<Map<String, dynamic>>.from(
-                fallbackResults[1]['transactions'] ?? [],
-              );
             });
           }
         } catch (_) {}
       }
   }
 
+  // ignore: unused_element
   String _formatTxTime(dynamic createdAt) {
     final dt = DateTime.tryParse(createdAt?.toString() ?? '');
     if (dt == null) return '';
@@ -222,6 +213,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
     return label.isEmpty ? fallback : label;
   }
 
+  // ignore: unused_element
   Widget _customerRequestSummaryCard(Map<String, dynamic> request) {
     final desiredFare = request['desiredFare'];
     final distance = double.tryParse((request['distanceKm'] ?? '').toString());
@@ -404,7 +396,6 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           _mapReady = true;
         });
         await _loadDashboard();
-        _mapController?.animateCamera(CameraUpdate.newLatLng(_currentLocation));
       }
     } catch (_) {
       if (mounted) setState(() => _mapReady = true);
@@ -414,7 +405,6 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
-    _mapController?.dispose();
     super.dispose();
   }
 
@@ -439,6 +429,17 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
       backgroundColor: AppColors.bg,
       body: Stack(
         children: [
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.veryLightBlue, AppColors.white],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -565,7 +566,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     color: AppColors.white.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: NotificationBell(
+                                  child: const NotificationBell(
                                     iconColor: AppColors.white,
                                     backgroundColor: Colors.transparent,
                                     borderColor: Colors.transparent,
@@ -696,140 +697,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                     ),
                   ],
 
-                  const SizedBox(height: 24),
-
-                  // Live Map with Online/Offline overlay
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: SizedBox(
-                        height: 200,
-                        child: Stack(
-                          children: [
-                            // Google Map
-                            AbsorbPointer(
-                              child: GoogleMap(
-                                initialCameraPosition: CameraPosition(
-                                  target: _currentLocation,
-                                  zoom: 14,
-                                ),
-                                onMapCreated: (controller) {
-                                  _mapController = controller;
-                                  if (_mapReady) {
-                                    controller.animateCamera(
-                                      CameraUpdate.newLatLng(_currentLocation),
-                                    );
-                                  }
-                                },
-                                markers: {
-                                  Marker(
-                                    markerId: const MarkerId('captain'),
-                                    position: _currentLocation,
-                                    infoWindow: const InfoWindow(
-                                      title: 'Your Location',
-                                    ),
-                                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                                      _isOnline
-                                          ? BitmapDescriptor.hueGreen
-                                          : BitmapDescriptor.hueRed,
-                                    ),
-                                  ),
-                                },
-                                myLocationEnabled: true,
-                                myLocationButtonEnabled: false,
-                                zoomControlsEnabled: false,
-                                scrollGesturesEnabled: false,
-                                zoomGesturesEnabled: false,
-                              ),
-                            ),
-
-                            // Online/Offline overlay at bottom of map
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.bark.withValues(alpha:0.92),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _isOnline
-                                              ? 'Waiting for requests...'
-                                              : 'Go online to start earning',
-                                          style: const TextStyle(
-                                            color: AppColors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        Text(
-                                          _isOnline
-                                              ? 'Visible to passengers'
-                                              : 'Currently Offline',
-                                          style: TextStyle(
-                                            color: AppColors.white.withOpacity(
-                                              0.7,
-                                            ),
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {
-                                        final next = !_isOnline;
-                                        setState(() => _isOnline = next);
-                                        await _syncOnlineStatus();
-                                      },
-                                      child: AnimatedContainer(
-                                        duration: const Duration(
-                                          milliseconds: 300,
-                                        ),
-                                        width: 44,
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: _isOnline
-                                              ? AppColors.moss
-                                              : AppColors.sage.withValues(alpha:0.3),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: AppColors.white.withOpacity(
-                                              0.2,
-                                            ),
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.power_settings_new_rounded,
-                                          color: AppColors.white,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // Stats Row
                   Padding(
@@ -841,6 +709,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             title: 'Wallet Balance',
                             value: 'Rs ${_walletBalance.toStringAsFixed(0)}',
                             icon: Icons.payments_rounded,
+                            color: AppColors.emerald,
                             onTap: () =>
                                 Navigator.pushNamed(context, '/wallet'),
                           ),
@@ -851,6 +720,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             title: 'Active Ride',
                             value: _activeRide != null ? '1' : '0',
                             icon: Icons.inbox_rounded,
+                            color: AppColors.primary,
                             onTap: () {
                               if (_activeRide != null) {
                                 _openRideRequests(
@@ -864,6 +734,78 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: (_isOnline ? AppColors.emerald : AppColors.sage)
+                              .withValues(alpha: 0.22),
+                        ),
+                        boxShadow: AppColors.cardShadow,
+                      ),
+                      child: Row(
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: (_isOnline ? AppColors.emerald : AppColors.sage)
+                                  .withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(
+                              _isOnline
+                                  ? Icons.online_prediction_rounded
+                                  : Icons.power_settings_new_rounded,
+                              color: _isOnline ? AppColors.emerald : AppColors.sage,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _isOnline ? 'Online for rides' : 'Offline',
+                                  style: const TextStyle(
+                                    color: AppColors.bark,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                Text(
+                                  _isOnline
+                                      ? 'Passengers can send ride requests'
+                                      : 'Go online to receive requests',
+                                  style: const TextStyle(
+                                    color: AppColors.sage,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: _isOnline,
+                            activeThumbColor: AppColors.emerald,
+                            onChanged: (value) async {
+                              setState(() => _isOnline = value);
+                              await _syncOnlineStatus();
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -892,7 +834,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Your Performance',
                             style: TextStyle(
                               color: AppColors.bark,
@@ -971,8 +913,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        'Rides Completed',
+                                        const Text(
+                                          'Rides Completed',
                                         style: TextStyle(
                                           color:
                                               AppColors.sage,
@@ -1009,7 +951,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                           CrossAxisAlignment
                                               .start,
                                       children: [
-                                        Text(
+                                        const Text(
                                           'Earnings',
                                           style: TextStyle(
                                             color: AppColors.sage,
@@ -1057,39 +999,48 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _QuickActionCard(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _QuickActionCard(
                             label: 'Post a Ride',
                             icon: Icons.directions_car_rounded,
+                            color: AppColors.primary,
                             onTap: () => _tryOpenPostRide(context),
                           ),
-                          const SizedBox(width: 16),
-                          _QuickActionCard(
-                            label: 'Create Tour',
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickActionCard(
+                            label: 'Tour',
                             icon: Icons.map_rounded,
+                            color: AppColors.vehicleBus,
                             onTap: () => _tryOpenPostRide(
                               context,
                               args: {'type': 'tour'},
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          _QuickActionCard(
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickActionCard(
                             label: 'My Rides',
                             icon: Icons.list_alt_rounded,
+                            color: AppColors.emerald,
                             onTap: () =>
                                 Navigator.pushNamed(context, '/my-rides'),
                           ),
-                          const SizedBox(width: 16),
-                          _QuickActionCard(
-                            label: 'Customer Requests',
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickActionCard(
+                            label: 'Requests',
                             icon: Icons.hail_rounded,
+                            color: AppColors.amber,
                             onTap: _openCustomerRequests,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -1628,6 +1579,7 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool isBadge;
+  final Color color;
 
   const _StatCard({
     required this.title,
@@ -1635,19 +1587,31 @@ class _StatCard extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.isBadge = false,
+    this.color = AppColors.primary,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          gradient: LinearGradient(
+            colors: [color, Color.lerp(color, AppColors.deepNavy, 0.22)!],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.sage.withValues(alpha:0.3)),
-          boxShadow: AppColors.cardShadow,
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.25),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1655,7 +1619,7 @@ class _StatCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, color: AppColors.moss, size: 20),
+                Icon(icon, color: AppColors.white, size: 22),
                 if (isBadge)
                   Container(
                     width: 8,
@@ -1670,8 +1634,15 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               value,
-              style: const TextStyle(
-                color: AppColors.bark,
+              style: TextStyle(
+                color: AppColors.white,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
               ),
@@ -1679,8 +1650,8 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               title,
-              style: const TextStyle(
-                color: AppColors.sage,
+              style: TextStyle(
+                color: AppColors.white.withValues(alpha: 0.82),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -1695,11 +1666,13 @@ class _StatCard extends StatelessWidget {
 class _QuickActionCard extends StatelessWidget {
   final String label;
   final IconData icon;
+  final Color color;
   final VoidCallback onTap;
 
   const _QuickActionCard({
     required this.label,
     required this.icon,
+    this.color = AppColors.primary,
     required this.onTap,
   });
 
@@ -1707,34 +1680,61 @@ class _QuickActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
+      child: AnimatedScale(
+        scale: 1,
+        duration: const Duration(milliseconds: 160),
+        child: Container(
+          height: 92,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: color.withValues(alpha: 0.24)),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.12),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.sage.withValues(alpha:0.3)),
-              boxShadow: AppColors.cardShadow,
+              gradient: LinearGradient(
+                colors: [color, Color.lerp(color, AppColors.deepNavy, 0.18)!],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: AppColors.moss, size: 28),
+            child: Icon(icon, color: AppColors.white, size: 22),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 7),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.bark,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }
 }
 
+// ignore: unused_element
 class _ActivityCard extends StatelessWidget {
   final String title;
   final String subtitle;

@@ -70,6 +70,11 @@ class FirestoreService {
     return response['deal'] as Map<String, dynamic>;
   }
 
+  Future<List<Map<String, dynamic>>> getMyBookings() async {
+    final response = await ApiService.get('/deals/my-bookings');
+    return List<Map<String, dynamic>>.from(response['bookings'] ?? []);
+  }
+
   Future<List<Map<String, dynamic>>> getRideDeals(String rideId) async {
     final response = await ApiService.get('/deals/ride/$rideId');
     return List<Map<String, dynamic>>.from(response['deals'] ?? []);
@@ -84,6 +89,11 @@ class FirestoreService {
       'rating': rating,
       'review': review,
     });
+  }
+
+  Future<Map<String, dynamic>> getCaptainProfile(String captainId) async {
+    final response = await ApiService.get('/captain/$captainId/profile');
+    return response['captain'] as Map<String, dynamic>;
   }
 
   Future<RideModel?> getRideById(String rideId) async {

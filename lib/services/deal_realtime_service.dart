@@ -33,7 +33,7 @@ class DealRealtimeService {
           for (final doc in snap.docs) {
             var deal = <String, dynamic>{'id': doc.id, ...doc.data()};
             deal = await _attachRide(deal);
-            bookings.add(deal);
+            bookings.add(_normalizeBooking(deal));
           }
           bookings.sort((a, b) {
             final aT = a['createdAt']?.toString() ?? '';
@@ -79,6 +79,37 @@ class DealRealtimeService {
       deal['ride'] = res['ride'];
     } catch (_) {}
     return deal;
+  }
+
+  Map<String, dynamic> _normalizeBooking(Map<String, dynamic> deal) {
+    final status = (deal['status'] ?? 'pending').toString().toLowerCase();
+    final ride = deal['ride'] as Map<String, dynamic>? ?? {};
+    final departure = DateTime.tryParse(
+      (ride['departureTime'] ?? deal['departureTime'] ?? '').toString(),
+    );
+    final isCompleted = status == 'completed';
+    final isConfirmed = status == 'confirmed';
+    final isUpcoming =
+        ['pending', 'confirmed', 'started'].contains(status) &&
+            (departure == null ||
+                departure.isAfter(DateTime.now()) ||
+                status == 'started');
+    return {
+      ...deal,
+      'status': status,
+      'bookingStatus': status,
+      'tabStatus': isCompleted
+          ? 'completed'
+          : isConfirmed
+              ? 'confirmed'
+              : isUpcoming
+                  ? 'upcoming'
+                  : status,
+      'isUpcoming': isUpcoming,
+      'isConfirmed': isConfirmed,
+      'isCompleted': isCompleted,
+      'canRate': isCompleted && deal['rating'] == null,
+    };
   }
 
   void stop() {
