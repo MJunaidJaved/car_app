@@ -30,6 +30,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loadedExternalProfile = false;
   UserModel? _externalUser;
 
+  // Captain performance stats (sirf apni profile pe, Lifetime tab nahi)
+  Map<String, dynamic> _todayStats = {'ridesCompleted': 0, 'earningsRs': 0};
+  Map<String, dynamic> _weekStats = {'ridesCompleted': 0, 'earningsRs': 0};
+  Map<String, dynamic> _monthStats = {'ridesCompleted': 0, 'earningsRs': 0};
+  String _selectedStatsPeriod = 'today';
 
   // Helper method to get user ID from response
   String _getUserIdFromMap(Map<String, dynamic> userMap) {
@@ -154,6 +159,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (args is UserModel && args.role == 'captain') {
       _externalUser = args;
       _loadExternalCaptain(args.id);
+    } else {
+      // Apni profile — agar captain hai to performance stats + reviews load karo
+      final ownUser = Provider.of<UserProvider>(context, listen: false).user;
+      if (ownUser != null && ownUser.role == 'captain') {
+        _loadCaptainStats();
+        _loadOwnRecentReviews(ownUser.id);
+      }
     }
   }
 
@@ -165,6 +177,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _externalUser =
             UserModel.fromMap(data, data['id']?.toString() ?? captainId);
       });
+    } catch (_) {}
+  }
+
+  Future<void> _loadCaptainStats() async {
+    try {
+      final res = await ApiService.get('/captain/stats');
+      if (!mounted) return;
+      setState(() {
+        _todayStats = res['today'] ?? _todayStats;
+        _weekStats = res['week'] ?? _weekStats;
+        _monthStats = res['month'] ?? _monthStats;
+      });
+    } catch (_) {}
+  }
+
+  // Yeh wahi backend endpoint use karta hai jo customer captain ki profile
+  // dekhte waqt use hota hai — is se apni profile pe bhi rating/reviews
+  // (jo customers ne diye) dikhne lagenge.
+  Future<void> _loadOwnRecentReviews(String captainId) async {
+    try {
+      final data = await FirestoreService().getCaptainProfile(captainId);
+      if (!mounted) return;
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final current = userProvider.user;
+      if (current == null) return;
+      userProvider.setUser(current.copyWith(
+        rating: (data['averageRating'] ?? data['rating']) != null
+            ? (data['averageRating'] ?? data['rating']).toDouble()
+            : null,
+        reviewCount: data['reviewCount'] != null
+            ? int.tryParse(data['reviewCount'].toString())
+            : null,
+        completedRides: data['completedRides'] != null
+            ? int.tryParse(data['completedRides'].toString())
+            : null,
+        recentReviews: data['recentReviews'] is List
+            ? List<Map<String, dynamic>>.from(data['recentReviews'])
+            : null,
+      ));
     } catch (_) {}
   }
 
@@ -253,7 +304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.white.withValues(alpha:0.15),
+                              color: AppColors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.arrow_back_ios_new_rounded,
@@ -272,7 +323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.white.withValues(alpha:0.15),
+                              color: AppColors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: IconButton(
@@ -293,7 +344,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundColor: AppColors.white.withValues(alpha:0.2),
+                          backgroundColor:
+                              AppColors.white.withValues(alpha: 0.2),
                           backgroundImage: (user?.photoUrl != null &&
                                   user!.photoUrl!.isNotEmpty)
                               ? CachedNetworkImageProvider(user.photoUrl!)
@@ -318,7 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 fontWeight: FontWeight.w700)),
                         Text(user?.email ?? '',
                             style: TextStyle(
-                                color: AppColors.white.withValues(alpha:0.7),
+                                color: AppColors.white.withValues(alpha: 0.7),
                                 fontSize: 13)),
                       ],
                     ),
@@ -335,14 +387,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: (user?.captainVerificationStatus == 'verified'
                                   ? AppColors.success
                                   : AppColors.warning)
-                              .withValues(alpha:0.1),
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                               color:
                                   (user?.captainVerificationStatus == 'verified'
                                           ? AppColors.success
                                           : AppColors.warning)
-                                      .withValues(alpha:0.3)),
+                                      .withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -377,12 +429,147 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         ? 'You are a trusted driver'
                                         : 'We are reviewing your documents',
                                     style: TextStyle(
-                                        color: AppColors.bark.withValues(alpha:0.7),
+                                        color: AppColors.bark
+                                            .withValues(alpha: 0.7),
                                         fontSize: 12),
                                   ),
                                 ],
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Your Performance card — sirf apni profile pe (Lifetime tab nahi)
+                  if (user?.role == 'captain' && !isExternal)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                              color: AppColors.sage.withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Your Performance',
+                              style: TextStyle(
+                                color: AppColors.bark,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              child: Row(
+                                children:
+                                    ['today', 'week', 'month'].map((period) {
+                                  final isSelected =
+                                      _selectedStatsPeriod == period;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 10),
+                                    child: GestureDetector(
+                                      onTap: () => setState(
+                                          () => _selectedStatsPeriod = period),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? AppColors.primary
+                                              : AppColors.bg,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: isSelected
+                                              ? null
+                                              : Border.all(
+                                                  color: AppColors.line),
+                                        ),
+                                        child: Text(
+                                          period[0].toUpperCase() +
+                                              period.substring(1),
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? AppColors.white
+                                                : AppColors.bark,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Builder(builder: (context) {
+                              final stats = _selectedStatsPeriod == 'today'
+                                  ? _todayStats
+                                  : _selectedStatsPeriod == 'week'
+                                      ? _weekStats
+                                      : _monthStats;
+                              final rides = stats['ridesCompleted'] ?? 0;
+                              final earnings = stats['earningsRs'] ?? 0;
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('Rides Completed',
+                                            style: TextStyle(
+                                                color: AppColors.sage,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600)),
+                                        const SizedBox(height: 6),
+                                        Text('$rides',
+                                            style: const TextStyle(
+                                                color: AppColors.bark,
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w900)),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                      width: 1,
+                                      height: 50,
+                                      color: AppColors.line),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 16),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('Earnings',
+                                              style: TextStyle(
+                                                  color: AppColors.sage,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600)),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                              'Rs ${(earnings as num).toStringAsFixed(0)}',
+                                              style: const TextStyle(
+                                                  color: AppColors.moss,
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.w900)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
                           ],
                         ),
                       ),
@@ -398,7 +585,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
-                              color: AppColors.sage.withValues(alpha:0.3)),
+                              color: AppColors.sage.withValues(alpha: 0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,12 +603,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 const Spacer(),
                                 if (!isExternal)
                                   GestureDetector(
-                                    onTap: () => _showEditProfile(context, user),
+                                    onTap: () =>
+                                        _showEditProfile(context, user),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: AppColors.moss.withValues(alpha:0.1),
+                                        color: AppColors.moss
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: const Row(
@@ -442,10 +631,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 16),
                             _VehicleDetailRow(
                                 label: 'Car Name/Model',
-                                value:
-                                    (user?.vehicleModel ?? '').trim().isEmpty
-                                        ? 'Not set'
-                                        : user!.vehicleModel!),
+                                value: (user?.vehicleModel ?? '').trim().isEmpty
+                                    ? 'Not set'
+                                    : user!.vehicleModel!),
                             const SizedBox(height: 8),
                             _VehicleDetailRow(
                                 label: 'Registration',
@@ -472,7 +660,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
-                              color: AppColors.sage.withValues(alpha:0.3)),
+                              color: AppColors.sage.withValues(alpha: 0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,7 +687,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   color: AppColors.bg,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                      color: AppColors.sage.withValues(alpha:0.3)),
+                                      color: AppColors.sage
+                                          .withValues(alpha: 0.3)),
                                   image: (user?.vehiclePhotoUrl != null &&
                                           user!.vehiclePhotoUrl!.isNotEmpty)
                                       ? DecorationImage(
@@ -539,7 +728,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: AppColors.white,
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(
-                            color: AppColors.sage.withValues(alpha:0.3), width: 1),
+                            color: AppColors.sage.withValues(alpha: 0.3),
+                            width: 1),
                       ),
                       child: Row(
                         children: [
@@ -551,16 +741,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Container(
                               width: 1,
                               height: 40,
-                              color: AppColors.sage.withValues(alpha:0.2)),
+                              color: AppColors.sage.withValues(alpha: 0.2)),
                           Expanded(
                               child: _TrustStat(
-                                  value: '${user?.completedRides ?? user?.totalRides ?? 0}',
+                                  value:
+                                      '${user?.completedRides ?? user?.totalRides ?? 0}',
                                   label: 'Completed',
                                   icon: Icons.directions_car_filled_rounded)),
                           Container(
                               width: 1,
                               height: 40,
-                              color: AppColors.sage.withValues(alpha:0.2)),
+                              color: AppColors.sage.withValues(alpha: 0.2)),
                           Expanded(
                               child: _TrustStat(
                                   value: '${user?.reviewCount ?? 0}',
@@ -601,7 +792,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               final text = (review['review'] ?? '').toString();
                               final rating = (review['rating'] ?? 0).toString();
                               final customer =
-                                  (review['customerName'] ?? 'Customer').toString();
+                                  (review['customerName'] ?? 'Customer')
+                                      .toString();
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: Column(
@@ -659,7 +851,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
-                              color: AppColors.sage.withValues(alpha:0.3), width: 1),
+                              color: AppColors.sage.withValues(alpha: 0.3),
+                              width: 1),
                         ),
                         child: Column(
                           children: [
@@ -683,7 +876,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   : 'Switch to Captain',
                               accentColor: AppColors.vehicleTruck,
                               onTap: () async {
-
                                 final userProvider = Provider.of<UserProvider>(
                                     context,
                                     listen: false);
@@ -794,7 +986,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                   color: AppColors.bg,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.sage.withValues(alpha:0.3))),
+                  border:
+                      Border.all(color: AppColors.sage.withValues(alpha: 0.3))),
               child: const Row(children: [
                 Icon(Icons.email_outlined, color: AppColors.primary),
                 SizedBox(width: 12),
@@ -874,7 +1067,8 @@ class _ProfileMenuItem extends StatelessWidget {
       this.accentColor});
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? AppColors.error : (accentColor ?? AppColors.primary);
+    final color =
+        isDestructive ? AppColors.error : (accentColor ?? AppColors.primary);
     return Column(children: [
       ListTile(
         onTap: onTap,
@@ -894,11 +1088,15 @@ class _ProfileMenuItem extends StatelessWidget {
                 fontWeight: FontWeight.w700)),
         trailing: isDestructive
             ? null
-            : Icon(Icons.chevron_right_rounded, color: AppColors.sage.withValues(alpha: 0.6)),
+            : Icon(Icons.chevron_right_rounded,
+                color: AppColors.sage.withValues(alpha: 0.6)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       ),
       if (showDivider)
-        Divider(color: AppColors.sage.withValues(alpha:0.15), height: 1, indent: 66),
+        Divider(
+            color: AppColors.sage.withValues(alpha: 0.15),
+            height: 1,
+            indent: 66),
     ]);
   }
 }
@@ -923,4 +1121,3 @@ class _VehicleDetailRow extends StatelessWidget {
     ]);
   }
 }
-

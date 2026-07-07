@@ -23,18 +23,6 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   bool _loading = true;
   final _realtime = DealRealtimeService();
 
-  bool _isVisibleBooking(Map<String, dynamic> booking) {
-    final status = (booking['status'] ?? '').toString().toLowerCase();
-    if (status == 'confirmed' || status == 'started') return true;
-    if (status != 'pending') return true;
-    final ride = booking['ride'] as Map<String, dynamic>? ?? {};
-    final departureRaw =
-        (ride['departureTime'] ?? booking['departureTime'] ?? '').toString();
-    final departure = DateTime.tryParse(departureRaw);
-    if (departure == null) return true;
-    return departure.isAfter(DateTime.now());
-  }
-
   @override
   void initState() {
     super.initState();
@@ -42,12 +30,17 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       onData: (bookings) {
         if (mounted) {
           setState(() {
-            _bookings = bookings.where(_isVisibleBooking).toList();
+            // FIX: no more silent hiding of "pending" bookings whose ride
+            // departure time has passed — show everything, tabs handle
+            // categorization on their own.
+            _bookings = List<Map<String, dynamic>>.from(bookings);
             _loading = false;
           });
         }
       },
-      onError: (_) {
+      onError: (e) {
+        // FIX: log the real error instead of swallowing it silently.
+        debugPrint('MyBookingsScreen: bookings stream error: $e');
         if (mounted) setState(() => _loading = false);
       },
     );
@@ -61,11 +54,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       ).getMyBookings();
       if (mounted) {
         setState(() {
-          _bookings = bookings.where(_isVisibleBooking).toList();
+          _bookings = List<Map<String, dynamic>>.from(bookings);
           _loading = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('MyBookingsScreen: manual refresh error: $e');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -160,7 +154,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha:0.15),
+                            color: AppColors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.arrow_back_ios_new_rounded,
@@ -186,7 +180,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                       NotificationBell(
                         icon: Icons.notifications_outlined,
                         iconColor: AppColors.white,
-                        backgroundColor: AppColors.white.withValues(alpha:0.15),
+                        backgroundColor:
+                            AppColors.white.withValues(alpha: 0.15),
                       ),
                     ],
                   ),
@@ -212,12 +207,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.white
-                                : AppColors.white.withValues(alpha:0.15),
+                                : AppColors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                                 color: isSelected
                                     ? AppColors.white
-                                    : AppColors.white.withValues(alpha:0.3)),
+                                    : AppColors.white.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -243,7 +238,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? AppColors.primary
-                                        : AppColors.white.withValues(alpha:0.18),
+                                        : AppColors.white
+                                            .withValues(alpha: 0.18),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
@@ -267,97 +263,130 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: _loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : Builder(
-                          builder: (context) {
-                            final filtered = _bookings.where((b) {
-                              if (_selectedFilter == 'all') return true;
-                              final status =
-                                  (b['status'] ?? '').toString().toLowerCase();
-                              final tabStatus =
-                                  (b['tabStatus'] ?? '').toString().toLowerCase();
-                              if (_selectedFilter == 'upcoming') {
-                                return tabStatus == 'upcoming' ||
-                                    status == 'pending' ||
-                                    status == 'started';
-                              }
-                              if (_selectedFilter == 'confirmed') {
-                                return tabStatus == 'confirmed' ||
-                                    status == 'confirmed';
-                              }
-                              return status == _selectedFilter;
-                            }).toList();
+                  // FIX: RefreshIndicator added so user can pull-to-refresh
+                  // manually instead of relying only on the realtime stream.
+                  child: RefreshIndicator(
+                    onRefresh: _refreshBookings,
+                    color: AppColors.moss,
+                    child: _loading
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(
+                                height: 300,
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              ),
+                            ],
+                          )
+                        : Builder(
+                            builder: (context) {
+                              final filtered = _bookings.where((b) {
+                                if (_selectedFilter == 'all') return true;
+                                final status = (b['status'] ?? '')
+                                    .toString()
+                                    .toLowerCase();
+                                final tabStatus = (b['tabStatus'] ?? '')
+                                    .toString()
+                                    .toLowerCase();
+                                if (_selectedFilter == 'upcoming') {
+                                  return tabStatus == 'upcoming' ||
+                                      status == 'pending' ||
+                                      status == 'started';
+                                }
+                                if (_selectedFilter == 'confirmed') {
+                                  return tabStatus == 'confirmed' ||
+                                      status == 'confirmed';
+                                }
+                                return status == _selectedFilter;
+                              }).toList();
 
-                            if (filtered.isEmpty) {
-                              return Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
+                              if (filtered.isEmpty) {
+                                return ListView(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.fromLTRB(
+                                      20, 80, 20, 100),
                                   children: [
-                                    Icon(Icons.calendar_today_outlined,
-                                        color: AppColors.moss.withValues(alpha:0.3),
-                                        size: 64),
-                                    const SizedBox(height: 12),
-                                    const Text(
-                                      'No bookings yet. Find a ride to get started.',
-                                      style: TextStyle(
-                                          color: AppColors.sage,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600),
+                                    Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.calendar_today_outlined,
+                                              color: AppColors.moss
+                                                  .withValues(alpha: 0.3),
+                                              size: 64),
+                                          const SizedBox(height: 12),
+                                          const Text(
+                                            'No bookings yet. Find a ride to get started.',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                color: AppColors.sage,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
-                                ),
-                              );
-                            }
-
-                            return ListView.builder(
-                              padding:
-                                  const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                              itemCount: filtered.length,
-                              itemBuilder: (context, i) {
-                                final b = filtered[i];
-                                final ride =
-                                    b['ride'] as Map<String, dynamic>? ?? {};
-                                final rideId = b['rideId'] ?? ride['id'] ?? '';
-                                final dealId = b['id'] ?? '';
-                                final captain =
-                                    b['captain'] as Map<String, dynamic>? ?? {};
-                                final captainPhone =
-                                    b['captainPhone']?.toString() ??
-                                        captain['phone']?.toString() ??
-                                        ride['captainPhone']?.toString() ??
-                                        '';
-                                return _BookingCard(
-                                  dealId: dealId,
-                                  captainName: ride['captainName'] ?? 'Captain',
-                                  startLocation: RideModel.formatLocationLabel(
-                                    ride['startLocation'],
-                                  ),
-                                  endLocation: RideModel.formatLocationLabel(
-                                    ride['endLocation'],
-                                  ),
-                                  fare: (b['agreedFare'] ?? 0).toDouble(),
-                                  status: b['status'] ?? 'pending',
-                                  rideId: rideId,
-                                  captainPhone: captainPhone,
-                                  pickupAddress: RideModel.formatLocationLabel(
-                                    b['passengerPickupAddress'] ??
-                                        ride['exactLocation'],
-                                  ),
-                                  dropAddress: RideModel.formatLocationLabel(
-                                    b['passengerDropAddress'] ??
-                                        ride['exactDropLocation'],
-                                  ),
-                                  canRate: b['status'] == 'completed' &&
-                                      (b['canRate'] == true ||
-                                          b['rating'] == null),
-                                  onCancel: () => _cancelBooking(dealId),
-                                  onRated: _refreshBookings,
                                 );
-                              },
-                            );
-                          },
-                        ),
+                              }
+
+                              return ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                                itemCount: filtered.length,
+                                itemBuilder: (context, i) {
+                                  final b = filtered[i];
+                                  final ride =
+                                      b['ride'] as Map<String, dynamic>? ?? {};
+                                  final rideId =
+                                      b['rideId'] ?? ride['id'] ?? '';
+                                  final dealId = b['id'] ?? '';
+                                  final captain =
+                                      b['captain'] as Map<String, dynamic>? ??
+                                          {};
+                                  final captainPhone =
+                                      b['captainPhone']?.toString() ??
+                                          captain['phone']?.toString() ??
+                                          ride['captainPhone']?.toString() ??
+                                          '';
+                                  return _BookingCard(
+                                    dealId: dealId,
+                                    captainName:
+                                        ride['captainName'] ?? 'Captain',
+                                    startLocation:
+                                        RideModel.formatLocationLabel(
+                                      ride['startLocation'],
+                                    ),
+                                    endLocation: RideModel.formatLocationLabel(
+                                      ride['endLocation'],
+                                    ),
+                                    fare: (b['agreedFare'] ?? 0).toDouble(),
+                                    status: b['status'] ?? 'pending',
+                                    rideId: rideId,
+                                    captainPhone: captainPhone,
+                                    pickupAddress:
+                                        RideModel.formatLocationLabel(
+                                      b['passengerPickupAddress'] ??
+                                          ride['exactLocation'],
+                                    ),
+                                    dropAddress: RideModel.formatLocationLabel(
+                                      b['passengerDropAddress'] ??
+                                          ride['exactDropLocation'],
+                                    ),
+                                    canRate: b['status'] == 'completed' &&
+                                        (b['canRate'] == true ||
+                                            b['rating'] == null),
+                                    onCancel: () => _cancelBooking(dealId),
+                                    onRated: _refreshBookings,
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                  ),
                 ),
               ],
             ),
@@ -369,8 +398,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
   int _bookingCount(String filter) {
     return _bookings.where((b) {
-      final status = (b['status'] ?? '').toString();
-      final tabStatus = (b['tabStatus'] ?? '').toString();
+      // FIX: lowercase status here too, consistent with the filter above.
+      final status = (b['status'] ?? '').toString().toLowerCase();
+      final tabStatus = (b['tabStatus'] ?? '').toString().toLowerCase();
       if (filter == 'all') return true;
       if (filter == 'upcoming') {
         return tabStatus == 'upcoming' ||
@@ -472,7 +502,7 @@ class _BookingCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: AppColors.moss.withValues(alpha:0.1),
+                backgroundColor: AppColors.moss.withValues(alpha: 0.1),
                 child: Text(
                   captainName.isNotEmpty ? captainName[0].toUpperCase() : '?',
                   style: const TextStyle(
@@ -493,7 +523,7 @@ class _BookingCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                    color: _statusColor.withValues(alpha:0.1),
+                    color: _statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10)),
                 child: Text(_statusLabel,
                     style: TextStyle(
@@ -650,4 +680,3 @@ class _BookingCard extends StatelessWidget {
     );
   }
 }
-

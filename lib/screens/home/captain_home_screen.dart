@@ -30,13 +30,6 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
   LatLng _currentLocation = const LatLng(31.5204, 74.3587);
   bool _mapReady = false;
   Timer? _refreshTimer;
-  
-  // Captain stats
-  Map<String, dynamic> _todayStats = {'ridesCompleted': 0, 'earningsRs': 0};
-  Map<String, dynamic> _weekStats = {'ridesCompleted': 0, 'earningsRs': 0};
-  Map<String, dynamic> _monthStats = {'ridesCompleted': 0, 'earningsRs': 0};
-  Map<String, dynamic> _lifetimeStats = {'ridesCompleted': 0, 'earningsRs': 0};
-  String _selectedStatsPeriod = 'today';
 
   bool _isDashboardRideActive(Map<String, dynamic> ride) {
     final status = (ride['status'] ?? '').toString().toLowerCase();
@@ -79,15 +72,12 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
             if (_mapReady) 'lng': _currentLocation.longitude.toString(),
           },
         ),
-        ApiService.get('/captain/stats')
-            .catchError((_) => <String, dynamic>{}),
       ]);
 
       final profileRes = results[0];
       final ridesRes = results[1];
       final walletRes = results[2];
       final customerReqRes = results[4];
-      final statsRes = results[5] as Map<String, dynamic>?;
 
       final user = profileRes['user'] as Map<String, dynamic>?;
       if (user != null && mounted) {
@@ -95,7 +85,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           _isOnline = user['isOnline'] != false;
         });
       }
-      
+
       final rides = List<Map<String, dynamic>>.from(ridesRes['rides'] ?? []);
       final activeDashboardRides =
           rides.where((ride) => _isDashboardRideActive(ride)).toList();
@@ -126,18 +116,22 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           return {'ride': ride, 'dealsRes': null};
         }
       });
-      
+
       final dealResults = await Future.wait(dealFutures);
-      
+
       for (final result in dealResults) {
         if (result == null) continue;
         final ride = result['ride'] as Map<String, dynamic>;
         final rideId = (ride['id'] ?? '').toString();
         final dealsRes = result['dealsRes'];
-        
+
         if (dealsRes != null) {
-          final deals = List<Map<String, dynamic>>.from(dealsRes['deals'] ?? []);
-          pendingMap[rideId] = deals.where((d) => (d['status'] ?? '').toString().toLowerCase() == 'pending').length;
+          final deals =
+              List<Map<String, dynamic>>.from(dealsRes['deals'] ?? []);
+          pendingMap[rideId] = deals
+              .where((d) =>
+                  (d['status'] ?? '').toString().toLowerCase() == 'pending')
+              .length;
           for (final deal in deals) {
             final status = (deal['status'] ?? '').toString().toLowerCase();
             if (!['pending', 'confirmed', 'started'].contains(status)) continue;
@@ -169,28 +163,22 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
             customerReqRes['requests'] ?? [],
           );
           _walletBalance = _asDouble(walletRes['wallet']?['balance']);
-          // Update stats
-          if (statsRes != null) {
-            _todayStats = statsRes['today'] ?? _todayStats;
-            _weekStats = statsRes['week'] ?? _weekStats;
-            _monthStats = statsRes['month'] ?? _monthStats;
-            _lifetimeStats = statsRes['lifetime'] ?? _lifetimeStats;
-          }
         });
       }
     } catch (_) {
-        try {
-          final fallbackResults = await Future.wait([
-            ApiService.get('/wallet'),
-            ApiService.get('/wallet/transactions'),
-          ]);
-          if (mounted) {
-            setState(() {
-              _walletBalance = _asDouble(fallbackResults[0]['wallet']?['balance']);
-            });
-          }
-        } catch (_) {}
-      }
+      try {
+        final fallbackResults = await Future.wait([
+          ApiService.get('/wallet'),
+          ApiService.get('/wallet/transactions'),
+        ]);
+        if (mounted) {
+          setState(() {
+            _walletBalance =
+                _asDouble(fallbackResults[0]['wallet']?['balance']);
+          });
+        }
+      } catch (_) {}
+    }
   }
 
   // ignore: unused_element
@@ -231,7 +219,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.sage.withValues(alpha:0.2)),
+            border: Border.all(color: AppColors.sage.withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,7 +442,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.deepNavy.withValues(alpha:0.92),
+                        color: AppColors.deepNavy.withValues(alpha: 0.92),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -495,19 +483,23 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                 height: 100,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.white.withValues(alpha: 0.08),
+                                  color:
+                                      AppColors.white.withValues(alpha: 0.08),
                                 ),
                               ),
                             ),
                             Row(
                               children: [
                                 GestureDetector(
-                                  onTap: () => Navigator.pushNamed(context, '/profile'),
+                                  onTap: () =>
+                                      Navigator.pushNamed(context, '/profile'),
                                   child: CircleAvatar(
                                     radius: 22,
-                                    backgroundColor: AppColors.white.withValues(alpha:0.2),
+                                    backgroundColor:
+                                        AppColors.white.withValues(alpha: 0.2),
                                     child: Text(
-                                      AppHelpers.nameInitial(user?.name, fallback: 'C'),
+                                      AppHelpers.nameInitial(user?.name,
+                                          fallback: 'C'),
                                       style: const TextStyle(
                                         color: AppColors.white,
                                         fontWeight: FontWeight.w800,
@@ -519,12 +511,14 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Captain',
                                         style: TextStyle(
-                                          color: AppColors.white.withValues(alpha: 0.75),
+                                          color: AppColors.white
+                                              .withValues(alpha: 0.75),
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           letterSpacing: 0.5,
@@ -551,7 +545,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                                 ? 'New Captain'
                                                 : '${(user?.rating ?? 0).toStringAsFixed(1)} Rating',
                                             style: TextStyle(
-                                              color: AppColors.white.withValues(alpha: 0.85),
+                                              color: AppColors.white
+                                                  .withValues(alpha: 0.85),
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -563,7 +558,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                 ),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: AppColors.white.withValues(alpha: 0.15),
+                                    color:
+                                        AppColors.white.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const NotificationBell(
@@ -587,10 +583,10 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha:0.1),
+                          color: AppColors.warning.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.warning.withValues(alpha:0.3),
+                            color: AppColors.warning.withValues(alpha: 0.3),
                           ),
                         ),
                         child: const Row(
@@ -637,7 +633,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.sage.withValues(alpha:0.3),
+                            color: AppColors.sage.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Column(
@@ -747,8 +743,9 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                         color: AppColors.white,
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: (_isOnline ? AppColors.emerald : AppColors.sage)
-                              .withValues(alpha: 0.22),
+                          color:
+                              (_isOnline ? AppColors.emerald : AppColors.sage)
+                                  .withValues(alpha: 0.22),
                         ),
                         boxShadow: AppColors.cardShadow,
                       ),
@@ -759,7 +756,9 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(
-                              color: (_isOnline ? AppColors.emerald : AppColors.sage)
+                              color: (_isOnline
+                                      ? AppColors.emerald
+                                      : AppColors.sage)
                                   .withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -767,7 +766,9 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                               _isOnline
                                   ? Icons.online_prediction_rounded
                                   : Icons.power_settings_new_rounded,
-                              color: _isOnline ? AppColors.emerald : AppColors.sage,
+                              color: _isOnline
+                                  ? AppColors.emerald
+                                  : AppColors.sage,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -804,179 +805,6 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                               await _syncOnlineStatus();
                             },
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Captain Stats Card
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: AppColors.light,
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Your Performance',
-                            style: TextStyle(
-                              color: AppColors.bark,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Tabs for different periods
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            child: Row(
-                              children: ['today', 'week', 'month', 'lifetime']
-                                  .map((period) {
-                                final isSelected =
-                                    _selectedStatsPeriod == period;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 10),
-                                  child: GestureDetector(
-                                    onTap: () => setState(
-                                      () => _selectedStatsPeriod = period,
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? AppColors.primary
-                                            : AppColors.bg,
-                                        borderRadius:
-                                            BorderRadius.circular(10),
-                                        border: isSelected
-                                            ? null
-                                            : Border.all(
-                                                color: AppColors.line,
-                                              ),
-                                      ),
-                                      child: Text(
-                                        period[0].toUpperCase() +
-                                            period.substring(1),
-                                        style: TextStyle(
-                                          color: isSelected
-                                              ? AppColors.white
-                                              : AppColors.bark,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Stats display based on selected period
-                          Builder(builder: (context) {
-                            final stats = _selectedStatsPeriod == 'today'
-                                ? _todayStats
-                                : _selectedStatsPeriod == 'week'
-                                    ? _weekStats
-                                    : _selectedStatsPeriod == 'month'
-                                        ? _monthStats
-                                        : _lifetimeStats;
-                            final rides =
-                                stats['ridesCompleted'] ?? 0;
-                            final earnings =
-                                stats['earningsRs'] ?? 0;
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                        const Text(
-                                          'Rides Completed',
-                                        style: TextStyle(
-                                          color:
-                                              AppColors.sage,
-                                          fontSize: 12,
-                                          fontWeight:
-                                              FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        '$rides',
-                                        style: const TextStyle(
-                                          color: AppColors.bark,
-                                          fontSize: 24,
-                                          fontWeight:
-                                              FontWeight.w900,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 50,
-                                  color: AppColors.line,
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: 16,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment
-                                              .start,
-                                      children: [
-                                        const Text(
-                                          'Earnings',
-                                          style: TextStyle(
-                                            color: AppColors.sage,
-                                            fontSize: 12,
-                                            fontWeight:
-                                                FontWeight.w600,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'Rs ${(earnings as num).toStringAsFixed(0)}',
-                                          style: const TextStyle(
-                                            color: AppColors.moss,
-                                            fontSize: 24,
-                                            fontWeight:
-                                                FontWeight.w900,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }),
                         ],
                       ),
                     ),
@@ -1107,7 +935,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                               color: AppColors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.sage.withValues(alpha:0.2),
+                                color: AppColors.sage.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Column(
@@ -1129,7 +957,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        _locationLabel(request['startLocation'], fallback: 'From'),
+                                        _locationLabel(request['startLocation'],
+                                            fallback: 'From'),
                                         style: const TextStyle(
                                           color: AppColors.bark,
                                           fontSize: 13,
@@ -1140,7 +969,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                   ],
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.only(left: 1.5, top: 2, bottom: 2),
+                                  padding: const EdgeInsets.only(
+                                      left: 1.5, top: 2, bottom: 2),
                                   child: Container(
                                     width: 3,
                                     height: 10,
@@ -1165,7 +995,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        _locationLabel(request['endLocation'], fallback: 'To'),
+                                        _locationLabel(request['endLocation'],
+                                            fallback: 'To'),
                                         style: const TextStyle(
                                           color: AppColors.bark,
                                           fontSize: 13,
@@ -1203,15 +1034,22 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     ),
                                   ),
                                 ],
-                                if ((request['requestedAtDisplay'] ?? request['displayDateTime'] ?? request['requestedAt']) != null) ...[
+                                if ((request['requestedAtDisplay'] ??
+                                        request['displayDateTime'] ??
+                                        request['requestedAt']) !=
+                                    null) ...[
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      const Icon(Icons.watch_later_outlined, size: 16, color: AppColors.moss),
+                                      const Icon(Icons.watch_later_outlined,
+                                          size: 16, color: AppColors.moss),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          AppHelpers.formatDateTimeValue(request['requestedAtDisplay'] ?? request['displayDateTime'] ?? request['requestedAt']),
+                                          AppHelpers.formatDateTimeValue(
+                                              request['requestedAtDisplay'] ??
+                                                  request['displayDateTime'] ??
+                                                  request['requestedAt']),
                                           style: const TextStyle(
                                             color: AppColors.bark,
                                             fontSize: 12,
@@ -1352,7 +1190,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                       final pickup = _locationLabel(
                         deal['passengerPickupAddress'],
                       );
-                      final departureTimeStr = deal['rideDepartureTime'] ?? deal['departureTime'];
+                      final departureTimeStr =
+                          deal['rideDepartureTime'] ?? deal['departureTime'];
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
@@ -1369,7 +1208,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                               color: AppColors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.sage.withValues(alpha:0.2),
+                                color: AppColors.sage.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Column(
@@ -1409,7 +1248,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                   ],
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.only(left: 1.5, top: 2, bottom: 2),
+                                  padding: const EdgeInsets.only(
+                                      left: 1.5, top: 2, bottom: 2),
                                   child: Container(
                                     width: 3,
                                     height: 10,
@@ -1459,11 +1299,13 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
-                                      const Icon(Icons.watch_later_outlined, size: 16, color: AppColors.moss),
+                                      const Icon(Icons.watch_later_outlined,
+                                          size: 16, color: AppColors.moss),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          AppHelpers.formatDateTimeValue(departureTimeStr),
+                                          AppHelpers.formatDateTimeValue(
+                                              departureTimeStr),
                                           style: const TextStyle(
                                             color: AppColors.bark,
                                             fontSize: 12,
@@ -1700,33 +1542,36 @@ class _QuickActionCard extends StatelessWidget {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color, Color.lerp(color, AppColors.deepNavy, 0.18)!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      color,
+                      Color.lerp(color, AppColors.deepNavy, 0.18)!
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: AppColors.white, size: 22),
               ),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: AppColors.white, size: 22),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.bark,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
+              const SizedBox(height: 7),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.bark,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1754,9 +1599,9 @@ class _ActivityCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha:0.5),
+        color: AppColors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.sage.withValues(alpha:0.1)),
+        border: Border.all(color: AppColors.sage.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -2011,7 +1856,9 @@ class _NavItem extends StatelessWidget {
                       color: AppColors.amber,
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: active ? AppColors.white : AppColors.darkRoyalBlue,
+                          color: active
+                              ? AppColors.white
+                              : AppColors.darkRoyalBlue,
                           width: 1.5),
                     ),
                     child: Text(
@@ -2030,7 +1877,9 @@ class _NavItem extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: active ? AppColors.white : AppColors.white.withValues(alpha: 0.75),
+              color: active
+                  ? AppColors.white
+                  : AppColors.white.withValues(alpha: 0.75),
               fontSize: 10,
               fontWeight: active ? FontWeight.w800 : FontWeight.w600,
             ),
@@ -2040,4 +1889,3 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-
