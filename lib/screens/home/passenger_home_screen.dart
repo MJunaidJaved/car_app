@@ -109,15 +109,6 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureCustomerPhone());
   }
 
-  // ignore: unused_element
-  String _greeting(String? fullName) {
-    final hour = DateTime.now().hour;
-    final name = (fullName ?? 'User').split(' ').first;
-    if (hour < 12) return 'Good morning, $name 👋';
-    if (hour < 17) return 'Good afternoon, $name';
-    return 'Good evening, $name';
-  }
-
   @override
   void dispose() {
     _refreshTimer?.cancel();
@@ -416,7 +407,8 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                       Text(
                                         'Passenger',
                                         style: TextStyle(
-                                          color: AppColors.white.withValues(alpha: 0.8),
+                                          color: AppColors.white
+                                              .withValues(alpha: 0.8),
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           letterSpacing: 0.5,
@@ -445,7 +437,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                   icon: Icons.notifications_outlined,
                                   iconColor: AppColors.white,
                                   backgroundColor:
-                                      AppColors.white.withValues(alpha:0.15),
+                                      AppColors.white.withValues(alpha: 0.15),
                                 ),
                                 const SizedBox(width: 10),
                                 GestureDetector(
@@ -454,7 +446,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                   child: CircleAvatar(
                                     radius: 21,
                                     backgroundColor:
-                                        AppColors.white.withValues(alpha:0.2),
+                                        AppColors.white.withValues(alpha: 0.2),
                                     backgroundImage: hasPhoto
                                         ? CachedNetworkImageProvider(p)
                                         : null,
@@ -486,7 +478,8 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                 borderRadius: BorderRadius.circular(24),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.dark.withValues(alpha:0.06),
+                                    color:
+                                        AppColors.dark.withValues(alpha: 0.06),
                                     blurRadius: 20,
                                     offset: const Offset(0, 8),
                                   ),
@@ -509,7 +502,8 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                       color: AppColors.white,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: AppColors.sage.withValues(alpha:0.3),
+                                        color: AppColors.sage
+                                            .withValues(alpha: 0.3),
                                       ),
                                     ),
                                     child: Material(
@@ -569,58 +563,9 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                       ),
                                     ),
                                   ),
+                                  // ✅ REMOVED: Book, Bookings, Request, Tours boxes
+                                  // Old GridView with 4 boxes is REMOVED
                                   const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _PassengerQuickAction(
-                                          label: 'Book',
-                                          icon: Icons.search_rounded,
-                                          color: AppColors.primary,
-                                          onTap: () => Navigator.pushNamed(
-                                            context,
-                                            '/find-ride',
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: _PassengerQuickAction(
-                                          label: 'Bookings',
-                                          icon: Icons.calendar_month_rounded,
-                                          color: AppColors.emerald,
-                                          onTap: () => Navigator.pushNamed(
-                                            context,
-                                            '/my-bookings',
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: _PassengerQuickAction(
-                                          label: 'Request',
-                                          icon: Icons.edit_location_alt_rounded,
-                                          color: AppColors.amber,
-                                          onTap: () => Navigator.pushNamed(
-                                            context,
-                                            '/customer-request',
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: _PassengerQuickAction(
-                                          label: 'Tours',
-                                          icon: Icons.map_rounded,
-                                          color: AppColors.vehicleBus,
-                                          onTap: () => Navigator.pushNamed(
-                                            context,
-                                            '/tours',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ],
                               ),
                             ),
@@ -672,7 +617,11 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                               final offers = List<Map<String, dynamic>>.from(
                                 request['offers'] ?? const [],
                               );
-                              final requestedAtStr = request['requestedAtDisplay'] ?? request['displayDateTime'] ?? request['requestedAt'] ?? request['createdAt'];
+                              final requestedAtStr =
+                                  request['requestedAtDisplay'] ??
+                                      request['displayDateTime'] ??
+                                      request['requestedAt'] ??
+                                      request['createdAt'];
                               return Padding(
                                 padding: const EdgeInsets.fromLTRB(
                                   20,
@@ -701,10 +650,12 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Container(
-                                              margin: const EdgeInsets.only(top: 4),
+                                              margin:
+                                                  const EdgeInsets.only(top: 4),
                                               width: 6,
                                               height: 6,
                                               decoration: const BoxDecoration(
@@ -725,21 +676,25 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                           ],
                                         ),
                                         Padding(
-                                          padding: const EdgeInsets.only(left: 1.5, top: 2, bottom: 2),
+                                          padding: const EdgeInsets.only(
+                                              left: 1.5, top: 2, bottom: 2),
                                           child: Container(
                                             width: 3,
                                             height: 10,
                                             decoration: BoxDecoration(
                                               color: Colors.grey[300],
-                                              borderRadius: BorderRadius.circular(1),
+                                              borderRadius:
+                                                  BorderRadius.circular(1),
                                             ),
                                           ),
                                         ),
                                         Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Container(
-                                              margin: const EdgeInsets.only(top: 4),
+                                              margin:
+                                                  const EdgeInsets.only(top: 4),
                                               width: 6,
                                               height: 6,
                                               decoration: const BoxDecoration(
@@ -763,11 +718,16 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                           const SizedBox(height: 6),
                                           Row(
                                             children: [
-                                              const Icon(Icons.watch_later_outlined, size: 16, color: AppColors.moss),
+                                              const Icon(
+                                                  Icons.watch_later_outlined,
+                                                  size: 16,
+                                                  color: AppColors.moss),
                                               const SizedBox(width: 6),
                                               Expanded(
                                                 child: Text(
-                                                  AppHelpers.formatDateTimeValue(requestedAtStr),
+                                                  AppHelpers
+                                                      .formatDateTimeValue(
+                                                          requestedAtStr),
                                                   style: const TextStyle(
                                                     color: AppColors.dark,
                                                     fontSize: 12,
@@ -869,7 +829,8 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                       color: AppColors.white,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: AppColors.sage.withValues(alpha:0.25),
+                                        color: AppColors.sage
+                                            .withValues(alpha: 0.25),
                                       ),
                                     ),
                                     child: Column(
@@ -877,10 +838,12 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Container(
-                                              margin: const EdgeInsets.only(top: 4),
+                                              margin:
+                                                  const EdgeInsets.only(top: 4),
                                               width: 6,
                                               height: 6,
                                               decoration: const BoxDecoration(
@@ -891,7 +854,9 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                start.isEmpty ? 'Unknown start' : start,
+                                                start.isEmpty
+                                                    ? 'Unknown start'
+                                                    : start,
                                                 style: const TextStyle(
                                                   color: AppColors.moss,
                                                   fontWeight: FontWeight.w700,
@@ -901,21 +866,25 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                           ],
                                         ),
                                         Padding(
-                                          padding: const EdgeInsets.only(left: 1.5, top: 2, bottom: 2),
+                                          padding: const EdgeInsets.only(
+                                              left: 1.5, top: 2, bottom: 2),
                                           child: Container(
                                             width: 3,
                                             height: 10,
                                             decoration: BoxDecoration(
                                               color: Colors.grey[300],
-                                              borderRadius: BorderRadius.circular(1),
+                                              borderRadius:
+                                                  BorderRadius.circular(1),
                                             ),
                                           ),
                                         ),
                                         Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Container(
-                                              margin: const EdgeInsets.only(top: 4),
+                                              margin:
+                                                  const EdgeInsets.only(top: 4),
                                               width: 6,
                                               height: 6,
                                               decoration: const BoxDecoration(
@@ -926,7 +895,9 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                end.isEmpty ? 'Unknown destination' : end,
+                                                end.isEmpty
+                                                    ? 'Unknown destination'
+                                                    : end,
                                                 style: const TextStyle(
                                                   color: AppColors.rose,
                                                   fontWeight: FontWeight.w700,
@@ -935,17 +906,27 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                                             ),
                                           ],
                                         ),
-                                        if ((b['ride']?['departureTime'] ?? b['departureTime']) != null) ...[
+                                        if ((b['ride']?['departureTime'] ??
+                                                b['departureTime']) !=
+                                            null) ...[
                                           const SizedBox(height: 6),
                                           Row(
                                             children: [
-                                              const Icon(Icons.watch_later_outlined, size: 16, color: AppColors.moss),
+                                              const Icon(
+                                                  Icons.watch_later_outlined,
+                                                  size: 16,
+                                                  color: AppColors.moss),
                                               const SizedBox(width: 6),
                                               Expanded(
                                                 child: Text(
-                                                  AppHelpers.formatDateTimeValue(b['ride']?['departureTime'] ?? b['departureTime']),
+                                                  AppHelpers
+                                                      .formatDateTimeValue(b[
+                                                                  'ride']?[
+                                                              'departureTime'] ??
+                                                          b['departureTime']),
                                                   style: const TextStyle(
-                                                    color: AppColors.electricBlue,
+                                                    color:
+                                                        AppColors.electricBlue,
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.bold,
                                                   ),
@@ -1256,7 +1237,8 @@ class _CategoryTab extends StatelessWidget {
           color: isSelected ? null : AppColors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.transparent : color.withValues(alpha: 0.25),
+            color:
+                isSelected ? Colors.transparent : color.withValues(alpha: 0.25),
             width: 1.1,
           ),
           boxShadow: [
@@ -1324,7 +1306,6 @@ class _LiveRideCard extends StatelessWidget {
     final user = Provider.of<UserProvider>(context, listen: false).user;
     final isFemaleUser = (user?.gender ?? '').toLowerCase() == 'female';
     final isLadiesLocked = ride.isLadiesRide && !isFemaleUser;
-    // Show the actual departure date + time prominently
     final dtLabel = AppHelpers.formatDateTime(ride.departureTime);
     final vehicleColor = AppColors.vehicleColor(ride.vehicleType);
 
@@ -1350,7 +1331,6 @@ class _LiveRideCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Colored top strip identifying the vehicle type
               Align(
                 alignment: Alignment.topLeft,
                 child: Container(
@@ -1363,9 +1343,9 @@ class _LiveRideCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // Route: From → To with clean arrow
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: vehicleColor.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
@@ -1376,7 +1356,8 @@ class _LiveRideCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.trip_origin, color: Colors.green, size: 14),
+                        const Icon(Icons.trip_origin,
+                            color: Colors.green, size: 14),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -1401,7 +1382,8 @@ class _LiveRideCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.location_on, color: Colors.red, size: 14),
+                        const Icon(Icons.location_on,
+                            color: Colors.red, size: 14),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -1419,10 +1401,10 @@ class _LiveRideCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              // Date & Time row
               Row(
                 children: [
-                  const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.moss),
+                  const Icon(Icons.calendar_today_outlined,
+                      size: 14, color: AppColors.moss),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -1437,7 +1419,8 @@ class _LiveRideCard extends StatelessWidget {
                   Text(
                     '$seatsLeft seats left',
                     style: TextStyle(
-                      color: seatsLeft == 1 ? AppColors.error : AppColors.success,
+                      color:
+                          seatsLeft == 1 ? AppColors.error : AppColors.success,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                     ),
@@ -1445,7 +1428,6 @@ class _LiveRideCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              // Price + type badges
               Row(
                 children: [
                   Text(
@@ -1458,7 +1440,8 @@ class _LiveRideCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: vehicleColor.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(10),
@@ -1475,7 +1458,8 @@ class _LiveRideCard extends StatelessWidget {
                   if (ride.isLadiesRide) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.ladiesPink.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
@@ -1513,7 +1497,9 @@ class _LiveRideCard extends StatelessWidget {
                             arguments: ride,
                           ),
                   child: Text(
-                    isLadiesLocked ? 'Female passengers only' : 'Book / Details',
+                    isLadiesLocked
+                        ? 'Female passengers only'
+                        : 'Book / Details',
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -1543,41 +1529,6 @@ class _LiveRideCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ignore: unused_element
-class _RideInfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _RideInfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.bg,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.sage.withValues(alpha:0.15)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: AppColors.textMuted),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.textDark,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1728,4 +1679,3 @@ class _PassengerBottomNavState extends State<_PassengerBottomNav> {
     );
   }
 }
-

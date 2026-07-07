@@ -28,6 +28,7 @@ class RideCard extends StatelessWidget {
     final vehicleLabel = ride.displayVehicle.isNotEmpty
         ? ride.displayVehicle
         : ride.vehicleType.toUpperCase();
+    final isShareRide = (ride.rideMode).toString().toLowerCase() != 'solo';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16, left: 4, right: 4),
@@ -36,18 +37,18 @@ class RideCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: primaryThemeColor.withOpacity(0.08),
+            color: primaryThemeColor.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
         border: Border.all(
-          color: primaryThemeColor.withOpacity(0.06),
+          color: primaryThemeColor.withValues(alpha: 0.06),
           width: 1.5,
         ),
       ),
@@ -66,23 +67,47 @@ class RideCard extends StatelessWidget {
                 ),
               ),
             ),
-            
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ✅ Bold Share/Solo ride label — always shown at the top
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: primaryThemeColor.withOpacity(0.04),
+                      color: (isShareRide ? Colors.green : Colors.deepOrange)
+                          .withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isShareRide ? 'SHARE RIDE' : 'SOLO RIDE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.4,
+                        color: isShareRide
+                            ? Colors.green[800]
+                            : Colors.deepOrange[800],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: primaryThemeColor.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
                         Expanded(
                           child: Text(
-                            ride.startLocation.isEmpty ? 'From' : ride.startLocation,
+                            ride.startLocation.isEmpty
+                                ? 'From'
+                                : ride.startLocation,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -116,16 +141,20 @@ class RideCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (AppHelpers.hasDisplayValue(ride.exactLocation) ||
-                      AppHelpers.hasDisplayValue(ride.exactDropLocation)) ...[
+                  // ✅ Exact Location and Exact Drop Location display
+                  if ((ride.exactLocation != null &&
+                          ride.exactLocation!.isNotEmpty) ||
+                      (ride.exactDropLocation != null &&
+                          ride.exactDropLocation!.isNotEmpty)) ...[
                     const SizedBox(height: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (AppHelpers.hasDisplayValue(ride.exactLocation))
+                        if (ride.exactLocation != null &&
+                            ride.exactLocation!.isNotEmpty)
                           Text(
-                            'From exact: ${ride.exactLocation}',
-                            maxLines: 1,
+                            'Starting point: ${ride.exactLocation}',
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: AppColors.textMuted,
@@ -133,10 +162,11 @@ class RideCard extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                        if (AppHelpers.hasDisplayValue(ride.exactDropLocation))
+                        if (ride.exactDropLocation != null &&
+                            ride.exactDropLocation!.isNotEmpty)
                           Text(
-                            'To exact: ${ride.exactDropLocation}',
-                            maxLines: 1,
+                            'Final destination: ${ride.exactDropLocation}',
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: AppColors.textMuted,
@@ -147,12 +177,13 @@ class RideCard extends StatelessWidget {
                       ],
                     ),
                   ],
-                  
+
                   const SizedBox(height: 16),
 
                   Row(
                     children: [
-                      Icon(Icons.watch_later_outlined, size: 18, color: primaryThemeColor),
+                      Icon(Icons.watch_later_outlined,
+                          size: 18, color: primaryThemeColor),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -164,15 +195,17 @@ class RideCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppHelpers.getRideTypeColor(ride.rideType).withOpacity(0.12),
+                          color: AppHelpers.getRideTypeColor(ride.rideType)
+                              .withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          AppConstants.rideTypeLabels[ride.rideType] ?? ride.rideType,
+                          AppConstants.rideTypeLabels[ride.rideType] ??
+                              ride.rideType,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -191,24 +224,23 @@ class RideCard extends StatelessWidget {
                     children: [
                       _buildColorfulBadge(
                         icon: Icons.payments_outlined,
-                        label: AppHelpers.formatCurrency(ride.suggestedFare),
+                        label: 'Rs ${ride.suggestedFare.toStringAsFixed(0)}',
                         bgColor: Colors.green[50]!,
                         textColor: Colors.green[800]!,
                         iconColor: Colors.green[700]!,
                       ),
-                      
                       _buildColorfulBadge(
                         icon: Icons.airline_seat_recline_normal_rounded,
-                        label: '${ride.availableSeats} of ${ride.totalSeats} seats',
+                        label:
+                            '${ride.availableSeats} of ${ride.totalSeats} seats',
                         bgColor: Colors.orange[50]!,
                         textColor: Colors.orange[800]!,
                         iconColor: Colors.orange[700]!,
                       ),
-                      
                       _buildColorfulBadge(
                         icon: Icons.directions_car_rounded,
                         label: vehicleLabel,
-                        bgColor: primaryThemeColor.withOpacity(0.1),
+                        bgColor: primaryThemeColor.withValues(alpha: 0.1),
                         textColor: primaryThemeColor,
                         iconColor: primaryThemeColor,
                       ),
@@ -222,10 +254,12 @@ class RideCard extends StatelessWidget {
                         if (!isCaptainView) ...[
                           CircleAvatar(
                             radius: 18,
-                            backgroundColor: primaryThemeColor.withOpacity(0.1),
+                            backgroundColor:
+                                primaryThemeColor.withValues(alpha: 0.1),
                             child: Text(
                               ride.captainName.isNotEmpty
-                                  ? AppHelpers.nameInitial(ride.captainName, fallback: 'C')
+                                  ? AppHelpers.nameInitial(ride.captainName,
+                                      fallback: 'C')
                                   : 'C',
                               style: TextStyle(
                                 color: primaryThemeColor,
@@ -250,7 +284,8 @@ class RideCard extends StatelessWidget {
                                 ),
                                 Row(
                                   children: [
-                                    const Icon(Icons.star, size: 14, color: AppColors.goldStar),
+                                    const Icon(Icons.star,
+                                        size: 14, color: AppColors.goldStar),
                                     const SizedBox(width: 2),
                                     Text(
                                       ride.captainRating.toStringAsFixed(1),
@@ -298,7 +333,7 @@ class RideCard extends StatelessWidget {
         color: bgColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: iconColor.withOpacity(0.12),
+          color: iconColor.withValues(alpha: 0.12),
           width: 1,
         ),
       ),
@@ -320,7 +355,6 @@ class RideCard extends StatelessWidget {
     );
   }
 }
-
 
 class _CaptainActions extends StatelessWidget {
   final RideModel ride;

@@ -29,9 +29,15 @@ class CustomerRequestCard extends StatelessWidget {
         ? 'Distance unavailable'
         : '${distance.toStringAsFixed(1)} km away';
     final status = (request['status'] ?? 'open').toString().toUpperCase();
-    final requestedAtStr = request['requestedAtDisplay'] ?? request['displayDateTime'] ?? request['requestedAt'];
+    final requestedAtStr = request['requestedAtDisplay'] ??
+        request['displayDateTime'] ??
+        request['requestedAt'];
     final vehicleTypeRaw = (request['vehicleType'] ?? 'car').toString();
     final vehicleType = vehicleTypeRaw.toUpperCase();
+
+    // ✅ Get ride mode (Share/Solo)
+    final rideMode = (request['rideMode'] ?? 'share').toString();
+    final isShare = rideMode.toLowerCase() == 'share';
 
     final primaryThemeColor = AppColors.deepNavy;
     final accentColor = AppColors.vehicleColor(vehicleTypeRaw);
@@ -46,18 +52,18 @@ class CustomerRequestCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: primaryThemeColor.withOpacity(0.06),
+              color: primaryThemeColor.withValues(alpha: 0.06),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
           ],
           border: Border.all(
-            color: accentColor.withOpacity(0.08),
+            color: accentColor.withValues(alpha: 0.08),
             width: 1.5,
           ),
         ),
@@ -70,29 +76,56 @@ class CustomerRequestCard extends StatelessWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [accentColor, Color.lerp(accentColor, Colors.black, 0.15)!],
+                    colors: [
+                      accentColor,
+                      Color.lerp(accentColor, Colors.black, 0.15)!
+                    ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
                 ),
               ),
-              
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ✅ Bold Share/Solo label at top of card
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.04),
+                        color: (isShare ? Colors.green : Colors.deepOrange)
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isShare ? 'SHARE RIDE' : 'SOLO RIDE',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.4,
+                          color: isShare
+                              ? Colors.green[800]
+                              : Colors.deepOrange[800],
+                        ),
+                      ),
+                    ),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
                           Expanded(
                             child: Text(
-                              _locationLabel(request['startLocation'], fallback: 'From'),
+                              _locationLabel(request['startLocation'],
+                                  fallback: 'From'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -109,7 +142,8 @@ class CustomerRequestCard extends StatelessWidget {
                           ),
                           Expanded(
                             child: Text(
-                              _locationLabel(request['endLocation'], fallback: 'To'),
+                              _locationLabel(request['endLocation'],
+                                  fallback: 'To'),
                               textAlign: TextAlign.right,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -123,13 +157,14 @@ class CustomerRequestCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
 
                     if (requestedAtStr != null) ...[
                       Row(
                         children: [
-                          Icon(Icons.watch_later_outlined, size: 18, color: accentColor),
+                          Icon(Icons.watch_later_outlined,
+                              size: 18, color: accentColor),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -141,11 +176,11 @@ class CustomerRequestCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.12),
+                              color: AppColors.primary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -168,12 +203,13 @@ class CustomerRequestCard extends StatelessWidget {
                       children: [
                         _buildColorfulBadge(
                           icon: Icons.payments_outlined,
-                          label: desiredFare == null ? 'Offer Fare' : 'Budget: Rs ${desiredFare.toStringAsFixed(0)}',
+                          label: desiredFare == null
+                              ? 'Offer Fare'
+                              : 'Budget: Rs ${desiredFare.toStringAsFixed(0)}',
                           bgColor: Colors.green[50]!,
                           textColor: Colors.green[800]!,
                           iconColor: Colors.green[700]!,
                         ),
-                        
                         _buildColorfulBadge(
                           icon: Icons.airline_seat_recline_normal_rounded,
                           label: '$passengers seat${passengers > 1 ? "s" : ""}',
@@ -181,15 +217,13 @@ class CustomerRequestCard extends StatelessWidget {
                           textColor: Colors.orange[800]!,
                           iconColor: Colors.orange[700]!,
                         ),
-                        
                         _buildColorfulBadge(
                           icon: Icons.directions_car_rounded,
                           label: vehicleType,
-                          bgColor: accentColor.withOpacity(0.1),
+                          bgColor: accentColor.withValues(alpha: 0.1),
                           textColor: accentColor,
                           iconColor: accentColor,
                         ),
-                        
                         _buildColorfulBadge(
                           icon: Icons.map_outlined,
                           label: distanceLabel,
@@ -206,10 +240,15 @@ class CustomerRequestCard extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 18,
-                          backgroundColor: accentColor.withOpacity(0.1),
+                          backgroundColor: accentColor.withValues(alpha: 0.1),
                           child: Text(
-                            request['customerName'] != null && request['customerName'].toString().isNotEmpty
-                                ? AppHelpers.nameInitial(request['customerName'].toString(), fallback: 'P')
+                            request['customerName'] != null &&
+                                    request['customerName']
+                                        .toString()
+                                        .isNotEmpty
+                                ? AppHelpers.nameInitial(
+                                    request['customerName'].toString(),
+                                    fallback: 'P')
                                 : 'P',
                             style: TextStyle(
                               color: accentColor,
@@ -224,7 +263,8 @@ class CustomerRequestCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                request['customerName']?.toString() ?? 'Customer',
+                                request['customerName']?.toString() ??
+                                    'Customer',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
@@ -243,7 +283,6 @@ class CustomerRequestCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        
                         ElevatedButton(
                           onPressed: onDetailsTap,
                           style: ElevatedButton.styleFrom(
@@ -252,7 +291,8 @@ class CustomerRequestCard extends StatelessWidget {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
                           ),
                           child: const Text('Details'),
                         ),
@@ -281,7 +321,7 @@ class CustomerRequestCard extends StatelessWidget {
         color: bgColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: iconColor.withOpacity(0.12),
+          color: iconColor.withValues(alpha: 0.12),
           width: 1,
         ),
       ),

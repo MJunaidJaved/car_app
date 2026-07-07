@@ -23,6 +23,29 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   bool _loading = true;
   final _realtime = DealRealtimeService();
 
+  bool _isVisibleBooking(Map<String, dynamic> booking) {
+    final status = (booking['status'] ?? '').toString().toLowerCase();
+    if (['pending', 'confirmed', 'started'].contains(status)) {
+      return true;
+    }
+    if (['completed', 'cancelled'].contains(status)) {
+      final completedAt = booking['completedAt'] ??
+          booking['updatedAt'] ??
+          booking['createdAt'];
+      if (completedAt != null) {
+        try {
+          final date = DateTime.parse(completedAt.toString());
+          final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
+          return date.isAfter(threeDaysAgo);
+        } catch (_) {
+          return false;
+        }
+      }
+      return false;
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -30,16 +53,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       onData: (bookings) {
         if (mounted) {
           setState(() {
-            // FIX: no more silent hiding of "pending" bookings whose ride
-            // departure time has passed — show everything, tabs handle
-            // categorization on their own.
-            _bookings = List<Map<String, dynamic>>.from(bookings);
+            _bookings = List<Map<String, dynamic>>.from(bookings)
+                .where((b) => _isVisibleBooking(b))
+                .toList();
             _loading = false;
           });
         }
       },
       onError: (e) {
-        // FIX: log the real error instead of swallowing it silently.
         debugPrint('MyBookingsScreen: bookings stream error: $e');
         if (mounted) setState(() => _loading = false);
       },
@@ -54,7 +75,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       ).getMyBookings();
       if (mounted) {
         setState(() {
-          _bookings = List<Map<String, dynamic>>.from(bookings);
+          _bookings = List<Map<String, dynamic>>.from(bookings)
+              .where((b) => _isVisibleBooking(b))
+              .toList();
           _loading = false;
         });
       }
@@ -121,6 +144,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       backgroundColor: AppColors.bg,
       body: Stack(
         children: [
+          // ✅ Gradient Background
           Positioned(
             top: 0,
             left: 0,
@@ -144,6 +168,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // ✅ AppBar with proper spacing
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Row(
@@ -187,6 +212,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // ✅ Filter Chips - Properly visible
                 SizedBox(
                   height: 40,
                   child: ListView.separated(
@@ -262,9 +289,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // ✅ BOOKINGS LIST - Proper scrollable area
                 Expanded(
-                  // FIX: RefreshIndicator added so user can pull-to-refresh
-                  // manually instead of relying only on the realtime stream.
                   child: RefreshIndicator(
                     onRefresh: _refreshBookings,
                     color: AppColors.moss,
@@ -376,6 +403,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                       b['passengerDropAddress'] ??
                                           ride['exactDropLocation'],
                                     ),
+                                    rideMode: b['ride']?['rideMode'] ?? 'share',
                                     canRate: b['status'] == 'completed' &&
                                         (b['canRate'] == true ||
                                             b['rating'] == null),
@@ -398,7 +426,6 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
   int _bookingCount(String filter) {
     return _bookings.where((b) {
-      // FIX: lowercase status here too, consistent with the filter above.
       final status = (b['status'] ?? '').toString().toLowerCase();
       final tabStatus = (b['tabStatus'] ?? '').toString().toLowerCase();
       if (filter == 'all') return true;
@@ -426,6 +453,7 @@ class _BookingCard extends StatelessWidget {
   final String captainPhone;
   final String pickupAddress;
   final String dropAddress;
+  final String rideMode;
   final bool canRate;
   final VoidCallback onCancel;
   final Future<void> Function()? onRated;
@@ -441,6 +469,7 @@ class _BookingCard extends StatelessWidget {
     required this.captainPhone,
     this.pickupAddress = '',
     this.dropAddress = '',
+    this.rideMode = 'share',
     this.canRate = false,
     required this.onCancel,
     this.onRated,
@@ -485,6 +514,7 @@ class _BookingCard extends StatelessWidget {
     final isRevealed =
         status == 'confirmed' || status == 'started' || status == 'completed';
     final displayPhone = isRevealed ? captainPhone : '03**-*****';
+    final isShareRide = rideMode.toLowerCase() != 'solo';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -498,6 +528,7 @@ class _BookingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ✅ Captain Info Row
           Row(
             children: [
               CircleAvatar(
@@ -536,15 +567,40 @@ class _BookingCard extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1, color: AppColors.light),
           const SizedBox(height: 16),
-          Text(startLocation,
-              style: const TextStyle(
-                  color: AppColors.bark,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700)),
+
+          // ✅ Share/Solo Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: (isShareRide ? Colors.green : Colors.deepOrange)
+                  .withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              isShareRide ? 'SHARE RIDE' : 'SOLO RIDE',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.4,
+                color: isShareRide ? Colors.green[800] : Colors.deepOrange[800],
+              ),
+            ),
+          ),
+
+          // ✅ Location Details with proper styling
+          Text(
+            startLocation,
+            style: const TextStyle(
+              color: AppColors.bark,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           if (pickupAddress.trim().isNotEmpty) ...[
             const SizedBox(height: 5),
             Text(
-              'Exact pickup: $pickupAddress',
+              '📍 $pickupAddress',
               style: const TextStyle(
                 color: AppColors.sage,
                 fontSize: 12,
@@ -553,15 +609,18 @@ class _BookingCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 8),
-          Text(endLocation,
-              style: const TextStyle(
-                  color: AppColors.bark,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700)),
+          Text(
+            endLocation,
+            style: const TextStyle(
+              color: AppColors.bark,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           if (dropAddress.trim().isNotEmpty) ...[
             const SizedBox(height: 5),
             Text(
-              'Exact drop: $dropAddress',
+              '📍 $dropAddress',
               style: const TextStyle(
                 color: AppColors.sage,
                 fontSize: 12,
@@ -570,6 +629,8 @@ class _BookingCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
+
+          // ✅ Phone Details
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -623,6 +684,8 @@ class _BookingCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+
+          // ✅ Fare and Buttons
           Row(
             children: [
               Text('Rs ${fare.toStringAsFixed(0)}',

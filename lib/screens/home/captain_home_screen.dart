@@ -812,7 +812,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Quick Actions
+                  // Quick Actions — Tour button removed (only Random/Delivery)
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
@@ -835,18 +835,6 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             icon: Icons.directions_car_rounded,
                             color: AppColors.primary,
                             onTap: () => _tryOpenPostRide(context),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _QuickActionCard(
-                            label: 'Tour',
-                            icon: Icons.map_rounded,
-                            color: AppColors.vehicleBus,
-                            onTap: () => _tryOpenPostRide(
-                              context,
-                              args: {'type': 'tour'},
-                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -941,6 +929,41 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Bold Share/Solo label at top
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: ((request['rideMode'] ?? 'solo')
+                                                .toString()
+                                                .toLowerCase() ==
+                                            'share')
+                                        ? AppColors.moss.withValues(alpha: 0.12)
+                                        : AppColors.amber
+                                            .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    ((request['rideMode'] ?? 'solo')
+                                                .toString()
+                                                .toLowerCase() ==
+                                            'share')
+                                        ? 'SHARE RIDE'
+                                        : 'SOLO RIDE',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.4,
+                                      color: ((request['rideMode'] ?? 'solo')
+                                                  .toString()
+                                                  .toLowerCase() ==
+                                              'share')
+                                          ? AppColors.moss
+                                          : AppColors.amber,
+                                    ),
+                                  ),
+                                ),
                                 // Vertical route layout (fully visible)
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1012,7 +1035,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     .isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Exact pickup: ${_locationLabel(request['pickupLocation'])}',
+                                    'Starting point: ${_locationLabel(request['pickupLocation'])}',
                                     style: const TextStyle(
                                       color: AppColors.sage,
                                       fontSize: 12,
@@ -1026,7 +1049,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                     .isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Exact drop: ${_locationLabel(request['dropLocation'])}',
+                                    'Final destination: ${_locationLabel(request['dropLocation'])}',
                                     style: const TextStyle(
                                       color: AppColors.sage,
                                       fontSize: 12,
@@ -1107,11 +1130,6 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                           (request['vehicleType'] ?? 'car')
                                               .toString()),
                                     ),
-                                    _MiniPill(
-                                      label: (request['rideMode'] ?? 'solo')
-                                          .toString()
-                                          .toUpperCase(),
-                                    ),
                                     if ((request['city'] ?? '')
                                         .toString()
                                         .trim()
@@ -1179,6 +1197,7 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                           .toString();
                       final fare = (deal['agreedFare'] ?? 0).toString();
                       final status = (deal['status'] ?? '').toString();
+                      final statusLower = status.toLowerCase();
                       final start = _locationLabel(
                         deal['rideStartLocation'],
                         fallback: 'From',
@@ -1192,6 +1211,12 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                       );
                       final departureTimeStr =
                           deal['rideDepartureTime'] ?? deal['departureTime'];
+                      final cardColor = statusLower == 'pending'
+                          ? AppColors.error
+                          : statusLower == 'confirmed' ||
+                                  statusLower == 'started'
+                              ? AppColors.success
+                              : AppColors.sage;
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
@@ -1208,7 +1233,8 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                               color: AppColors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.sage.withValues(alpha: 0.2),
+                                color: cardColor.withValues(alpha: 0.4),
+                                width: 1.5,
                               ),
                             ),
                             child: Column(
@@ -1334,17 +1360,20 @@ class _CaptainHomeScreenState extends State<CaptainHomeScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.bg,
+                                        color:
+                                            cardColor.withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(
                                           999,
                                         ),
                                       ),
                                       child: Text(
-                                        status.toUpperCase(),
-                                        style: const TextStyle(
-                                          color: AppColors.bark,
+                                        statusLower == 'confirmed'
+                                            ? 'BOOKED'
+                                            : status.toUpperCase(),
+                                        style: TextStyle(
+                                          color: cardColor,
                                           fontSize: 11,
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
                                     ),

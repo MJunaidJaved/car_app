@@ -10,13 +10,78 @@ import 'package:url_launcher/url_launcher.dart';
 
 class BookingCard extends StatelessWidget {
   final DealModel deal;
+  final VoidCallback? onDeleted; // ✅ Callback for delete
 
-  const BookingCard({super.key, required this.deal});
+  const BookingCard({
+    super.key,
+    required this.deal,
+    this.onDeleted,
+  });
 
   Future<void> _callCaptain(String phone) async {
     final uri = Uri.parse('tel:$phone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    }
+  }
+
+  Future<void> _openWhatsApp(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanPhone.isEmpty) return;
+    final formattedPhone =
+        cleanPhone.startsWith('92') ? cleanPhone : '92$cleanPhone';
+    final url = 'https://wa.me/$formattedPhone';
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  // ✅ DELETE BOOKING FUNCTION
+  Future<void> _deleteBooking(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Booking?'),
+        content: const Text(
+          'Are you sure you want to delete this booking? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final firestoreService =
+          Provider.of<FirestoreService>(context, listen: false);
+      await firestoreService.deleteBooking(deal.id);
+
+      if (context.mounted) {
+        AppHelpers.showSnackBar(context, 'Booking deleted successfully');
+        onDeleted?.call(); // ✅ Refresh parent
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppHelpers.showSnackBar(
+          context,
+          'Failed to delete: $e',
+          isError: true,
+        );
+      }
     }
   }
 
@@ -94,6 +159,35 @@ class BookingCard extends StatelessWidget {
     }
   }
 
+  // Helper method to get status color
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return AppColors.warning;
+      case 'confirmed':
+        return AppColors.success;
+      case 'started':
+        return AppColors.primary;
+      case 'completed':
+        return AppColors.moss;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return AppColors.sage;
+    }
+  }
+
+  // Helper method to format currency
+  String _formatCurrency(double amount) {
+    return 'Rs ${amount.toStringAsFixed(0)}';
+  }
+
+  // ✅ Check if booking can be deleted (completed/cancelled only)
+  bool get _canDelete {
+    final status = deal.status.toLowerCase();
+    return status == 'completed' || status == 'cancelled';
+  }
+
   @override
   Widget build(BuildContext context) {
     final firestoreService = Provider.of<FirestoreService>(context);
@@ -103,6 +197,10 @@ class BookingCard extends StatelessWidget {
       builder: (context, snapshot) {
         final ride = snapshot.data;
 
+        // ✅ Get rideMode for Share/Solo label
+        final isShareRide =
+            (deal.rideMode ?? 'share').toString().toLowerCase() != 'solo';
+
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: Padding(
@@ -110,15 +208,15 @@ class BookingCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Status Badge
+                // Status Badge + Delete Button
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppHelpers.getStatusColor(deal.status)
-                            .withValues(alpha:0.1),
+                        color:
+                            _getStatusColor(deal.status).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -126,25 +224,63 @@ class BookingCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppHelpers.getStatusColor(deal.status),
+                          color: _getStatusColor(deal.status),
                         ),
                       ),
                     ),
                     const Spacer(),
+                    // ✅ DELETE BUTTON (Only for completed/cancelled)
+                    if (_canDelete)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                        onPressed: () => _deleteBooking(context),
+                        tooltip: 'Delete booking',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
                     Text(
                       AppHelpers.formatDateTime(deal.createdAt),
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      style:
+                          TextStyle(fontSize: 12, color: AppColors.textMuted),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
 
+                // ✅ Bold Share/Solo label at the top
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: (isShareRide ? Colors.green : Colors.deepOrange)
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isShareRide ? 'SHARE RIDE' : 'SOLO RIDE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.4,
+                      color: isShareRide
+                          ? Colors.green[800]
+                          : Colors.deepOrange[800],
+                    ),
+                  ),
+                ),
+
                 // Route Info
                 if (ride != null) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.04),
+                      color: AppColors.primary.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -176,7 +312,8 @@ class BookingCard extends StatelessWidget {
                           ],
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(left: 2, top: 2, bottom: 2),
+                          padding:
+                              const EdgeInsets.only(left: 2, top: 2, bottom: 2),
                           child: Container(
                             width: 3,
                             height: 12,
@@ -211,17 +348,48 @@ class BookingCard extends StatelessWidget {
                             ),
                           ],
                         ),
+                        // Show exact pickup and drop locations
+                        if ((ride.exactLocation != null &&
+                                ride.exactLocation!.isNotEmpty) ||
+                            (ride.exactDropLocation != null &&
+                                ride.exactDropLocation!.isNotEmpty)) ...[
+                          const SizedBox(height: 8),
+                          if (ride.exactLocation != null &&
+                              ride.exactLocation!.isNotEmpty)
+                            Text(
+                              'Exact pickup: ${ride.exactLocation}',
+                              style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          if (ride.exactDropLocation != null &&
+                              ride.exactDropLocation!.isNotEmpty)
+                            Text(
+                              'Exact drop: ${ride.exactDropLocation}',
+                              style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Icon(Icons.schedule, size: 16, color: AppColors.textMuted),
+                      const Icon(Icons.schedule,
+                          size: 16, color: AppColors.textMuted),
                       const SizedBox(width: 6),
                       Text(
                         AppHelpers.formatDateTime(ride.departureTime),
-                        style: const TextStyle(fontSize: 13, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -238,7 +406,7 @@ class BookingCard extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      AppHelpers.formatCurrency(deal.agreedFare),
+                      _formatCurrency(deal.agreedFare),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -248,50 +416,111 @@ class BookingCard extends StatelessWidget {
                   ],
                 ),
 
-                // Actions based on status
-                if (deal.status == 'confirmed') ...[
+                // Customer Accept Button - When captain has countered
+                if (deal.status == 'pending' &&
+                    deal.lastCounterBy == 'captain') ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        try {
+                          final firestoreService =
+                              Provider.of<FirestoreService>(
+                            context,
+                            listen: false,
+                          );
+                          await firestoreService.confirmDeal(deal.id);
+                          if (context.mounted) {
+                            AppHelpers.showSnackBar(
+                              context,
+                              'Booking confirmed! Captain contact revealed.',
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppHelpers.showSnackBar(
+                              context,
+                              'Failed to confirm: $e',
+                              isError: true,
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: Text(
+                        'Accept Rs ${deal.agreedFare.toStringAsFixed(0)} & Confirm',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.moss,
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Contact Actions - When confirmed or started
+                if (deal.status == 'confirmed' || deal.status == 'started') ...[
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha:0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: AppColors.primary.withValues(alpha:0.3)),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                      ),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.phone, color: AppColors.primary),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Captain Contact',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                deal.customerPhone,
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ],
+                        const Text(
+                          'Captain Contact',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        IconButton(
-                          onPressed: () => _callCaptain(deal.customerPhone),
-                          icon:
-                              const Icon(Icons.call, color: AppColors.primary),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone,
+                                color: AppColors.primary, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                deal.customerPhone,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => _callCaptain(deal.customerPhone),
+                              icon: const Icon(Icons.call,
+                                  color: AppColors.primary),
+                            ),
+                            IconButton(
+                              onPressed: () =>
+                                  _openWhatsApp(deal.customerPhone),
+                              icon:
+                                  const Icon(Icons.chat, color: AppColors.moss),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                 ],
 
+                // Rate button for completed rides
                 if (deal.status == 'completed' && deal.rating == null) ...[
                   const SizedBox(height: 16),
                   SizedBox(
@@ -304,12 +533,13 @@ class BookingCard extends StatelessWidget {
                   ),
                 ],
 
+                // Rating display if already rated
                 if (deal.rating != null) ...[
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.goldStar.withValues(alpha:0.1),
+                      color: AppColors.goldStar.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -332,4 +562,3 @@ class BookingCard extends StatelessWidget {
     );
   }
 }
-

@@ -55,7 +55,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
   GoogleMapController? _mapController;
   bool _mapTapSetsDrop = false;
 
-  final _types = ['office', 'random', 'delivery', 'tour'];
+  final _types = ['random', 'delivery'];
 
   String get _aiSuggestedFare => 'Rs 120';
 
@@ -80,7 +80,9 @@ class _PostRideScreenState extends State<PostRideScreen> {
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null) {
         if (args.containsKey('type')) {
-          setState(() => _rideType = args['type']);
+          final requestedType = args['type']?.toString() ?? _rideType;
+          setState(() => _rideType =
+              _types.contains(requestedType) ? requestedType : _rideType);
         }
         if (args.containsKey('ride')) {
           final ride = args['ride'] as Map<String, dynamic>;
@@ -90,15 +92,20 @@ class _PostRideScreenState extends State<PostRideScreen> {
           _fareCtrl.text = (ride['suggestedFare'] ?? '').toString();
           _seatsCtrl.text = (ride['totalSeats'] ?? '').toString();
           _descCtrl.text = (ride['description'] ?? '').toString();
-          _exactLocationCtrl.text = RideModel.formatLocationLabel(ride['exactLocation']);
-          _exactDropLocationCtrl.text = RideModel.formatLocationLabel(ride['exactDropLocation']);
-          _rideType = (ride['rideType'] ?? _rideType).toString();
+          _exactLocationCtrl.text =
+              RideModel.formatLocationLabel(ride['exactLocation']);
+          _exactDropLocationCtrl.text =
+              RideModel.formatLocationLabel(ride['exactDropLocation']);
+          final rideTypeFromData = (ride['rideType'] ?? _rideType).toString();
+          _rideType =
+              _types.contains(rideTypeFromData) ? rideTypeFromData : 'random';
           _rideMode = (ride['rideMode'] ?? _rideMode).toString();
           _startLat = (ride['startLat'] ?? 0).toDouble();
           _startLng = (ride['startLng'] ?? 0).toDouble();
           _endLat = (ride['endLat'] ?? 0).toDouble();
           _endLng = (ride['endLng'] ?? 0).toDouble();
-          final dt = DateTime.tryParse((ride['departureTime'] ?? '').toString());
+          final dt =
+              DateTime.tryParse((ride['departureTime'] ?? '').toString());
           if (dt != null) {
             _date = dt.toLocal();
             _time = TimeOfDay.fromDateTime(_date);
@@ -363,18 +370,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
       }
 
       final seatCount = int.tryParse(_seatsCtrl.text) ?? 1;
-      final maxVehicleSeats = _vehicleSeatLimit(user);
-      if (_rideType == 'tour' && seatCount > maxVehicleSeats) {
-        AppHelpers.showSnackBar(
-          context,
-          'Tour seats cannot exceed your registered vehicle seats ($maxVehicleSeats).',
-          isError: true,
-        );
-        return;
-      }
 
       if (_editingRideId != null && _editingRideId!.isNotEmpty) {
-        // update existing ride
         final body = {
           'startLocation': _fromCtrl.text.trim(),
           'endLocation': _toCtrl.text.trim(),
@@ -391,8 +388,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
           'endLng': _endLng,
           'exactLocation': _exactLocationCtrl.text.trim(),
           'exactDropLocation': _exactDropLocationCtrl.text.trim(),
-          if (_rideType == 'tour') 'tourType': _rideMode,
-          if (_rideType == 'tour') 'maxPassengers': seatCount,
         };
         await ApiService.patch('/rides/${_editingRideId!}', body);
         if (mounted) {
@@ -416,8 +411,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
           endLng: _endLng,
           exactLocation: _exactLocationCtrl.text.trim(),
           exactDropLocation: _exactDropLocationCtrl.text.trim(),
-          tourType: _rideType == 'tour' ? _rideMode : null,
-          maxPassengers: _rideType == 'tour' ? seatCount : null,
         );
 
         if (mounted) {
@@ -485,7 +478,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.white.withValues(alpha:0.15),
+                              color: AppColors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -650,7 +643,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   controller: _exactLocationCtrl,
                                   maxLines: 2,
                                   decoration: const InputDecoration(
-                                    labelText: 'Exact pickup note',
+                                    labelText:
+                                        'Starting point (exact pickup note)',
                                     hintText:
                                         'e.g. Main gate, Street 4, near mosque',
                                     border: OutlineInputBorder(),
@@ -661,7 +655,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   controller: _exactDropLocationCtrl,
                                   maxLines: 2,
                                   decoration: const InputDecoration(
-                                    labelText: 'Exact drop note',
+                                    labelText:
+                                        'Final destination (exact drop note)',
                                     hintText:
                                         'e.g. Office gate, building entrance',
                                     border: OutlineInputBorder(),
@@ -686,7 +681,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: AppColors.moss.withValues(alpha:0.1),
+                                        color: AppColors.moss
+                                            .withValues(alpha: 0.1),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(Icons.swap_vert_rounded,
@@ -722,7 +718,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                       border: Border.all(
                                         color: selected
                                             ? AppColors.moss
-                                            : AppColors.sage.withValues(alpha:0.3),
+                                            : AppColors.sage
+                                                .withValues(alpha: 0.3),
                                       ),
                                     ),
                                     child: Text(
@@ -743,24 +740,121 @@ class _PostRideScreenState extends State<PostRideScreen> {
 
                           const SizedBox(height: 14),
 
+                          // ✅ RIDE MODE - Bold Share/Solo Box
                           _SectionCard(
                             title: 'Ride Mode',
-                            child: Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: ['share', 'solo'].map((mode) {
-                                final selected = _rideMode == mode;
-                                return ChoiceChip(
-                                  label: Text(mode[0].toUpperCase() +
-                                      mode.substring(1)),
-                                  selected: selected,
-                                  onSelected: (_) {
-                                    setState(() {
-                                      _rideMode = mode;
-                                    });
-                                  },
-                                );
-                              }).toList(),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () =>
+                                        setState(() => _rideMode = 'share'),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                      decoration: BoxDecoration(
+                                        color: _rideMode == 'share'
+                                            ? Colors.green
+                                                .withValues(alpha: 0.12)
+                                            : AppColors.bg,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: _rideMode == 'share'
+                                              ? Colors.green
+                                              : AppColors.light,
+                                          width: _rideMode == 'share' ? 2 : 1,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.people_rounded,
+                                            size: 32,
+                                            color: _rideMode == 'share'
+                                                ? Colors.green[700]
+                                                : AppColors.textMuted,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'SHARE RIDE',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              color: _rideMode == 'share'
+                                                  ? Colors.green[700]
+                                                  : AppColors.textMuted,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Share with others',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: _rideMode == 'share'
+                                                  ? Colors.green[600]
+                                                  : AppColors.textMuted,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () =>
+                                        setState(() => _rideMode = 'solo'),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                      decoration: BoxDecoration(
+                                        color: _rideMode == 'solo'
+                                            ? Colors.deepOrange
+                                                .withValues(alpha: 0.12)
+                                            : AppColors.bg,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: _rideMode == 'solo'
+                                              ? Colors.deepOrange
+                                              : AppColors.light,
+                                          width: _rideMode == 'solo' ? 2 : 1,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.person_rounded,
+                                            size: 32,
+                                            color: _rideMode == 'solo'
+                                                ? Colors.deepOrange[700]
+                                                : AppColors.textMuted,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'SOLO RIDE',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              color: _rideMode == 'solo'
+                                                  ? Colors.deepOrange[700]
+                                                  : AppColors.textMuted,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Private ride',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: _rideMode == 'solo'
+                                                  ? Colors.deepOrange[600]
+                                                  : AppColors.textMuted,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
 
@@ -776,7 +870,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   padding: const EdgeInsets.all(12),
                                   margin: const EdgeInsets.only(bottom: 14),
                                   decoration: BoxDecoration(
-                                    color: AppColors.moss.withValues(alpha:0.1),
+                                    color:
+                                        AppColors.moss.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
@@ -836,13 +931,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                       return 'Enter seats';
                                     }
                                     final n = int.tryParse(v);
-                                    final user = Provider.of<UserProvider>(
-                                      context,
-                                      listen: false,
-                                    ).user;
-                                    final limit = _rideType == 'tour'
-                                        ? _vehicleSeatLimit(user)
-                                        : 60;
+                                    const limit = 60;
                                     if (n == null || n < 1 || n > limit) {
                                       return '1 to $limit seats';
                                     }
@@ -854,9 +943,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                         const Icon(Icons.event_seat_rounded),
                                     helperText: _rideMode == 'solo'
                                         ? 'Solo booking, but seats can match your vehicle'
-                                        : _rideType == 'tour'
-                                            ? 'Tour seats cannot exceed your registered vehicle'
-                                            : null,
+                                        : null,
                                     border: const OutlineInputBorder(),
                                   ),
                                 ),
@@ -884,7 +971,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                                 BorderRadius.circular(14),
                                             border: Border.all(
                                                 color: AppColors.sage
-                                                    .withValues(alpha:0.3),
+                                                    .withValues(alpha: 0.3),
                                                 width: 1),
                                           ),
                                           child: Row(
@@ -937,7 +1024,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                                 BorderRadius.circular(14),
                                             border: Border.all(
                                                 color: AppColors.sage
-                                                    .withValues(alpha:0.3),
+                                                    .withValues(alpha: 0.3),
                                                 width: 1),
                                           ),
                                           child: Row(
@@ -994,21 +1081,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
                             ),
                           ),
 
-                          if (_rideType == 'tour') ...[
-                            const SizedBox(height: 14),
-                            _SectionCard(
-                              title: 'Tour Details',
-                              child: AppField(
-                                controller: _descCtrl,
-                                label: 'Tour Description',
-                                hintText:
-                                    'e.g. Lahore to Murree, scenic route, AC car',
-                                icon: Icons.description_outlined,
-                                maxLines: 3,
-                              ),
-                            ),
-                          ],
-
                           const SizedBox(height: 24),
 
                           SizedBox(
@@ -1019,9 +1091,9 @@ class _PostRideScreenState extends State<PostRideScreen> {
                                   ? const CircularProgressIndicator(
                                       color: AppColors.white)
                                   : Text(
-                                      _rideType == 'tour'
-                                          ? 'Create Tour Event'
-                                          : (_editingRideId != null ? 'Save Changes' : 'Post Ride'),
+                                      _editingRideId != null
+                                          ? 'Save Changes'
+                                          : 'Post Ride',
                                       style: const TextStyle(
                                           fontWeight: FontWeight.w900,
                                           fontSize: 16),
@@ -1062,9 +1134,9 @@ class _SignedInChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha:0.16),
+        color: AppColors.white.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.white.withValues(alpha:0.25)),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1123,4 +1195,3 @@ class _SectionCard extends StatelessWidget {
     );
   }
 }
-

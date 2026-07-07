@@ -203,6 +203,7 @@ class _CaptainCustomerRequestsScreenState
     }
   }
 
+  // ✅ FIXED: Added captainId in request body + WhatsApp/Call buttons
   Future<void> _doneAtCustomerFare(Map<String, dynamic> request) async {
     final requestId = (request['id'] ?? '').toString();
     final desiredFare =
@@ -238,83 +239,216 @@ class _CaptainCustomerRequestsScreenState
     if (confirmed != true) return;
 
     try {
+      final captainId = FirebaseAuth.instance.currentUser?.uid ?? '';
+      if (captainId.isEmpty) {
+        AppHelpers.showSnackBar(context, 'You are not logged in',
+            isError: true);
+        return;
+      }
+
       final res = await ApiService.post(
         '/customer-requests/$requestId/accept-fare',
-        {},
+        {
+          'captainId': captainId,
+          'fare': desiredFare,
+        },
       );
+
       await _loadRequests(showLoading: false);
       if (!mounted) return;
+
       AppHelpers.showSnackBar(context, 'Ride confirmed at customer fare');
 
-      // If backend returned contact data, show quick actions to the captain immediately
-      final customerPhone = (res['customerPhone'] ?? res['customer']?['phone'] ?? '').toString();
-      final customerLat = (res['customerLat'] as num?)?.toDouble() ?? (request['startLat'] as num?)?.toDouble();
-      final customerLng = (res['customerLng'] as num?)?.toDouble() ?? (request['startLng'] as num?)?.toDouble();
-      final pickupLabel = (res['pickupLocation'] ?? request['pickupLocation'] ?? request['startLocation'])?.toString();
+      final customerPhone =
+          (res['customerPhone'] ?? res['customer']?['phone'] ?? '').toString();
+      final customerName =
+          (res['customerName'] ?? request['customerName'] ?? 'Customer')
+              .toString();
+      final pickupLabel = (res['pickupLocation'] ??
+              request['pickupLocation'] ??
+              request['startLocation'])
+          ?.toString();
 
+      // ✅ Updated bottom sheet with WhatsApp & Call buttons
       if (customerPhone.isNotEmpty) {
         await showModalBottomSheet<void>(
           context: context,
-          backgroundColor: AppColors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          builder: (ctx) => Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Customer confirmed', style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: AppColors.midnightBlue)),
-                const SizedBox(height: 12),
-                if (pickupLabel != null && pickupLabel.toString().trim().isNotEmpty)
-                  Text('Pickup: ${pickupLabel.toString()}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text(customerPhone, style: const TextStyle(color: AppColors.dustyBlue)),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => dialPhone(ctx, customerPhone),
-                  icon: const Icon(Icons.call),
-                  label: const Text('Call Customer'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => openWhatsApp(ctx, customerPhone),
-                  icon: const Icon(Icons.chat),
-                  label: const Text('WhatsApp Customer'),
-                ),
-                if ((customerLat ?? 0) != 0 && (customerLng ?? 0) != 0) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 140,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(target: LatLng(customerLat ?? 0.0, customerLng ?? 0.0), zoom: 14),
-                        markers: {Marker(markerId: const MarkerId('cust'), position: LatLng(customerLat ?? 0.0, customerLng ?? 0.0))},
-                        zoomControlsEnabled: false,
-                        scrollGesturesEnabled: false,
-                        zoomGesturesEnabled: false,
-                        rotateGesturesEnabled: false,
-                        tiltGesturesEnabled: false,
-                        myLocationButtonEnabled: false,
-                      ),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.moss.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.moss,
+                      size: 48,
                     ),
                   ),
-                ],
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    '✅ Ride Confirmed!',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.moss,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 8),
-                ElevatedButton(
+                Center(
+                  child: Text(
+                    'Fare: Rs ${desiredFare.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.bark,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.bg,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.person_outline,
+                              color: AppColors.moss),
+                          const SizedBox(width: 8),
+                          Text(
+                            customerName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.phone,
+                              color: AppColors.sage, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            customerPhone,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (pickupLabel != null && pickupLabel.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on,
+                                color: AppColors.sage, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                pickupLabel,
+                                style: const TextStyle(
+                                  color: AppColors.textDark,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // ✅ WhatsApp Button
+                ElevatedButton.icon(
+                  onPressed: () => openWhatsApp(ctx, customerPhone),
+                  icon: const Icon(Icons.chat_rounded),
+                  label: const Text(
+                    'Chat on WhatsApp',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[600],
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // ✅ Call Button
+                OutlinedButton.icon(
+                  onPressed: () => dialPhone(ctx, customerPhone),
+                  icon: const Icon(Icons.call_rounded),
+                  label: const Text(
+                    'Call Customer',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.moss),
+                    foregroundColor: AppColors.moss,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
                   onPressed: () {
+                    Navigator.pop(ctx);
                     final rideId = res['rideId']?.toString();
                     final dealId = res['dealId']?.toString();
-                    if (rideId != null && rideId.isNotEmpty && dealId != null && dealId.isNotEmpty) {
-                      Navigator.pop(ctx);
-                      Navigator.pushNamed(context, '/active-ride', arguments: {'rideId': rideId, 'dealId': dealId});
+                    if (rideId != null &&
+                        rideId.isNotEmpty &&
+                        dealId != null &&
+                        dealId.isNotEmpty) {
+                      Navigator.pushNamed(
+                        context,
+                        '/active-ride',
+                        arguments: {'rideId': rideId, 'dealId': dealId},
+                      );
                     } else {
                       Navigator.pop(ctx);
                     }
                   },
-                  child: const Text('View active ride'),
+                  child: const Text(
+                    'View Active Ride',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.sage),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -323,7 +457,10 @@ class _CaptainCustomerRequestsScreenState
       } else {
         final rideId = res['rideId']?.toString();
         final dealId = res['dealId']?.toString();
-        if (rideId != null && rideId.isNotEmpty && dealId != null && dealId.isNotEmpty) {
+        if (rideId != null &&
+            rideId.isNotEmpty &&
+            dealId != null &&
+            dealId.isNotEmpty) {
           Navigator.pushNamed(
             context,
             '/active-ride',
@@ -424,7 +561,9 @@ class _CaptainCustomerRequestsScreenState
                         ),
                         const TextSpan(
                           text: '  →  ',
-                          style: TextStyle(color: AppColors.midnightBlue, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                              color: AppColors.midnightBlue,
+                              fontWeight: FontWeight.w700),
                         ),
                         TextSpan(
                           text: end,
@@ -436,12 +575,12 @@ class _CaptainCustomerRequestsScreenState
                       ],
                     ),
                   ),
-                  if (AppHelpers.hasDisplayValue(pickup)) ...[
+                  if (pickup != null && pickup.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text('Pickup: $pickup',
                         style: const TextStyle(color: AppColors.dustyBlue)),
                   ],
-                  if (AppHelpers.hasDisplayValue(drop)) ...[
+                  if (drop != null && drop.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text('Drop: $drop',
                         style: const TextStyle(color: AppColors.dustyBlue)),
@@ -557,7 +696,8 @@ class _CaptainCustomerRequestsScreenState
                       ),
                     ],
                   ),
-                  if (offerStatus == 'accepted' && requestStatus == 'accepted') ...[
+                  if (offerStatus == 'accepted' &&
+                      requestStatus == 'accepted') ...[
                     const SizedBox(height: 14),
                     Divider(color: AppColors.line),
                     const SizedBox(height: 14),
@@ -572,31 +712,39 @@ class _CaptainCustomerRequestsScreenState
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        if ((request['customerPhone'] as String?)?.isNotEmpty ?? false)
+                        if ((request['customerPhone'] as String?)?.isNotEmpty ??
+                            false)
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () => dialPhone(context, (request['customerPhone'] ?? '').toString()),
+                              onPressed: () => dialPhone(context,
+                                  (request['customerPhone'] ?? '').toString()),
                               icon: const Icon(Icons.call, size: 18),
                               label: const Text('Call'),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                               ),
                             ),
                           ),
-                        if ((request['customerPhone'] as String?)?.isNotEmpty ?? false)
+                        if ((request['customerPhone'] as String?)?.isNotEmpty ??
+                            false)
                           const SizedBox(width: 10),
-                        if ((request['customerPhone'] as String?)?.isNotEmpty ?? false)
+                        if ((request['customerPhone'] as String?)?.isNotEmpty ??
+                            false)
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () => openWhatsApp(context, (request['customerPhone'] ?? '').toString()),
+                              onPressed: () => openWhatsApp(context,
+                                  (request['customerPhone'] ?? '').toString()),
                               icon: const Icon(Icons.chat, size: 18),
                               label: const Text('WhatsApp'),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                               ),
                             ),
                           ),
-                        if ((request['customerPhone'] as String?)?.isNotEmpty ?? false)
+                        if ((request['customerPhone'] as String?)?.isNotEmpty ??
+                            false)
                           const SizedBox(width: 10),
                         Expanded(
                           child: OutlinedButton.icon(
@@ -605,7 +753,10 @@ class _CaptainCustomerRequestsScreenState
                               Navigator.pushNamed(
                                 context,
                                 '/active-ride',
-                                arguments: {'requestId': requestId, 'mode': 'tracking'},
+                                arguments: {
+                                  'requestId': requestId,
+                                  'mode': 'tracking'
+                                },
                               );
                             },
                             icon: const Icon(Icons.location_on, size: 18),
@@ -685,6 +836,8 @@ class _CaptainCustomerRequestsScreenState
         title: const Text('Customer Requests'),
         backgroundColor: AppColors.deepNavy,
         foregroundColor: AppColors.white,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: RefreshIndicator(
         onRefresh: () => _loadRequests(showLoading: false),
@@ -694,7 +847,7 @@ class _CaptainCustomerRequestsScreenState
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                color: AppColors.deepNavy.withValues(alpha:0.9),
+                color: AppColors.deepNavy.withValues(alpha: 0.9),
                 child: const Text(
                   'You are offline. Go online on the home screen to receive requests.',
                   textAlign: TextAlign.center,
@@ -709,24 +862,46 @@ class _CaptainCustomerRequestsScreenState
                       children: [
                         Wrap(
                           spacing: 8,
+                          runSpacing: 8,
                           children: [
                             ChoiceChip(
                               label: const Text('Active'),
                               selected: _requestFilter == 'active',
                               onSelected: (_) =>
                                   setState(() => _requestFilter = 'active'),
+                              selectedColor: AppColors.moss,
+                              labelStyle: TextStyle(
+                                color: _requestFilter == 'active'
+                                    ? AppColors.white
+                                    : AppColors.textDark,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             ChoiceChip(
                               label: const Text('Completed'),
                               selected: _requestFilter == 'completed',
                               onSelected: (_) =>
                                   setState(() => _requestFilter = 'completed'),
+                              selectedColor: AppColors.moss,
+                              labelStyle: TextStyle(
+                                color: _requestFilter == 'completed'
+                                    ? AppColors.white
+                                    : AppColors.textDark,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             ChoiceChip(
                               label: const Text('All'),
                               selected: _requestFilter == 'all',
                               onSelected: (_) =>
                                   setState(() => _requestFilter = 'all'),
+                              selectedColor: AppColors.moss,
+                              labelStyle: TextStyle(
+                                color: _requestFilter == 'all'
+                                    ? AppColors.white
+                                    : AppColors.textDark,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -734,7 +909,30 @@ class _CaptainCustomerRequestsScreenState
                         if (visibleRequests.isEmpty) ...[
                           const SizedBox(height: 140),
                           const Center(
-                              child: Text('No customer requests yet.')),
+                            child: Column(
+                              children: [
+                                Icon(Icons.inbox_outlined,
+                                    size: 64, color: AppColors.sage),
+                                SizedBox(height: 12),
+                                Text(
+                                  'No customer requests yet.',
+                                  style: TextStyle(
+                                    color: AppColors.sage,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Requests will appear here when customers post.',
+                                  style: TextStyle(
+                                    color: AppColors.sage,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ] else
                           ...visibleRequests.map(_requestCard),
                       ],
@@ -804,6 +1002,9 @@ class _CaptainCustomerRequestsScreenState
         desiredFareAmount >= 50 &&
         ['open', 'countered'].contains(status.toLowerCase());
 
+    final rideMode = (request['rideMode'] ?? 'share').toString();
+    final isShare = rideMode.toLowerCase() == 'share';
+
     return GestureDetector(
       onTap: () => _openRequestSheet(request),
       child: Container(
@@ -815,7 +1016,7 @@ class _CaptainCustomerRequestsScreenState
           border: Border.all(color: AppColors.ivory),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha:0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -868,7 +1069,24 @@ class _CaptainCustomerRequestsScreenState
               ],
             ),
             const SizedBox(height: 8),
-            // Vertical route layout (fully visible)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              margin: const EdgeInsets.only(bottom: 4),
+              decoration: BoxDecoration(
+                color: (isShare ? Colors.green : Colors.deepOrange)
+                    .withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                isShare ? 'SHARE' : 'SOLO',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.3,
+                  color: isShare ? Colors.green[800] : Colors.deepOrange[800],
+                ),
+              ),
+            ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -933,11 +1151,16 @@ class _CaptainCustomerRequestsScreenState
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.watch_later_outlined, size: 16, color: AppColors.moss),
+                const Icon(Icons.watch_later_outlined,
+                    size: 16, color: AppColors.moss),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    AppHelpers.formatDateTimeValue(request['requestedAtDisplay'] ?? request['displayDateTime'] ?? request['requestedAt'] ?? request['createdAt']),
+                    AppHelpers.formatDateTimeValue(
+                        request['requestedAtDisplay'] ??
+                            request['displayDateTime'] ??
+                            request['requestedAt'] ??
+                            request['createdAt']),
                     style: const TextStyle(
                       color: AppColors.midnightBlue,
                       fontSize: 12,
@@ -1012,6 +1235,10 @@ class _CaptainCustomerRequestsScreenState
                           }
                         },
                         child: const Text('Accept Counter'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.moss,
+                          foregroundColor: AppColors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1040,6 +1267,10 @@ class _CaptainCustomerRequestsScreenState
                   label: Text(
                     'Done at Rs ${desiredFareAmount.toStringAsFixed(0)}',
                   ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.moss,
+                    foregroundColor: AppColors.white,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1050,6 +1281,9 @@ class _CaptainCustomerRequestsScreenState
                 onPressed: () => _openRequestSheet(request),
                 icon: const Icon(Icons.visibility_rounded),
                 label: const Text('View details and send fare'),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.moss),
+                ),
               ),
             ),
           ],
@@ -1058,4 +1292,3 @@ class _CaptainCustomerRequestsScreenState
     );
   }
 }
-

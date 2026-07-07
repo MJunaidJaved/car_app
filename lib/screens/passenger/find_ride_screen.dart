@@ -312,8 +312,6 @@ class _FindRideScreenState extends State<FindRideScreen>
     _updateMarkers();
   }
 
-
-
   // ─────────────────────────────────────────
   //  BUILD
   // ─────────────────────────────────────────
@@ -335,7 +333,8 @@ class _FindRideScreenState extends State<FindRideScreen>
   }
 
   Widget _buildResultsListView(bool isFemale) {
-    final fromText = _fromCtrl.text.isEmpty ? 'Current Location' : _fromCtrl.text;
+    final fromText =
+        _fromCtrl.text.isEmpty ? 'Current Location' : _fromCtrl.text;
     final toText = _toCtrl.text.isEmpty ? 'Anywhere' : _toCtrl.text;
 
     return Stack(
@@ -376,7 +375,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha:0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.arrow_back_ios_new_rounded,
@@ -400,7 +399,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                           Text(
                             '$fromText ➔ $toText',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha:0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -420,14 +419,16 @@ class _FindRideScreenState extends State<FindRideScreen>
                         if (_results.isNotEmpty) _fitMarkersOnMap(_results);
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha:0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.map_rounded, color: Colors.white, size: 18),
+                            Icon(Icons.map_rounded,
+                                color: Colors.white, size: 18),
                             SizedBox(width: 6),
                             Text(
                               'Map',
@@ -481,7 +482,8 @@ class _FindRideScreenState extends State<FindRideScreen>
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                   color: AppColors.primary,
                                   borderRadius: BorderRadius.circular(10)),
@@ -514,7 +516,8 @@ class _FindRideScreenState extends State<FindRideScreen>
                         _sheetAnim.forward();
                         _updateMarkers();
                         _mapController?.animateCamera(
-                          CameraUpdate.newLatLng(LatLng(ride.startLat, ride.startLng)),
+                          CameraUpdate.newLatLng(
+                              LatLng(ride.startLat, ride.startLng)),
                         );
                       },
                     );
@@ -708,7 +711,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.dark.withValues(alpha:0.85),
+                  color: AppColors.dark.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
@@ -749,7 +752,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withValues(alpha:0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 12,
                       offset: const Offset(0, 4))
                 ],
@@ -822,7 +825,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha:0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text('Pin',
@@ -838,7 +841,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha:0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.gps_fixed,
@@ -877,7 +880,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha:0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text('Pin',
@@ -949,7 +952,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha:0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.arrow_back_ios_new_rounded,
@@ -968,7 +971,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha:0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.map_rounded,
@@ -991,7 +994,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                          color: AppColors.dark.withValues(alpha:0.06),
+                          color: AppColors.dark.withValues(alpha: 0.06),
                           blurRadius: 24,
                           offset: const Offset(0, 8))
                     ],
@@ -1006,7 +1009,8 @@ class _FindRideScreenState extends State<FindRideScreen>
                         onPlaceSelected: (latLng) {
                           _fromLatLng = latLng;
                           _center = latLng;
-                          _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
+                          _mapController
+                              ?.animateCamera(CameraUpdate.newLatLng(latLng));
                           _updateMarkers();
                         },
                       ),
@@ -1104,11 +1108,11 @@ class _FindRideScreenState extends State<FindRideScreen>
                 border: Border.all(
                     color: sel
                         ? AppColors.primary
-                        : AppColors.sage.withValues(alpha:0.3)),
+                        : AppColors.sage.withValues(alpha: 0.3)),
                 boxShadow: sel
                     ? [
                         BoxShadow(
-                            color: AppColors.primary.withValues(alpha:0.2),
+                            color: AppColors.primary.withValues(alpha: 0.2),
                             blurRadius: 10,
                             offset: const Offset(0, 4))
                       ]
@@ -1157,7 +1161,7 @@ class _FindRideScreenState extends State<FindRideScreen>
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.search_rounded,
-                color: AppColors.sage.withValues(alpha:0.4), size: 64),
+                color: AppColors.sage.withValues(alpha: 0.4), size: 64),
             const SizedBox(height: 12),
             const Text('No rides found nearby',
                 style: TextStyle(
@@ -1235,7 +1239,7 @@ class _FindRideScreenState extends State<FindRideScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha:0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Row(
@@ -1304,6 +1308,7 @@ class _RidePreviewSheet extends StatelessWidget {
     final vehicleLabel = ride.displayVehicle.isNotEmpty
         ? ride.displayVehicle
         : ride.vehicleType.toUpperCase();
+    final isShareRide = (ride.rideMode).toString().toLowerCase() != 'solo';
 
     return Container(
       decoration: BoxDecoration(
@@ -1328,6 +1333,30 @@ class _RidePreviewSheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
+          // ✅ Bold Share/Solo label at the very top
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: (isShareRide ? Colors.green : Colors.deepOrange)
+                    .withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                isShareRide ? 'SHARE RIDE' : 'SOLO RIDE',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.4,
+                  color:
+                      isShareRide ? Colors.green[800] : Colors.deepOrange[800],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Captain row
           Row(
             children: [
@@ -1349,17 +1378,21 @@ class _RidePreviewSheet extends StatelessWidget {
                       totalRides: 0,
                       createdAt: DateTime.now(),
                     );
-                    Navigator.pushNamed(context, '/profile', arguments: dummyUserModel);
+                    Navigator.pushNamed(context, '/profile',
+                        arguments: dummyUserModel);
                   },
                   child: Row(
                     children: [
                       CircleAvatar(
                         radius: 22,
-                        backgroundColor: AppColors.primary.withValues(alpha:0.1),
+                        backgroundColor:
+                            AppColors.primary.withValues(alpha: 0.1),
                         child: Text(
-                            AppHelpers.nameInitial(ride.captainName, fallback: 'C'),
+                            AppHelpers.nameInitial(ride.captainName,
+                                fallback: 'C'),
                             style: const TextStyle(
-                                color: AppColors.primary, fontWeight: FontWeight.w800)),
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w800)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -1428,7 +1461,8 @@ class _RidePreviewSheet extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(ride.startLocation.isEmpty ? 'From' : ride.startLocation,
+                  child: Text(
+                      ride.startLocation.isEmpty ? 'From' : ride.startLocation,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -1442,7 +1476,8 @@ class _RidePreviewSheet extends StatelessWidget {
                       color: AppColors.primary, size: 22),
                 ),
                 Expanded(
-                  child: Text(ride.endLocation.isEmpty ? 'To' : ride.endLocation,
+                  child: Text(
+                      ride.endLocation.isEmpty ? 'To' : ride.endLocation,
                       textAlign: TextAlign.right,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1455,6 +1490,42 @@ class _RidePreviewSheet extends StatelessWidget {
             ),
           ),
 
+          // ✅ FIXED: Exact Location and Exact Drop Location display
+          if ((ride.exactLocation != null && ride.exactLocation!.isNotEmpty) ||
+              (ride.exactDropLocation != null &&
+                  ride.exactDropLocation!.isNotEmpty)) ...[
+            const SizedBox(height: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (ride.exactLocation != null &&
+                    ride.exactLocation!.isNotEmpty)
+                  Text(
+                    'Starting point: ${ride.exactLocation}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                if (ride.exactDropLocation != null &&
+                    ride.exactDropLocation!.isNotEmpty)
+                  Text(
+                    'Final destination: ${ride.exactDropLocation}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+
           const SizedBox(height: 14),
 
           // Info chips
@@ -1464,8 +1535,12 @@ class _RidePreviewSheet extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _ChipBadge(icon: Icons.access_time_rounded, label: dateLabel),
-              _ChipBadge(icon: Icons.event_seat_rounded, label: ride.seatsLabel),
-              _ChipBadge(icon: Icons.directions_car_outlined, label: vehicleLabel, accentColor: AppColors.vehicleColor(ride.vehicleType)),
+              _ChipBadge(
+                  icon: Icons.event_seat_rounded, label: ride.seatsLabel),
+              _ChipBadge(
+                  icon: Icons.directions_car_outlined,
+                  label: vehicleLabel,
+                  accentColor: AppColors.vehicleColor(ride.vehicleType)),
               Text('Rs ${ride.suggestedFare.toStringAsFixed(0)}',
                   style: const TextStyle(
                       color: AppColors.primary,
@@ -1556,12 +1631,15 @@ class _RideResultCardState extends State<_RideResultCard>
     final isFemale = (user?.gender ?? '').toLowerCase() == 'female';
     final isFull = widget.ride.isFull;
     final isLadiesLocked = widget.ride.isLadiesRide && !isFemale;
-    final dateLabel = widget.ride.departureDisplay != null && widget.ride.departureDisplay!.isNotEmpty
+    final dateLabel = widget.ride.departureDisplay != null &&
+            widget.ride.departureDisplay!.isNotEmpty
         ? widget.ride.departureDisplay!
         : AppHelpers.formatDateTime(widget.ride.departureTime);
     final vehicleLabel = widget.ride.displayVehicle.isNotEmpty
         ? widget.ride.displayVehicle
         : widget.ride.vehicleType.toUpperCase();
+    final isShareRide =
+        (widget.ride.rideMode).toString().toLowerCase() != 'solo';
 
     // Get vehicle-specific gradient color
     final vehicleColor = AppColors.vehicleColor(widget.ride.vehicleType);
@@ -1580,7 +1658,8 @@ class _RideResultCardState extends State<_RideResultCard>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: vehicleColor.withValues(alpha: 0.2), width: 2),
+              border: Border.all(
+                  color: vehicleColor.withValues(alpha: 0.2), width: 2),
               boxShadow: [
                 BoxShadow(
                   color: vehicleColor.withValues(alpha: 0.15),
@@ -1592,7 +1671,7 @@ class _RideResultCardState extends State<_RideResultCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Gradient header with vehicle type
+                // Gradient header with vehicle type + bold Share/Solo tag
                 Container(
                   decoration: BoxDecoration(
                     gradient: vehicleGradient,
@@ -1601,7 +1680,8 @@ class _RideResultCardState extends State<_RideResultCard>
                       topRight: Radius.circular(22),
                     ),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
                       Icon(
@@ -1621,9 +1701,28 @@ class _RideResultCardState extends State<_RideResultCard>
                           ),
                         ),
                       ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          isShareRide ? 'SHARE' : 'SOLO',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
                       if (widget.ride.isLadiesRide)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(8),
@@ -1631,7 +1730,8 @@ class _RideResultCardState extends State<_RideResultCard>
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.woman_2_outlined, color: Colors.white, size: 14),
+                              Icon(Icons.woman_2_outlined,
+                                  color: Colors.white, size: 14),
                               SizedBox(width: 4),
                               Text(
                                 'Ladies',
@@ -1669,7 +1769,8 @@ class _RideResultCardState extends State<_RideResultCard>
                               child: CircularProgressIndicator(
                                 value: downloadProgress.progress,
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(vehicleColor),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(vehicleColor),
                               ),
                             ),
                           );
@@ -1713,7 +1814,8 @@ class _RideResultCardState extends State<_RideResultCard>
                                   totalRides: 0,
                                   createdAt: DateTime.now(),
                                 );
-                                Navigator.pushNamed(context, '/profile', arguments: dummyUserModel);
+                                Navigator.pushNamed(context, '/profile',
+                                    arguments: dummyUserModel);
                               },
                               child: Row(
                                 children: [
@@ -1721,11 +1823,13 @@ class _RideResultCardState extends State<_RideResultCard>
                                     width: 48,
                                     height: 48,
                                     decoration: BoxDecoration(
-                                      gradient: AppColors.vehicleGradient(widget.ride.vehicleType),
+                                      gradient: AppColors.vehicleGradient(
+                                          widget.ride.vehicleType),
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
-                                          color: vehicleColor.withValues(alpha: 0.2),
+                                          color: vehicleColor.withValues(
+                                              alpha: 0.2),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -1733,7 +1837,9 @@ class _RideResultCardState extends State<_RideResultCard>
                                     ),
                                     child: Center(
                                       child: Text(
-                                        AppHelpers.nameInitial(widget.ride.captainName, fallback: 'C'),
+                                        AppHelpers.nameInitial(
+                                            widget.ride.captainName,
+                                            fallback: 'C'),
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w900,
@@ -1745,7 +1851,8 @@ class _RideResultCardState extends State<_RideResultCard>
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           widget.ride.captainName,
@@ -1801,32 +1908,48 @@ class _RideResultCardState extends State<_RideResultCard>
                         ],
                       ),
                       const SizedBox(height: 14),
-                      Divider(height: 1, color: vehicleColor.withValues(alpha: 0.15)),
+                      Divider(
+                          height: 1,
+                          color: vehicleColor.withValues(alpha: 0.15)),
                       const SizedBox(height: 14),
                       // Proximity badge
-                      if (!widget.ride.isProximityMatch || widget.ride.proximityDistance != null)
+                      if (!widget.ride.isProximityMatch ||
+                          widget.ride.proximityDistance != null)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: widget.ride.isProximityMatch
-                                  ? [AppColors.primary.withValues(alpha: 0.1), AppColors.primary.withValues(alpha: 0.05)]
-                                  : [AppColors.warning.withValues(alpha: 0.1), AppColors.warning.withValues(alpha: 0.05)],
+                                  ? [
+                                      AppColors.primary.withValues(alpha: 0.1),
+                                      AppColors.primary.withValues(alpha: 0.05)
+                                    ]
+                                  : [
+                                      AppColors.warning.withValues(alpha: 0.1),
+                                      AppColors.warning.withValues(alpha: 0.05)
+                                    ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: widget.ride.isProximityMatch ? AppColors.primary.withValues(alpha: 0.3) : AppColors.warning.withValues(alpha: 0.3),
+                              color: widget.ride.isProximityMatch
+                                  ? AppColors.primary.withValues(alpha: 0.3)
+                                  : AppColors.warning.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                widget.ride.isProximityMatch ? Icons.check_circle_rounded : Icons.near_me_rounded,
+                                widget.ride.isProximityMatch
+                                    ? Icons.check_circle_rounded
+                                    : Icons.near_me_rounded,
                                 size: 16,
-                                color: widget.ride.isProximityMatch ? AppColors.primary : AppColors.warning,
+                                color: widget.ride.isProximityMatch
+                                    ? AppColors.primary
+                                    : AppColors.warning,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -1835,7 +1958,9 @@ class _RideResultCardState extends State<_RideResultCard>
                                       ? 'Direct match'
                                       : '${widget.ride.proximityDistance?.toStringAsFixed(1) ?? '?'} km from destination',
                                   style: TextStyle(
-                                    color: widget.ride.isProximityMatch ? AppColors.primary : AppColors.warning,
+                                    color: widget.ride.isProximityMatch
+                                        ? AppColors.primary
+                                        : AppColors.warning,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1844,7 +1969,8 @@ class _RideResultCardState extends State<_RideResultCard>
                             ],
                           ),
                         ),
-                      if (!widget.ride.isProximityMatch || widget.ride.proximityDistance != null)
+                      if (!widget.ride.isProximityMatch ||
+                          widget.ride.proximityDistance != null)
                         const SizedBox(height: 12),
                       // Route info
                       Container(
@@ -1860,13 +1986,17 @@ class _RideResultCardState extends State<_RideResultCard>
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: vehicleColor.withValues(alpha: 0.2), width: 1),
+                          border: Border.all(
+                              color: vehicleColor.withValues(alpha: 0.2),
+                              width: 1),
                         ),
                         child: Row(
                           children: [
                             Expanded(
                               child: Text(
-                                widget.ride.startLocation.isEmpty ? 'From' : widget.ride.startLocation,
+                                widget.ride.startLocation.isEmpty
+                                    ? 'From'
+                                    : widget.ride.startLocation,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -1877,7 +2007,8 @@ class _RideResultCardState extends State<_RideResultCard>
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
                               child: Icon(
                                 Icons.arrow_forward_rounded,
                                 color: vehicleColor,
@@ -1886,7 +2017,9 @@ class _RideResultCardState extends State<_RideResultCard>
                             ),
                             Expanded(
                               child: Text(
-                                widget.ride.endLocation.isEmpty ? 'To' : widget.ride.endLocation,
+                                widget.ride.endLocation.isEmpty
+                                    ? 'To'
+                                    : widget.ride.endLocation,
                                 textAlign: TextAlign.right,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1900,6 +2033,37 @@ class _RideResultCardState extends State<_RideResultCard>
                           ],
                         ),
                       ),
+                      // ✅ FIXED: Exact Location and Exact Drop Location display
+                      if ((widget.ride.exactLocation != null &&
+                              widget.ride.exactLocation!.isNotEmpty) ||
+                          (widget.ride.exactDropLocation != null &&
+                              widget.ride.exactDropLocation!.isNotEmpty)) ...[
+                        const SizedBox(height: 8),
+                        if (widget.ride.exactLocation != null &&
+                            widget.ride.exactLocation!.isNotEmpty)
+                          Text(
+                            'Starting point: ${widget.ride.exactLocation}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        if (widget.ride.exactDropLocation != null &&
+                            widget.ride.exactDropLocation!.isNotEmpty)
+                          Text(
+                            'Final destination: ${widget.ride.exactDropLocation}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                      ],
                       const SizedBox(height: 12),
                       // Info chips
                       Wrap(
@@ -1930,7 +2094,8 @@ class _RideResultCardState extends State<_RideResultCard>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
@@ -1939,7 +2104,9 @@ class _RideResultCardState extends State<_RideResultCard>
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: vehicleColor.withValues(alpha: 0.3), width: 1),
+                              border: Border.all(
+                                  color: vehicleColor.withValues(alpha: 0.3),
+                                  width: 1),
                             ),
                             child: Text(
                               'Rs ${widget.ride.suggestedFare.toStringAsFixed(0)}',
@@ -1952,7 +2119,8 @@ class _RideResultCardState extends State<_RideResultCard>
                           ),
                           if (isFull)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: AppColors.error.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(8),
@@ -1968,9 +2136,11 @@ class _RideResultCardState extends State<_RideResultCard>
                             )
                           else
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.success.withValues(alpha: 0.15),
+                                color:
+                                    AppColors.success.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Text(
@@ -1990,20 +2160,26 @@ class _RideResultCardState extends State<_RideResultCard>
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton.icon(
-                          onPressed: (isFull || isLadiesLocked) ? null : widget.onBookNow,
+                          onPressed: (isFull || isLadiesLocked)
+                              ? null
+                              : widget.onBookNow,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: vehicleColor,
                             foregroundColor: Colors.white,
-                            disabledBackgroundColor: AppColors.dustyBlue.withValues(alpha: 0.3),
+                            disabledBackgroundColor:
+                                AppColors.dustyBlue.withValues(alpha: 0.3),
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          icon: const Icon(Icons.price_change_outlined, size: 20),
+                          icon:
+                              const Icon(Icons.price_change_outlined, size: 20),
                           label: Text(
-                            isLadiesLocked ? 'Female passengers only' : 'Book Now',
+                            isLadiesLocked
+                                ? 'Female passengers only'
+                                : 'Book Now',
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 14,
@@ -2071,7 +2247,7 @@ class _ChipBadge extends StatelessWidget {
         ],
       ),
     );
- }
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -2094,7 +2270,7 @@ class _MapFab extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha:0.12),
+                color: Colors.black.withValues(alpha: 0.12),
                 blurRadius: 10,
                 offset: const Offset(0, 3))
           ],

@@ -56,6 +56,8 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
   String? _toError;
   String? _editingRequestId;
 
+  String _rideMode = 'share';
+
   String? _currentUserName(BuildContext context) {
     try {
       return Provider.of<UserProvider>(context).user?.name;
@@ -328,11 +330,13 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         if (desiredFare != null && desiredFare > 0) 'desiredFare': desiredFare,
         if (pos != null) 'customerLat': pos.latitude,
         if (pos != null) 'customerLng': pos.longitude,
+        'rideMode': _rideMode,
       };
 
       Map<String, dynamic> res;
       if (_editingRequestId != null && _editingRequestId!.isNotEmpty) {
-        res = await ApiService.patch('/customer-requests/${_editingRequestId!}', body);
+        res = await ApiService.patch(
+            '/customer-requests/${_editingRequestId!}', body);
       } else {
         res = await ApiService.post('/customer-requests', body);
       }
@@ -387,6 +391,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     });
   }
 
+  // ✅ FIXED: _acceptOffer with WhatsApp and Call buttons
   Future<void> _acceptOffer(
     Map<String, dynamic> request,
     Map<String, dynamic> offer,
@@ -415,48 +420,157 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
       final vehicle =
           (offer['captainVehicleInfo'] ?? offer['captainVehicleType'] ?? '')
               .toString();
+
+      // ✅ Updated bottom sheet with WhatsApp & Call buttons
       await showModalBottomSheet<void>(
         context: context,
-        backgroundColor: AppColors.white,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (ctx) => Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        backgroundColor: Colors.transparent,
+        isDismissible: false,
+        builder: (ctx) => Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Captain accepted',
-                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.midnightBlue,
-                    ),
+              // Success Icon
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.moss.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.moss,
+                    size: 48,
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
-              Text(captainName,
-                  style: const TextStyle(fontWeight: FontWeight.w800)),
-              if (phone.isNotEmpty)
-                Text(phone, style: const TextStyle(color: AppColors.dustyBlue)),
-              if (vehicle.isNotEmpty)
-                Text('Vehicle: $vehicle',
-                    style: const TextStyle(color: AppColors.dustyBlue)),
+              Center(
+                child: Text(
+                  '✅ Ride Confirmed!',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.moss,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  'Fare finalized at Rs ${res['agreedFare'] ?? 0}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.bark,
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
-              if (phone.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.bg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline, color: AppColors.moss),
+                        const SizedBox(width: 8),
+                        Text(
+                          captainName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone,
+                            color: AppColors.sage, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          phone.isNotEmpty ? phone : 'Number available',
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (vehicle.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.directions_car,
+                              color: AppColors.sage, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            vehicle,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // ✅ WhatsApp Button
+              if (phone.isNotEmpty)
                 ElevatedButton.icon(
-                  onPressed: () => dialPhone(ctx, phone),
-                  icon: const Icon(Icons.call),
-                  label: const Text('Call Captain'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
                   onPressed: () => openWhatsApp(ctx, phone),
-                  icon: const Icon(Icons.chat),
-                  label: const Text('WhatsApp Captain'),
+                  icon: const Icon(Icons.chat_rounded),
+                  label: const Text(
+                    'Chat on WhatsApp',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[600],
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 8),
-              ],
+              const SizedBox(height: 8),
+              // ✅ Call Button
+              if (phone.isNotEmpty)
+                OutlinedButton.icon(
+                  onPressed: () => dialPhone(ctx, phone),
+                  icon: const Icon(Icons.call_rounded),
+                  label: const Text(
+                    'Call Captain',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.moss),
+                    foregroundColor: AppColors.moss,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              // ✅ View Active Ride Button
               OutlinedButton(
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -464,7 +578,8 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                       rideId.isNotEmpty &&
                       dealId != null &&
                       dealId.isNotEmpty) {
-                    AppNavigator.state?.pushNamed(
+                    Navigator.pushNamed(
+                      context,
                       '/active-ride',
                       arguments: {
                         'rideId': rideId,
@@ -472,10 +587,20 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                       },
                     );
                   } else {
-                    AppNavigator.state?.pushNamed('/my-bookings');
+                    Navigator.pushNamed(context, '/my-bookings');
                   }
                 },
-                child: const Text('View Active Ride'),
+                child: const Text(
+                  'View Active Ride',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.sage),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ],
           ),
@@ -576,15 +701,17 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     }
   }
 
+  // ✅ DELETE REQUEST FUNCTION
   Future<void> _deleteRequest(Map<String, dynamic> request) async {
     final requestId = (request['id'] ?? '').toString();
     if (requestId.isEmpty) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete request?'),
+        title: const Text('Delete Request?'),
         content: const Text(
-          'This will remove your posted request and cancel pending captain offers.',
+          'This will remove your posted request and cancel all pending captain offers.',
         ),
         actions: [
           TextButton(
@@ -593,17 +720,22 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Delete'),
           ),
         ],
       ),
     );
+
     if (confirmed != true) return;
 
     try {
       await ApiService.delete('/customer-requests/$requestId');
       if (!mounted) return;
+
       setState(() {
         _requests.removeWhere((r) => (r['id'] ?? '').toString() == requestId);
         if (_waitingRequestId == requestId) {
@@ -611,10 +743,15 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
           _showPostForm = true;
         }
       });
-      AppHelpers.showSnackBar(context, 'Request deleted');
+
+      AppHelpers.showSnackBar(context, 'Request deleted successfully');
     } catch (e) {
       if (mounted) {
-        AppHelpers.showSnackBar(context, 'Delete failed: $e', isError: true);
+        AppHelpers.showSnackBar(
+          context,
+          'Delete failed: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -635,6 +772,9 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     if (eLat != null && eLng != null) _toLatLng = LatLng(eLat, eLng);
     final reqAt = DateTime.tryParse((request['requestedAt'] ?? '').toString());
     if (reqAt != null) _requestedAt = reqAt.toLocal();
+    if (request['rideMode'] != null) {
+      _rideMode = request['rideMode'].toString();
+    }
   }
 
   @override
@@ -663,6 +803,8 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
             : 'Post Ride Request'),
         backgroundColor: AppColors.deepNavy,
         foregroundColor: AppColors.white,
+        elevation: 0,
+        centerTitle: true,
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 12),
@@ -673,352 +815,517 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: () => _loadMine(showLoading: false),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _SignedInChip(
-                  role: 'Customer',
-                  name: userName,
+      body: RefreshIndicator(
+        onRefresh: () => _loadMine(showLoading: false),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          physics: const BouncingScrollPhysics(),
+          children: [
+            _SignedInChip(
+              role: 'Customer',
+              name: userName,
+            ),
+            const SizedBox(height: 12),
+            if (waiting != null && !waitingExpired) ...[
+              _buildWaitingHeader(waiting),
+              const SizedBox(height: 16),
+              const Text(
+                'Captain Offers',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: AppColors.deepNavy,
                 ),
-                const SizedBox(height: 12),
-                if (waiting != null && !waitingExpired) ...[
-                  _buildWaitingHeader(waiting),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Captain Offers',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildOffersStream(
-                    (_waitingRequestId ?? waiting['id'] ?? '').toString(),
-                    waiting,
-                  ),
-                  const SizedBox(height: 24),
-                ],
-                if (_showPostForm && (waiting == null || waitingExpired))
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Text(
-                          'Select route on map',
-                          style: TextStyle(
-                            color: AppColors.bark,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Type From and To, use current location, or tap the map for more accurate nearby matching.',
-                          style: TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        PlacesAutocompleteField(
-                          controller: _fromCtrl,
-                          label: 'From',
-                          icon: Icons.trip_origin,
-                          onChanged: (_) {
-                            _fromLatLng = null;
-                          },
-                          onPlaceSelected: (latLng) {
-                            setState(() {
-                              _fromLatLng = latLng;
-                              _mapCenter = latLng;
-                            });
-                            _mapController?.animateCamera(
-                              CameraUpdate.newLatLng(latLng),
-                            );
-                          },
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () =>
-                                    setState(() => _mapTapSetsDrop = false),
-                                icon: const Icon(Icons.trip_origin_rounded,
-                                    size: 18),
-                                label: const Text('Tap map for From'),
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: !_mapTapSetsDrop
-                                      ? AppColors.sky
-                                      : AppColors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextButton.icon(
-                                onPressed: _useCurrentPickup,
-                                icon: const Icon(Icons.gps_fixed_rounded,
-                                    size: 18),
-                                label: const Text('Current pickup'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_fromLatLng != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            'From map: ${_fromLatLng!.latitude.toStringAsFixed(5)}, ${_fromLatLng!.longitude.toStringAsFixed(5)}',
-                            style: const TextStyle(
-                              color: AppColors.moss,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-                        PlacesAutocompleteField(
-                          controller: _toCtrl,
-                          label: 'To',
-                          icon: Icons.location_on_outlined,
-                          onChanged: (_) {
-                            _toLatLng = null;
-                          },
-                          onPlaceSelected: (latLng) {
-                            setState(() => _toLatLng = latLng);
-                            _mapController?.animateCamera(
-                              CameraUpdate.newLatLng(latLng),
-                            );
-                          },
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () =>
-                                    setState(() => _mapTapSetsDrop = true),
-                                icon: const Icon(Icons.flag_rounded, size: 18),
-                                label: const Text('Tap map for To'),
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: _mapTapSetsDrop
-                                      ? AppColors.sky
-                                      : AppColors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_toLatLng != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            'To map: ${_toLatLng!.latitude.toStringAsFixed(5)}, ${_toLatLng!.longitude.toStringAsFixed(5)}',
-                            style: const TextStyle(
-                              color: AppColors.moss,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: SizedBox(
-                            height: 240,
-                            child: Stack(
-                              children: [
-                                GoogleMap(
-                                  initialCameraPosition: CameraPosition(
-                                    target: _mapCenter,
-                                    zoom: 13,
-                                  ),
-                                  onMapCreated: (controller) =>
-                                      _mapController = controller,
-                                  markers: _requestMarkers(),
-                                  myLocationEnabled: true,
-                                  myLocationButtonEnabled: false,
-                                  zoomControlsEnabled: false,
-                                  onTap: _selectMapPoint,
-                                ),
-                                Positioned(
-                                  left: 12,
-                                  top: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 7,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.white,
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      _mapTapSetsDrop
-                                          ? 'Tap map to set To'
-                                          : 'Tap map to set From',
-                                      style: const TextStyle(
-                                        color: AppColors.bark,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (_fromLatLng == null || _toLatLng == null) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.warning.withValues(alpha:0.12),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.warning.withValues(alpha:0.35),
-                              ),
-                            ),
-                            child: const Text(
-                              'Map is optional. Text route will be used if you do not tap the map.',
-                              style: TextStyle(
-                                color: AppColors.bark,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _pickupCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Exact pickup point',
-                            hintText: 'e.g. Main gate, shop name, street',
-                          ),
-                        ),
-                        TextField(
-                          controller: _dropPointCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Exact drop point',
-                            hintText: 'e.g. Office gate, building entrance',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _fareCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Your fare budget',
-                            prefixText: 'Rs ',
-                            hintText: 'Optional',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.schedule_rounded),
-                          title: const Text('Day and time'),
-                          subtitle: Text(
-                            '${_requestedAt.day}/${_requestedAt.month}/${_requestedAt.year} ${_requestedAt.hour.toString().padLeft(2, '0')}:${_requestedAt.minute.toString().padLeft(2, '0')}',
-                          ),
-                          trailing: TextButton(
-                            onPressed: _pickDateTime,
-                            child: const Text('Change'),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _posting ? null : _postRequest,
-                            icon: const Icon(Icons.send_rounded),
-                            label:
-                                Text(_posting ? 'Posting...' : 'Post request'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.moss,
-                              foregroundColor: AppColors.white,
-                            ),
-                          ),
-                        ),
-                      ],
+              ),
+              const SizedBox(height: 10),
+              _buildOffersStream(
+                (_waitingRequestId ?? waiting['id'] ?? '').toString(),
+                waiting,
+              ),
+              const SizedBox(height: 24),
+            ],
+            if (_showPostForm && (waiting == null || waitingExpired))
+              _buildPostForm(),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'My Posted Requests',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                      color: AppColors.deepNavy,
                     ),
                   ),
-                ...[
-                  const SizedBox(height: 20),
-                  Row(
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _waitingRequestId = null;
+                      _showPostForm = true;
+                    });
+                  },
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('New'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(
+                  label: const Text('Active'),
+                  selected: _requestFilter == 'active',
+                  onSelected: (_) => setState(() => _requestFilter = 'active'),
+                  selectedColor: AppColors.moss,
+                  labelStyle: TextStyle(
+                    color: _requestFilter == 'active'
+                        ? AppColors.white
+                        : AppColors.textDark,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                ChoiceChip(
+                  label: const Text('Completed'),
+                  selected: _requestFilter == 'completed',
+                  onSelected: (_) =>
+                      setState(() => _requestFilter = 'completed'),
+                  selectedColor: AppColors.moss,
+                  labelStyle: TextStyle(
+                    color: _requestFilter == 'completed'
+                        ? AppColors.white
+                        : AppColors.textDark,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                ChoiceChip(
+                  label: const Text('All'),
+                  selected: _requestFilter == 'all',
+                  onSelected: (_) => setState(() => _requestFilter = 'all'),
+                  selectedColor: AppColors.moss,
+                  labelStyle: TextStyle(
+                    color: _requestFilter == 'all'
+                        ? AppColors.white
+                        : AppColors.textDark,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            if (_loading)
+              const SkeletonList(item: RequestCardSkeleton(), count: 3)
+            else if (visibleRequests.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Column(
                     children: [
-                      const Expanded(
-                        child: Text(
-                          'My Posted Requests',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18,
-                            color: AppColors.deepNavy,
-                          ),
+                      Icon(Icons.inbox_outlined,
+                          size: 64, color: AppColors.sage),
+                      SizedBox(height: 12),
+                      Text(
+                        'No posted requests yet.',
+                        style: TextStyle(
+                          color: AppColors.sage,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _waitingRequestId = null;
-                            _showPostForm = true;
-                          });
-                        },
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('New'),
+                      SizedBox(height: 4),
+                      Text(
+                        'Post your first ride request to get started.',
+                        style: TextStyle(
+                          color: AppColors.sage,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Active'),
-                        selected: _requestFilter == 'active',
-                        onSelected: (_) =>
-                            setState(() => _requestFilter = 'active'),
-                      ),
-                      ChoiceChip(
-                        label: const Text('Completed'),
-                        selected: _requestFilter == 'completed',
-                        onSelected: (_) =>
-                            setState(() => _requestFilter = 'completed'),
-                      ),
-                      ChoiceChip(
-                        label: const Text('All'),
-                        selected: _requestFilter == 'all',
-                        onSelected: (_) =>
-                            setState(() => _requestFilter = 'all'),
-                      ),
-                    ],
+                ),
+              )
+            else
+              ...visibleRequests.map(
+                (request) => AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: _requestCard(request),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPostForm() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Select route on map',
+            style: TextStyle(
+              color: AppColors.bark,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Type From and To, use current location, or tap the map for more accurate nearby matching.',
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 14),
+          PlacesAutocompleteField(
+            controller: _fromCtrl,
+            label: 'From',
+            icon: Icons.trip_origin,
+            onChanged: (_) {
+              _fromLatLng = null;
+            },
+            onPlaceSelected: (latLng) {
+              setState(() {
+                _fromLatLng = latLng;
+                _mapCenter = latLng;
+              });
+              _mapController?.animateCamera(
+                CameraUpdate.newLatLng(latLng),
+              );
+            },
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => setState(() => _mapTapSetsDrop = false),
+                  icon: const Icon(Icons.trip_origin_rounded, size: 18),
+                  label: const Text('Tap map for From'),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor:
+                        !_mapTapSetsDrop ? AppColors.sky : AppColors.white,
                   ),
-                  const SizedBox(height: 10),
-                  if (_loading)
-                    const SkeletonList(item: RequestCardSkeleton(), count: 3)
-                  else if (visibleRequests.isEmpty)
-                    const Text(
-                      'No posted requests yet.',
-                      style: TextStyle(color: AppColors.textMuted),
-                    )
-                  else
-                    ...visibleRequests.map(
-                      (request) => AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        child: _requestCard(request),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: _useCurrentPickup,
+                  icon: const Icon(Icons.gps_fixed_rounded, size: 18),
+                  label: const Text('Current pickup'),
+                ),
+              ),
+            ],
+          ),
+          if (_fromLatLng != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'From map: ${_fromLatLng!.latitude.toStringAsFixed(5)}, ${_fromLatLng!.longitude.toStringAsFixed(5)}',
+              style: const TextStyle(
+                color: AppColors.moss,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          PlacesAutocompleteField(
+            controller: _toCtrl,
+            label: 'To',
+            icon: Icons.location_on_outlined,
+            onChanged: (_) {
+              _toLatLng = null;
+            },
+            onPlaceSelected: (latLng) {
+              setState(() => _toLatLng = latLng);
+              _mapController?.animateCamera(
+                CameraUpdate.newLatLng(latLng),
+              );
+            },
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => setState(() => _mapTapSetsDrop = true),
+                  icon: const Icon(Icons.flag_rounded, size: 18),
+                  label: const Text('Tap map for To'),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor:
+                        _mapTapSetsDrop ? AppColors.sky : AppColors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_toLatLng != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'To map: ${_toLatLng!.latitude.toStringAsFixed(5)}, ${_toLatLng!.longitude.toStringAsFixed(5)}',
+              style: const TextStyle(
+                color: AppColors.moss,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              height: 240,
+              child: Stack(
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: _mapCenter,
+                      zoom: 13,
+                    ),
+                    onMapCreated: (controller) => _mapController = controller,
+                    markers: _requestMarkers(),
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    onTap: _selectMapPoint,
+                  ),
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        _mapTapSetsDrop
+                            ? 'Tap map to set To'
+                            : 'Tap map to set From',
+                        style: const TextStyle(
+                          color: AppColors.bark,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
+                  ),
                 ],
+              ),
+            ),
+          ),
+          if (_fromLatLng == null || _toLatLng == null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.35),
+                ),
+              ),
+              child: const Text(
+                'Map is optional. Text route will be used if you do not tap the map.',
+                style: TextStyle(
+                  color: AppColors.bark,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          TextField(
+            controller: _pickupCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Exact pickup point',
+              hintText: 'e.g. Main gate, shop name, street',
+            ),
+          ),
+          TextField(
+            controller: _dropPointCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Exact drop point',
+              hintText: 'e.g. Office gate, building entrance',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _fareCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Your fare budget',
+              prefixText: 'Rs ',
+              hintText: 'Optional',
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.bg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _rideMode = 'share'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: _rideMode == 'share'
+                            ? Colors.green.withValues(alpha: 0.12)
+                            : AppColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _rideMode == 'share'
+                              ? Colors.green
+                              : AppColors.light,
+                          width: _rideMode == 'share' ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.people_rounded,
+                            size: 32,
+                            color: _rideMode == 'share'
+                                ? Colors.green[700]
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'SHARE RIDE',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: _rideMode == 'share'
+                                  ? Colors.green[700]
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                          Text(
+                            'Share with others',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _rideMode == 'share'
+                                  ? Colors.green[600]
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _rideMode = 'solo'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: _rideMode == 'solo'
+                            ? Colors.deepOrange.withValues(alpha: 0.12)
+                            : AppColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _rideMode == 'solo'
+                              ? Colors.deepOrange
+                              : AppColors.light,
+                          width: _rideMode == 'solo' ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.person_rounded,
+                            size: 32,
+                            color: _rideMode == 'solo'
+                                ? Colors.deepOrange[700]
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'SOLO RIDE',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: _rideMode == 'solo'
+                                  ? Colors.deepOrange[700]
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                          Text(
+                            'Private ride',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _rideMode == 'solo'
+                                  ? Colors.deepOrange[600]
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          if (waitingExpired) _buildExpiredOverlay(waiting),
+          const SizedBox(height: 12),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.schedule_rounded),
+            title: const Text('Day and time'),
+            subtitle: Text(
+              '${_requestedAt.day}/${_requestedAt.month}/${_requestedAt.year} ${_requestedAt.hour.toString().padLeft(2, '0')}:${_requestedAt.minute.toString().padLeft(2, '0')}',
+            ),
+            trailing: TextButton(
+              onPressed: _pickDateTime,
+              child: const Text('Change'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _posting ? null : _postRequest,
+              icon: const Icon(Icons.send_rounded),
+              label: Text(_posting ? 'Posting...' : 'Post request'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.moss,
+                foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1030,16 +1337,44 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     final vehicle = (request['vehicleType'] ?? 'car').toString();
     final fare = request['desiredFare'];
     final posted = _timeAgo(request['createdAt']?.toString());
+    final rideMode = (request['rideMode'] ?? 'share').toString();
+    final isShare = rideMode.toLowerCase() == 'share';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.ivory),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: (isShare ? Colors.green : Colors.deepOrange)
+                  .withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              isShare ? 'SHARE RIDE' : 'SOLO RIDE',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.4,
+                color: isShare ? Colors.green[800] : Colors.deepOrange[800],
+              ),
+            ),
+          ),
           Text(
             '$start → $end',
             style: const TextStyle(
@@ -1133,7 +1468,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
   Widget _buildExpiredOverlay(Map<String, dynamic> request) {
     return Positioned.fill(
       child: Container(
-        color: AppColors.deepNavy.withValues(alpha:0.92),
+        color: AppColors.deepNavy.withValues(alpha: 0.92),
         padding: const EdgeInsets.all(28),
         child: Center(
           child: Column(
@@ -1195,12 +1530,17 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
     final offerCount = offers.length;
     final canDelete = ['open', 'countered', 'expired', 'cancelled', '']
         .contains(requestStatus);
+
     final requestedAt = DateTime.tryParse(
       (request['requestedAt'] ?? '').toString(),
     );
     final requestedLabel = requestedAt == null
         ? '-'
-        : '${requestedAt.toLocal().day}/${requestedAt.toLocal().month}/${requestedAt.toLocal().year} ${TimeOfDay.fromDateTime(requestedAt.toLocal()).format(context)}';
+        : AppHelpers.formatDateTimeValue(requestedAt.toLocal());
+
+    final rideMode = (request['rideMode'] ?? 'share').toString();
+    final isShare = rideMode.toLowerCase() == 'share';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -1210,7 +1550,7 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
         border: Border.all(color: AppColors.ivory),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha:0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1239,6 +1579,27 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      margin: const EdgeInsets.only(bottom: 4),
+                      decoration: BoxDecoration(
+                        color: (isShare ? Colors.green : Colors.deepOrange)
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        isShare ? 'SHARE' : 'SOLO',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.3,
+                          color: isShare
+                              ? Colors.green[800]
+                              : Colors.deepOrange[800],
+                        ),
+                      ),
+                    ),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1264,7 +1625,8 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                       ],
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(left: 1.5, top: 2, bottom: 2),
+                      padding:
+                          const EdgeInsets.only(left: 1.5, top: 2, bottom: 2),
                       child: Container(
                         width: 3,
                         height: 10,
@@ -1319,12 +1681,12 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
               ),
             ],
           ),
-          if (AppHelpers.hasDisplayValue(pickup))
+          if (pickup != null && pickup.isNotEmpty)
             Text(
               'Exact pickup: $pickup',
               style: const TextStyle(color: AppColors.textMuted),
             ),
-          if (AppHelpers.hasDisplayValue(drop))
+          if (drop != null && drop.isNotEmpty)
             Text(
               'Exact drop: $drop',
               style: const TextStyle(color: AppColors.textMuted),
@@ -1374,13 +1736,17 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                   icon: const Icon(Icons.chat),
                   label: const Text('WhatsApp'),
                 ),
-                if (request['status'] == 'accepted' || request['status'] == 'completed')
+                if (request['status'] == 'accepted' ||
+                    request['status'] == 'completed')
                   TextButton.icon(
                     onPressed: () {
                       Navigator.pushNamed(
                         context,
                         '/active-ride',
-                        arguments: {'requestId': request['id'], 'mode': 'tracking'},
+                        arguments: {
+                          'requestId': request['id'],
+                          'mode': 'tracking'
+                        },
                       );
                     },
                     icon: const Icon(Icons.location_on),
@@ -1406,11 +1772,14 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                         });
                       },
                       icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text('Edit', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      label: const Text('Edit',
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 8),
                         minimumSize: const Size.fromHeight(36),
-                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                        textStyle: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -1422,13 +1791,16 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _deleteRequest(request),
                     icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                    label: const Text('Delete', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    label: const Text('Delete',
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
                       side: const BorderSide(color: AppColors.error),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 8),
                       minimumSize: const Size.fromHeight(36),
-                      textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                      textStyle: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -1465,7 +1837,8 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
               decoration: BoxDecoration(
                 color: AppColors.surfaceBlue,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.skyBlue.withValues(alpha:0.45)),
+                border: Border.all(
+                    color: AppColors.skyBlue.withValues(alpha: 0.45)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1570,11 +1943,13 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                           height: 40,
                           child: OutlinedButton(
                             onPressed: () => _counterOffer(request, offer),
-                            child: const Text('Counter', maxLines: 1, overflow: TextOverflow.ellipsis),
+                            child: const Text('Counter',
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               minimumSize: const Size.fromHeight(36),
-                              textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                              textStyle: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
@@ -1584,9 +1959,11 @@ class _CustomerRequestScreenState extends State<CustomerRequestScreen> {
                             height: 40,
                             child: ElevatedButton(
                               onPressed: () => _acceptOffer(request, offer),
-                              child: const Text('Accept', maxLines: 1, overflow: TextOverflow.ellipsis),
+                              child: const Text('Accept',
+                                  maxLines: 1, overflow: TextOverflow.ellipsis),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
                                 minimumSize: const Size.fromHeight(36),
                               ),
                             ),
@@ -1625,7 +2002,7 @@ class _SignedInChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.deepNavy.withValues(alpha:0.12),
+            color: AppColors.deepNavy.withValues(alpha: 0.12),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -1637,7 +2014,7 @@ class _SignedInChip extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: AppColors.white.withValues(alpha:0.14),
+              color: AppColors.white.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -1738,4 +2115,3 @@ class _PulsingDotState extends State<_PulsingDot>
     );
   }
 }
-

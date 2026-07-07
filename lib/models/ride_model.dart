@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class RideModel {
   final String id;
@@ -92,6 +95,21 @@ class RideModel {
     this.routeProximityKm,
     this.routeMatchScore = 0,
   });
+
+  // ✅ SHARE/SOLO HELPERS
+  bool get isShareRide => rideMode.toLowerCase() == 'share';
+  bool get isSoloRide => rideMode.toLowerCase() == 'solo';
+
+  String get rideModeLabel => isShareRide ? 'SHARE' : 'SOLO';
+
+  Color get rideModeColor => isShareRide ? Colors.green : Colors.deepOrange;
+
+  Color get rideModeBgColor => isShareRide
+      ? Colors.green.withValues(alpha: 0.12)
+      : Colors.deepOrange.withValues(alpha: 0.12);
+
+  IconData get rideModeIcon =>
+      isShareRide ? Icons.people_rounded : Icons.person_rounded;
 
   factory RideModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -362,8 +380,9 @@ class RideModel {
 
   String get displayVehicle => formatVehicleInfo(vehicleInfo);
 
-  String get displayDeparture =>
-      (departureDisplay ?? '').trim().isNotEmpty ? departureDisplay!.trim() : '';
+  String get displayDeparture => (departureDisplay ?? '').trim().isNotEmpty
+      ? departureDisplay!.trim()
+      : '';
 
   String get routeLabel => (routeDisplay ?? '').trim().isNotEmpty
       ? routeDisplay!.trim()

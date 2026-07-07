@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:async'; // ✅ Added for Timer
 
 import 'navigation/app_navigator.dart';
 import 'services/fcm_service.dart';
@@ -63,7 +64,35 @@ void main() async {
   );
   await FcmService.initialize();
   Provider.debugCheckInvalidValueType = null;
+
+  // ✅ AUTO-CLEANUP: Schedule cleanup every 6 hours
+  _scheduleAutoCleanup();
+
   runApp(const ShareWayApp());
+}
+
+// ✅ AUTO-CLEANUP FUNCTION
+void _scheduleAutoCleanup() {
+  Timer.periodic(const Duration(hours: 6), (timer) async {
+    try {
+      final firestoreService = FirestoreService();
+      final count = await firestoreService.cleanupOldBookings();
+      debugPrint('✅ Auto-cleanup: $count bookings deleted');
+    } catch (e) {
+      debugPrint('❌ Auto-cleanup error: $e');
+    }
+  });
+
+  // ✅ Run initial cleanup after 1 minute
+  Timer(const Duration(minutes: 1), () async {
+    try {
+      final firestoreService = FirestoreService();
+      final count = await firestoreService.cleanupOldBookings();
+      debugPrint('✅ Initial cleanup: $count bookings deleted');
+    } catch (e) {
+      debugPrint('❌ Initial cleanup error: $e');
+    }
+  });
 }
 
 class ShareWayApp extends StatelessWidget {

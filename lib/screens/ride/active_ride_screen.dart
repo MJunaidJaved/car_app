@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/user_provider.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/deal_status_utils.dart';
@@ -52,6 +53,13 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
   String get _start => _deal?['ride']?['startLocation'] ?? '';
   String get _end => _deal?['ride']?['endLocation'] ?? '';
   double get _fare => (_deal?['agreedFare'] ?? 0).toDouble();
+
+  // ✅ Get rideMode for Share/Solo label
+  String get _rideMode {
+    final ride = _deal?['ride'] as Map<String, dynamic>?;
+    return ride?['rideMode']?.toString() ?? 'share';
+  }
+
   String get _vehicle {
     final rideInfo = _deal?['ride']?['vehicleInfo'];
     final fromRide = RideModel.formatVehicleInfo(rideInfo);
@@ -90,6 +98,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     if (!_isCaptain) {
       final boarding = _deal?['boardingStatus']?.toString() ?? '';
       if (boarding == 'boarded') return 'You are boarded';
+      if (boarding == 'arrived') return 'Captain has arrived';
       if (_dealStatus == 'started') return 'Ride in progress';
       if (_dealStatus == 'confirmed') return 'Captain is on the way';
     }
@@ -217,8 +226,10 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
         final lng = (p['passengerPickupLng'] ?? 0).toDouble();
         if (lat == 0 && lng == 0) continue;
         final dealId = p['dealId']?.toString() ?? p['id']?.toString() ?? '';
-        final boarded = p['boardingStatus'] == 'boarded';
-        final dropped = p['boardingStatus'] == 'dropped';
+        final boardingStatus = (p['boardingStatus'] ?? 'waiting').toString();
+        final dropped = boardingStatus == 'dropped';
+        final boarded = boardingStatus == 'boarded';
+        final arrived = boardingStatus == 'arrived';
         markers.add(Marker(
           markerId: MarkerId('p_$dealId'),
           position: LatLng(lat, lng),
@@ -233,7 +244,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                 ? BitmapDescriptor.hueViolet
                 : boarded
                     ? BitmapDescriptor.hueGreen
-                    : BitmapDescriptor.hueYellow,
+                    : arrived
+                        ? BitmapDescriptor.hueOrange
+                        : BitmapDescriptor.hueYellow,
           ),
         ));
       }
@@ -382,7 +395,8 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
   void _startCaptainLocationUpdates() {
     _captainLocationTimer?.cancel();
-    _captainLocationTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
+    _captainLocationTimer =
+        Timer.periodic(const Duration(seconds: 15), (_) async {
       if (_rideId == null) return;
       try {
         final pos = await Geolocator.getCurrentPosition();
@@ -461,7 +475,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
           .startDeal(_dealId!);
       _locationService.startCaptainTracking(_rideId!);
       if (mounted) {
-        AppHelpers.showSnackBar(context, 'Ride started - passengers notified');
+        AppHelpers.showSnackBar(context, 'Ride started for this passenger');
       }
     } catch (e) {
       if (mounted) {
@@ -502,6 +516,35 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
   void _triggerSOS() {
     setState(() => _showSosConfirm = true);
+  }
+
+  // Helper method to open WhatsApp using url_launcher
+  void openWhatsApp(BuildContext context, String phone) async {
+    if (phone.isEmpty) {
+      AppHelpers.showSnackBar(context, 'Phone number not available');
+      return;
+    }
+    // Remove any non-digit characters
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanPhone.isEmpty) {
+      AppHelpers.showSnackBar(context, 'Invalid phone number');
+      return;
+    }
+    // Add country code if not present
+    final formattedPhone =
+        cleanPhone.startsWith('92') ? cleanPhone : '92$cleanPhone';
+    final url = 'https://wa.me/$formattedPhone';
+
+    try {
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        AppHelpers.showSnackBar(context, 'Could not open WhatsApp');
+      }
+    } catch (e) {
+      AppHelpers.showSnackBar(context, 'Error opening WhatsApp', isError: true);
+    }
   }
 
   Widget _buildCustomerRequestRide(BuildContext context) {
@@ -603,6 +646,11 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
       return _buildCustomerRequestRide(context);
     }
 
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // ✅ Get rideMode for Share/Solo label
+    final isShareRide = _rideMode.toLowerCase() != 'solo';
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Stack(
@@ -640,7 +688,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                       border: Border.all(color: AppColors.line, width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.dark.withValues(alpha:0.02),
+                          color: AppColors.dark.withValues(alpha: 0.02),
                           blurRadius: 10,
                         ),
                       ],
@@ -680,7 +728,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.sos.withValues(alpha:0.3),
+                            color: AppColors.sos.withValues(alpha: 0.3),
                             blurRadius: 15,
                             offset: const Offset(0, 6),
                           ),
@@ -704,395 +752,475 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
             ),
           ),
 
-          // Bottom ride card
+          // Bottom ride card with scroll fix
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: screenHeight * 0.72),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                  border: const Border(
+                    top: BorderSide(color: AppColors.line, width: 1),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.dark.withValues(alpha: 0.02),
+                      blurRadius: 30,
+                      offset: const Offset(0, -10),
+                    ),
+                  ],
                 ),
-                border: const Border(
-                    top: BorderSide(color: AppColors.line, width: 1)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.dark.withValues(alpha:0.02),
-                    blurRadius: 30,
-                    offset: const Offset(0, -10),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Captain info
-                  Row(
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircleAvatar(
-                        radius: 26,
-                        backgroundColor: AppColors.primary.withValues(alpha:0.1),
-                        child: Text(
-                          _captainInitial,
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _captainName,
-                              style: const TextStyle(
-                                color: AppColors.textDark,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                const Icon(Icons.star_rounded,
-                                    color: AppColors.primary, size: 16),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    _vehicle.isNotEmpty
-                                        ? _vehicle
-                                        : 'Vehicle details',
-                                    style: const TextStyle(
-                                        color: AppColors.textMuted,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Call button
-                      GestureDetector(
-                        onTap: () => dialPhone(context, _captainPhone),
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha:0.1),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            Icons.phone_rounded,
-                            color: AppColors.primary,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-                  const Divider(height: 1, color: AppColors.line),
-                  const SizedBox(height: 24),
-
-                  // Route progress
-                  Row(
-                    children: [
-                      Column(
-                        children: [
-                          const Icon(Icons.circle,
-                              color: AppColors.success, size: 10),
-                          Container(
-                              width: 1.5, height: 36, color: AppColors.line),
-                          const Icon(Icons.circle,
-                              color: AppColors.primary, size: 10),
-                        ],
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(_start,
-                                style: const TextStyle(
-                                    color: AppColors.textDark,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700)),
-                            const SizedBox(height: 24),
-                            Text(_end,
-                                style: const TextStyle(
-                                    color: AppColors.textDark,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      ),
+                      // ✅ Bold Share/Solo label at the top
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
+                            horizontal: 10, vertical: 4),
+                        margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha:0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          color:
+                              (isShareRide ? Colors.green : Colors.deepOrange)
+                                  .withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              _captainLocation != null
-                                  ? 'Captain live'
-                                  : 'Waiting for captain',
+                        child: Text(
+                          isShareRide ? 'SHARE RIDE' : 'SOLO RIDE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.4,
+                            color: isShareRide
+                                ? Colors.green[800]
+                                : Colors.deepOrange[800],
+                          ),
+                        ),
+                      ),
+
+                      // Captain info
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 26,
+                            backgroundColor:
+                                AppColors.primary.withValues(alpha: 0.1),
+                            child: Text(
+                              _captainInitial,
                               style: const TextStyle(
                                 color: AppColors.primary,
-                                fontSize: 12,
                                 fontWeight: FontWeight.w800,
+                                fontSize: 20,
                               ),
                             ),
-                            if (_captainLocation != null)
-                              Text(
-                                _captainDistanceLabel,
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Fare chip
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _InfoChip(
-                        icon: Icons.payments_rounded,
-                        label: 'Rs ${_fare.toStringAsFixed(0)}  •  Agreed fare',
-                      ),
-                      GestureDetector(
-                        onTap: () => openWhatsApp(context, _captainPhone),
-                        child: const _InfoChip(
-                          icon: Icons.chat_rounded,
-                          label: 'WhatsApp',
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  if (_rideId != null && !_isCaptain)
-                    CoRidersSection(
-                      rideId: _rideId!,
-                      currentUserId:
-                          Provider.of<UserProvider>(context, listen: false)
-                              .user
-                              ?.id,
-                    ),
-                  if (_dealId != null) ...[
-                    const SizedBox(height: 16),
-                    DealChatPanel(dealId: _dealId!, height: 160),
-                  ],
-
-                  const SizedBox(height: 24),
-
-                  if (_isCaptain &&
-                      (_dealStatus == 'confirmed' ||
-                          _dealStatus == 'started')) ...[
-                    if (_confirmedPassengers.isNotEmpty) ...[
-                      const Text(
-                        'Confirmed passengers',
-                        style: TextStyle(
-                          color: AppColors.textDark,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ..._confirmedPassengers.map((p) {
-                        final dealId = p['dealId']?.toString() ?? '';
-                        final name = p['customerName']?.toString() ??
-                            p['firstName']?.toString() ??
-                            'Passenger';
-                        final pickup =
-                            p['passengerPickupAddress']?.toString() ?? '';
-                        final phone = p['customerPhone']?.toString() ?? '';
-                        final status =
-                            p['boardingStatus']?.toString() ?? 'waiting';
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.bg,
-                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(name,
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _captainName,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w800)),
-                              Text(pickup,
-                                  style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textMuted)),
-                              if (phone.trim().isNotEmpty) ...[
-                                const SizedBox(height: 8),
+                                    color: AppColors.textDark,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                                 Row(
                                   children: [
+                                    const Icon(Icons.star_rounded,
+                                        color: AppColors.primary, size: 16),
+                                    const SizedBox(width: 4),
                                     Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () =>
-                                            dialPhone(context, phone),
-                                        icon: const Icon(Icons.call_outlined),
-                                        label: const Text('Call'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        onPressed: () =>
-                                            openWhatsApp(context, phone),
-                                        icon: const Icon(Icons.chat_outlined),
-                                        label: const Text('WhatsApp'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.moss,
-                                          foregroundColor: AppColors.white,
+                                      child: Text(
+                                        _vehicle.isNotEmpty
+                                            ? _vehicle
+                                            : 'Vehicle details',
+                                        style: const TextStyle(
+                                          color: AppColors.textMuted,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
                                         ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
                                 ),
                               ],
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  if (status != 'boarded' &&
-                                      status != 'dropped')
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: dealId.isEmpty
-                                            ? null
-                                            : () =>
-                                                _setBoarding(dealId, 'boarded'),
-                                        child: const Text('Boarded'),
-                                      ),
-                                    ),
-                                  if (status == 'boarded') ...[
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: dealId.isEmpty
-                                            ? null
-                                            : () =>
-                                                _setBoarding(dealId, 'dropped'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.moss,
-                                          foregroundColor: AppColors.white,
-                                        ),
-                                        child: const Text('Dropped'),
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                            ),
+                          ),
+                          // Call button
+                          GestureDetector(
+                            onTap: () => dialPhone(context, _captainPhone),
+                            child: Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(14),
                               ),
+                              child: const Icon(
+                                Icons.phone_rounded,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+                      const Divider(height: 1, color: AppColors.line),
+                      const SizedBox(height: 24),
+
+                      // Route progress
+                      Row(
+                        children: [
+                          Column(
+                            children: [
+                              const Icon(Icons.circle,
+                                  color: AppColors.success, size: 10),
+                              Container(
+                                  width: 1.5,
+                                  height: 36,
+                                  color: AppColors.line),
+                              const Icon(Icons.circle,
+                                  color: AppColors.primary, size: 10),
                             ],
                           ),
-                        );
-                      }),
-                      const SizedBox(height: 12),
-                    ],
-                  ],
-                  if (_isCaptain && _dealStatus == 'confirmed') ...[
-                    SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _startRideAsCaptain,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.bark,
-                          foregroundColor: AppColors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_start,
+                                    style: const TextStyle(
+                                      color: AppColors.textDark,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    )),
+                                const SizedBox(height: 24),
+                                Text(_end,
+                                    style: const TextStyle(
+                                      color: AppColors.textDark,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    )),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  _captainLocation != null
+                                      ? 'Captain live'
+                                      : 'Waiting for captain',
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                if (_captainLocation != null)
+                                  Text(
+                                    _captainDistanceLabel,
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Fare chip
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _InfoChip(
+                            icon: Icons.payments_rounded,
+                            label:
+                                'Rs ${_fare.toStringAsFixed(0)}  •  Agreed fare',
+                          ),
+                          GestureDetector(
+                            onTap: () => openWhatsApp(context, _captainPhone),
+                            child: const _InfoChip(
+                              icon: Icons.chat_rounded,
+                              label: 'WhatsApp',
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      if (_rideId != null && !_isCaptain)
+                        CoRidersSection(
+                          rideId: _rideId!,
+                          currentUserId:
+                              Provider.of<UserProvider>(context, listen: false)
+                                  .user
+                                  ?.id,
                         ),
-                        child: const Text('Start Ride',
+                      if (_dealId != null) ...[
+                        const SizedBox(height: 16),
+                        DealChatPanel(dealId: _dealId!, height: 160),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      if (_isCaptain &&
+                          (_dealStatus == 'confirmed' ||
+                              _dealStatus == 'started')) ...[
+                        if (_confirmedPassengers.isNotEmpty) ...[
+                          const Text(
+                            'Confirmed passengers',
                             style: TextStyle(
-                                fontWeight: FontWeight.w800, fontSize: 16)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (!_isCaptain && canCancelDeal(_dealStatus))
-                    TextButton(
-                      onPressed: _cancelBooking,
-                      child: const Text('Cancel booking',
-                          style: TextStyle(
-                              color: AppColors.error,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  if (!_isCaptain &&
-                      (_deal?['boardingStatus']?.toString() == 'boarded' ||
-                          _dealStatus == 'started'))
-                    SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: (_deal?['boardingStatus']?.toString() ==
-                                    'boarded' ||
-                                _dealStatus == 'started')
-                            ? () async {
-                                try {
-                                  if (_dealId != null) {
-                                    await Provider.of<FirestoreService>(context,
-                                            listen: false)
-                                        .completeDeal(_dealId!);
-                                  }
-                                } catch (e) {
-                                  if (mounted) {
-                                    AppHelpers.showSnackBar(
-                                      context,
-                                      'Error: $e',
-                                      isError: true,
-                                    );
-                                  }
-                                  return;
-                                }
-                                if (mounted) {
-                                  Navigator.pushNamed(context, '/rate-review',
-                                      arguments: _dealId);
-                                }
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.moss,
-                          foregroundColor: AppColors.white,
-                          disabledBackgroundColor:
-                              AppColors.sage.withValues(alpha:0.3),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ..._confirmedPassengers.map((p) {
+                            final dealId = p['dealId']?.toString() ?? '';
+                            final name = p['customerName']?.toString() ??
+                                p['firstName']?.toString() ??
+                                'Passenger';
+                            final pickup =
+                                p['passengerPickupAddress']?.toString() ?? '';
+                            final phone = p['customerPhone']?.toString() ?? '';
+                            final status =
+                                (p['boardingStatus']?.toString() ?? 'waiting');
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.bg,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(name,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800)),
+                                  Text(pickup,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.textMuted,
+                                      )),
+                                  if (phone.trim().isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed: () =>
+                                                dialPhone(context, phone),
+                                            icon:
+                                                const Icon(Icons.call_outlined),
+                                            label: const Text('Call'),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: () =>
+                                                openWhatsApp(context, phone),
+                                            icon:
+                                                const Icon(Icons.chat_outlined),
+                                            label: const Text('WhatsApp'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.moss,
+                                              foregroundColor: AppColors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      // Step 1: captain reached passenger pickup
+                                      if (status == 'waiting')
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: dealId.isEmpty
+                                                ? null
+                                                : () => _setBoarding(
+                                                    dealId, 'arrived'),
+                                            child: const Text('Mark Arrived'),
+                                          ),
+                                        ),
+                                      // Step 2: passenger boarded
+                                      if (status == 'arrived')
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: dealId.isEmpty
+                                                ? null
+                                                : () => _setBoarding(
+                                                    dealId, 'boarded'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.bark,
+                                              foregroundColor: AppColors.white,
+                                            ),
+                                            child: const Text('Boarded'),
+                                          ),
+                                        ),
+                                      // Step 3: dropped off
+                                      if (status == 'boarded') ...[
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: dealId.isEmpty
+                                                ? null
+                                                : () => _setBoarding(
+                                                    dealId, 'dropped'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.moss,
+                                              foregroundColor: AppColors.white,
+                                            ),
+                                            child: const Text('Dropped'),
+                                          ),
+                                        ),
+                                      ],
+                                      if (status == 'dropped')
+                                        const Expanded(
+                                          child: Text(
+                                            'Passenger dropped',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: AppColors.moss,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 12),
+                        ],
+                      ],
+                      if (_isCaptain && _dealStatus == 'confirmed') ...[
+                        SizedBox(
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _startRideAsCaptain,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.bark,
+                              foregroundColor: AppColors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text('Start Ride',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
+                                )),
+                          ),
                         ),
-                        child: Text(
+                        const SizedBox(height: 12),
+                      ],
+                      if (!_isCaptain && canCancelDeal(_dealStatus))
+                        TextButton(
+                          onPressed: _cancelBooking,
+                          child: const Text('Cancel booking',
+                              style: TextStyle(
+                                color: AppColors.error,
+                                fontWeight: FontWeight.w700,
+                              )),
+                        ),
+                      if (!_isCaptain &&
                           (_deal?['boardingStatus']?.toString() == 'boarded' ||
-                                  _dealStatus == 'started')
-                              ? 'I have arrived'
-                              : 'Waiting to board',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 16),
+                              _dealStatus == 'started'))
+                        SizedBox(
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: (_deal?['boardingStatus']?.toString() ==
+                                        'boarded' ||
+                                    _dealStatus == 'started')
+                                ? () async {
+                                    try {
+                                      if (_dealId != null) {
+                                        await Provider.of<FirestoreService>(
+                                                context,
+                                                listen: false)
+                                            .completeDeal(_dealId!);
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        AppHelpers.showSnackBar(
+                                          context,
+                                          'Error: $e',
+                                          isError: true,
+                                        );
+                                      }
+                                      return;
+                                    }
+                                    if (mounted) {
+                                      Navigator.pushNamed(
+                                          context, '/rate-review',
+                                          arguments: _dealId);
+                                    }
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.moss,
+                              foregroundColor: AppColors.white,
+                              disabledBackgroundColor:
+                                  AppColors.sage.withValues(alpha: 0.3),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              (_deal?['boardingStatus']?.toString() ==
+                                          'boarded' ||
+                                      _dealStatus == 'started')
+                                  ? 'I have arrived'
+                                  : 'Waiting to board',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -1101,7 +1229,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
           if (_showSosConfirm)
             Positioned.fill(
               child: Container(
-                color: AppColors.dark.withValues(alpha:0.7),
+                color: AppColors.dark.withValues(alpha: 0.7),
                 child: Center(
                   child: Container(
                     margin: const EdgeInsets.all(32),
@@ -1118,7 +1246,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           width: 72,
                           height: 72,
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha:0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: const Icon(
@@ -1182,17 +1310,15 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: AppColors.white,
-                                  elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 16),
                                 ),
-                                child: const Text(
-                                  'Send SOS',
-                                  style: TextStyle(fontWeight: FontWeight.w900),
-                                ),
+                                child: const Text('Send SOS',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w700)),
                               ),
                             ),
                           ],
@@ -1209,30 +1335,36 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
   }
 }
 
+// _InfoChip widget - defined as a separate widget
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _InfoChip({required this.icon, required this.label});
+
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha:0.08),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.bg,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: AppColors.line, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.primary, size: 14),
+          Icon(icon, size: 16, color: AppColors.primary),
           const SizedBox(width: 8),
           Text(
             label,
             style: const TextStyle(
-              color: AppColors.primary,
+              color: AppColors.textDark,
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -1240,4 +1372,3 @@ class _InfoChip extends StatelessWidget {
     );
   }
 }
-

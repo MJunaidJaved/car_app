@@ -45,7 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       if (userProvider.user != null) {
         final updatedUser = userProvider.user?.copyWith(role: role);
-        userProvider.setUser(updatedUser!);
+        if (updatedUser != null) {
+          userProvider.setUser(updatedUser);
+        }
       }
 
       setState(() => _role = role);

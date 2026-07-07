@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import 'api_service.dart';
+import 'firestore_service.dart'; // ✅ Added for isBookingVisible
 
 /// Real-time passenger bookings via Firestore, with API polling fallback.
 class DealRealtimeService {
@@ -33,7 +34,12 @@ class DealRealtimeService {
           for (final doc in snap.docs) {
             var deal = <String, dynamic>{'id': doc.id, ...doc.data()};
             deal = await _attachRide(deal);
-            bookings.add(_normalizeBooking(deal));
+            final normalized = _normalizeBooking(deal);
+
+            // ✅ AUTO-DELETE: Only add visible bookings
+            if (FirestoreService.isBookingVisible(normalized)) {
+              bookings.add(normalized);
+            }
           }
           bookings.sort((a, b) {
             final aT = a['createdAt']?.toString() ?? '';
@@ -60,7 +66,15 @@ class DealRealtimeService {
     Future<void> fetch() async {
       try {
         final res = await ApiService.get('/deals/my-bookings');
-        onData(List<Map<String, dynamic>>.from(res['bookings'] ?? []));
+        final allBookings =
+            List<Map<String, dynamic>>.from(res['bookings'] ?? []);
+
+        // ✅ AUTO-DELETE: Filter visible bookings
+        final visibleBookings = allBookings
+            .where((b) => FirestoreService.isBookingVisible(b))
+            .toList();
+
+        onData(visibleBookings);
       } catch (e) {
         onError?.call(e);
       }
@@ -89,11 +103,10 @@ class DealRealtimeService {
     );
     final isCompleted = status == 'completed';
     final isConfirmed = status == 'confirmed';
-    final isUpcoming =
-        ['pending', 'confirmed', 'started'].contains(status) &&
-            (departure == null ||
-                departure.isAfter(DateTime.now()) ||
-                status == 'started');
+    final isUpcoming = ['pending', 'confirmed', 'started'].contains(status) &&
+        (departure == null ||
+            departure.isAfter(DateTime.now()) ||
+            status == 'started');
     return {
       ...deal,
       'status': status,
@@ -109,6 +122,8 @@ class DealRealtimeService {
       'isConfirmed': isConfirmed,
       'isCompleted': isCompleted,
       'canRate': isCompleted && deal['rating'] == null,
+      // ✅ Add updatedAt for auto-delete
+      'updatedAt': deal['updatedAt'] ?? deal['createdAt'],
     };
   }
 

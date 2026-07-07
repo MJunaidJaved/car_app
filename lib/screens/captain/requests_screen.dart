@@ -316,7 +316,7 @@ class _RequestsScreenState extends State<RequestsScreen>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha:0.15),
+                            color: AppColors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -360,7 +360,7 @@ class _RequestsScreenState extends State<RequestsScreen>
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha:0.1),
+                      color: AppColors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: TabBar(
@@ -386,7 +386,8 @@ class _RequestsScreenState extends State<RequestsScreen>
                 const SizedBox(height: 16),
                 Expanded(
                   child: _loading
-                      ? const SkeletonList(item: RequestCardSkeleton(), count: 4)
+                      ? const SkeletonList(
+                          item: RequestCardSkeleton(), count: 4)
                       : TabBarView(
                           controller: _tabCtrl,
                           children: [
@@ -490,7 +491,8 @@ class _RequestsScreenState extends State<RequestsScreen>
                 fontWeight: FontWeight.w900,
               ),
             ),
-            if (AppHelpers.hasDisplayValue(_ride!.exactLocation)) ...[
+            if ((_ride!.exactLocation != null &&
+                _ride!.exactLocation!.isNotEmpty)) ...[
               const SizedBox(height: 6),
               Text(
                 'Exact pickup: ${_ride!.exactLocation}',
@@ -501,7 +503,8 @@ class _RequestsScreenState extends State<RequestsScreen>
                 ),
               ),
             ],
-            if (AppHelpers.hasDisplayValue(_ride!.exactDropLocation)) ...[
+            if ((_ride!.exactDropLocation != null &&
+                _ride!.exactDropLocation!.isNotEmpty)) ...[
               const SizedBox(height: 6),
               Text(
                 'Exact drop: ${_ride!.exactDropLocation}',
@@ -581,7 +584,8 @@ class _RequestsScreenState extends State<RequestsScreen>
           const Center(
             child: Text(
               'No confirmed passengers yet.',
-              style: TextStyle(color: AppColors.sage, fontWeight: FontWeight.w600),
+              style:
+                  TextStyle(color: AppColors.sage, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -604,6 +608,14 @@ class _RequestsScreenState extends State<RequestsScreen>
         final lat = (d['passengerPickupLat'] ?? 0).toDouble();
         final lng = (d['passengerPickupLng'] ?? 0).toDouble();
         final dealId = d['id']?.toString() ?? '';
+        final status = d['status'] ?? '';
+
+        // ✅ Card color based on status
+        final cardColor = status == 'confirmed'
+            ? AppColors.success
+            : status == 'started'
+                ? AppColors.primary
+                : AppColors.sage;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -611,17 +623,43 @@ class _RequestsScreenState extends State<RequestsScreen>
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.moss.withValues(alpha:0.3)),
+            border: Border.all(
+              color: cardColor.withValues(alpha: 0.4),
+              width: 2,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  // ✅ "Booked ✓" label for confirmed deals
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Booked ✓',
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               Text(
                 'Rs ${(d['agreedFare'] ?? 0).toString()}',
@@ -699,7 +737,7 @@ class _RequestsScreenState extends State<RequestsScreen>
                       backgroundColor: AppColors.bark,
                       foregroundColor: AppColors.white,
                     ),
-                    child: const Text('Start Ride (all passengers)'),
+                    child: const Text('Start Ride'),
                   ),
                 ),
               ],
@@ -726,7 +764,7 @@ class _RequestsScreenState extends State<RequestsScreen>
               children: [
                 Icon(
                   isPending ? Icons.hail_rounded : Icons.history_rounded,
-                  color: AppColors.moss.withValues(alpha:0.3),
+                  color: AppColors.moss.withValues(alpha: 0.3),
                   size: 64,
                 ),
                 const SizedBox(height: 12),
@@ -761,6 +799,14 @@ class _RequestsScreenState extends State<RequestsScreen>
             name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
         final fare = (d['agreedFare'] ?? 0).toDouble();
         final dealId = d['id'] ?? '';
+        final status = d['status'] ?? '';
+
+        // ✅ Card color based on status
+        final cardColor = isPending
+            ? AppColors.error
+            : status == 'confirmed'
+                ? AppColors.success
+                : AppColors.sage;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 20),
@@ -768,7 +814,10 @@ class _RequestsScreenState extends State<RequestsScreen>
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.sage.withValues(alpha:0.2)),
+            border: Border.all(
+              color: cardColor.withValues(alpha: 0.3),
+              width: 2,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -777,11 +826,11 @@ class _RequestsScreenState extends State<RequestsScreen>
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: AppColors.moss.withValues(alpha:0.1),
+                    backgroundColor: cardColor.withValues(alpha: 0.1),
                     child: Text(
                       initials,
-                      style: const TextStyle(
-                        color: AppColors.moss,
+                      style: TextStyle(
+                        color: cardColor,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -934,7 +983,7 @@ class _SummaryPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.sage.withValues(alpha:0.15)),
+        border: Border.all(color: AppColors.sage.withValues(alpha: 0.15)),
       ),
       child: Text(
         label,
@@ -953,4 +1002,3 @@ class _InsufficientBalanceData {
   final double current;
   _InsufficientBalanceData({required this.required, required this.current});
 }
-
